@@ -1,6 +1,7 @@
 // Admin layout with sidebar navigation
 
-import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -9,12 +10,36 @@ import {
   Palette,
   AlertTriangle,
   LogOut,
+  Loader2,
 } from 'lucide-react';
 
-// TODO: Implement actual auth check
+// Authentication hook that checks session with backend
 const useAuth = () => {
-  // Placeholder - will be replaced with actual auth logic
-  return { isAuthenticated: true };
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/admin/me', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch {
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  return { isAuthenticated, isLoading };
 };
 
 const navItems = [
@@ -27,12 +52,35 @@ const navItems = [
 ];
 
 export default function AdminLayout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
+  // Show loading spinner while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />;
   }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('http://localhost:3001/api/admin/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch {
+      // Ignore errors, still redirect to login
+    }
+    navigate('/admin/login');
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -67,10 +115,7 @@ export default function AdminLayout() {
 
         <div className="absolute bottom-4 left-0 right-0 px-4">
           <button
-            onClick={() => {
-              // TODO: Implement logout
-              console.log('Logout');
-            }}
+            onClick={handleLogout}
             className="flex items-center space-x-3 px-4 py-3 text-sm text-muted-foreground hover:text-destructive w-full"
           >
             <LogOut className="h-5 w-5" />

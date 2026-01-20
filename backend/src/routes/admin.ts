@@ -88,6 +88,18 @@ router.post('/logout', (req, res) => {
   });
 });
 
+// GET /api/admin/me - Check authentication status (no auth required)
+router.get('/me', (req, res) => {
+  if (req.session.adminId) {
+    res.json({
+      authenticated: true,
+      username: req.session.adminUsername,
+    });
+  } else {
+    res.status(401).json({ authenticated: false });
+  }
+});
+
 // All routes below require authentication
 router.use(requireAuth);
 
