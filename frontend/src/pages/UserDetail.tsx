@@ -1,6 +1,16 @@
 // User Detail page - Shows detailed sentiment analysis for a specific user
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 // Types for tweet data
 interface TweetData {
@@ -56,6 +66,20 @@ interface AggregationData {
   emotion_medians: string;
   tweet_count: number;
   computed_at: string;
+}
+
+// Types for emotion trends data
+interface TrendDataPoint {
+  timestamp: string;
+  emotions: Record<string, number>;
+}
+
+interface TrendsResponse {
+  userId: string;
+  timeBucket: string;
+  dataPoints: TrendDataPoint[];
+  emotions: string[];
+  emotionColors: Record<string, { color: string }>;
 }
 
 function formatNumber(num: number): string {
@@ -387,6 +411,218 @@ function TweetList({
   );
 }
 
+// Emotion trends chart component
+function EmotionTrends({ userId }: { userId: number }) {
+  const [trends, setTrends] = useState<TrendsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [timeBucket, setTimeBucket] = useState<string>('daily');
+  const [selectedEmotions, setSelectedEmotions] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const fetchTrends = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(
+          `http://localhost:3001/api/users/${userId}/trends?timeBucket=${timeBucket}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setTrends(data);
+          // Default: select top 4 emotions by average value if none selected
+          if (selectedEmotions.size === 0 && data.dataPoints.length > 0) {
+            const emotionAverages: Record<string, number> = {};
+            for (const point of data.dataPoints) {
+              for (const [emotion, value] of Object.entries(point.emotions)) {
+                emotionAverages[emotion] =
+                  (emotionAverages[emotion] || 0) + (value as number);
+              }
+            }
+            const topEmotions = Object.entries(emotionAverages)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 4)
+              .map(([e]) => e);
+            setSelectedEmotions(new Set(topEmotions));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching trends:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTrends();
+  }, [userId, timeBucket]);
+
+  const toggleEmotion = (emotion: string) => {
+    setSelectedEmotions((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(emotion)) {
+        newSet.delete(emotion);
+      } else {
+        newSet.add(emotion);
+      }
+      return newSet;
+    });
+  };
+
+  const defaultColors: Record<string, string> = {
+    happy: '#FFD700',
+    sad: '#4169E1',
+    angry: '#FF4444',
+    fearful: '#9932CC',
+    hatred: '#8B0000',
+    thankful: '#32CD32',
+    excited: '#FF6B35',
+    hopeful: '#00CED1',
+    frustrated: '#FF8C00',
+    sarcastic: '#BA55D3',
+    inspirational: '#FFD700',
+    anxious: '#708090',
+  };
+
+  const getColor = (emotion: string): string => {
+    return trends?.emotionColors[emotion]?.color || defaultColors[emotion] || '#888';
+  };
+
+  const formatDate = (timestamp: string): string => {
+    // Handle different formats: YYYY-MM-DD or YYYY-MM
+    if (timestamp.length === 7) {
+      // Monthly format
+      const [year, month] = timestamp.split('-');
+      const date = new Date(parseInt(year), parseInt(month) - 1);
+      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-card rounded-lg p-6 border border-border shadow-md">
+        <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
+          <span className="text-primary-cyan">📈</span>
+          Emotion Trends
+        </h2>
+        <div className="animate-pulse h-64 bg-muted rounded"></div>
+      </div>
+    );
+  }
+
+  if (!trends || trends.dataPoints.length === 0) {
+    return (
+      <div className="bg-card rounded-lg p-6 border border-border shadow-md">
+        <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
+          <span className="text-primary-cyan">📈</span>
+          Emotion Trends
+        </h2>
+        <p className="text-muted-foreground text-center py-8">
+          Not enough data to display trends. Check back after more tweets have been analyzed.
+        </p>
+      </div>
+    );
+  }
+
+  // Transform data for Recharts
+  const chartData = trends.dataPoints.map((point) => ({
+    date: formatDate(point.timestamp),
+    ...point.emotions,
+  }));
+
+  return (
+    <div className="bg-card rounded-lg p-6 border border-border shadow-md">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+          <span className="text-primary-cyan">📈</span>
+          Emotion Trends
+        </h2>
+        <div className="flex gap-2">
+          {['daily', 'weekly', 'monthly'].map((bucket) => (
+            <button
+              key={bucket}
+              onClick={() => setTimeBucket(bucket)}
+              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                timeBucket === bucket
+                  ? 'bg-primary-cyan text-background'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              {bucket.charAt(0).toUpperCase() + bucket.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Emotion toggles */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {trends.emotions.map((emotion) => (
+          <button
+            key={emotion}
+            onClick={() => toggleEmotion(emotion)}
+            className={`px-2 py-1 text-xs rounded-full transition-all ${
+              selectedEmotions.has(emotion)
+                ? 'ring-2 ring-offset-2 ring-offset-background'
+                : 'opacity-50 hover:opacity-75'
+            }`}
+            style={{
+              backgroundColor: `${getColor(emotion)}30`,
+              color: getColor(emotion),
+              borderColor: getColor(emotion),
+              ...(selectedEmotions.has(emotion) && { ringColor: getColor(emotion) }),
+            }}
+          >
+            {emotion}
+          </button>
+        ))}
+      </div>
+
+      {/* Chart */}
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis
+              dataKey="date"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+              axisLine={{ stroke: 'hsl(var(--border))' }}
+            />
+            <YAxis
+              domain={[0, 100]}
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+              axisLine={{ stroke: 'hsl(var(--border))' }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'hsl(var(--card))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+              }}
+              labelStyle={{ color: 'hsl(var(--foreground))' }}
+            />
+            <Legend />
+            {trends.emotions
+              .filter((emotion) => selectedEmotions.has(emotion))
+              .map((emotion) => (
+                <Line
+                  key={emotion}
+                  type="monotone"
+                  dataKey={emotion}
+                  stroke={getColor(emotion)}
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: getColor(emotion) }}
+                  activeDot={{ r: 6 }}
+                />
+              ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <p className="text-xs text-muted-foreground mt-2 text-center">
+        Click emotions above to show/hide them on the chart
+      </p>
+    </div>
+  );
+}
+
 export default function UserDetail() {
   const { id } = useParams();
   const [user, setUser] = useState<UserData | null>(null);
@@ -505,16 +741,8 @@ export default function UserDetail() {
               analysisCount={user.analysisCount}
             />
 
-            {/* Coming Soon Sections */}
-            <div className="bg-card rounded-lg p-6 border border-border shadow-md">
-              <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-                <span className="text-primary-cyan">📈</span>
-                Emotion Trends
-              </h2>
-              <p className="text-muted-foreground text-center py-8">
-                Time-series emotion charts coming soon.
-              </p>
-            </div>
+            {/* Emotion Trends Chart */}
+            <EmotionTrends userId={user.id} />
           </div>
 
           {/* Tweet List Section */}

@@ -1966,3 +1966,49 @@ The error handling was already implemented in the Dashboard component:
 - Error handling catches network errors and displays friendly messages
 - Retry functionality works correctly
 
+
+---
+
+## Session - Feature #40 - 2026-01-20
+
+### Feature #40: User detail shows profile info (COMPLETED)
+- **Status**: PASSING
+- **Description**: User detail page displays Twitter profile information
+
+### Verification Steps Completed:
+1. Navigate to user detail page - ✅ Successfully navigated to /users/1 and /users/2
+2. Verify Twitter name is displayed - ✅ "Elon Musk" and "Bill Gates" headings visible
+3. Verify handle (@username) is displayed - ✅ "@elonmusk" and "@BillGates" links visible
+4. Verify avatar image loads - ✅ Profile images present with alt text
+5. Verify bio is displayed - ✅ User bios displayed correctly
+
+### Additional Verifications:
+- API returns real data from database (verified via curl)
+- User 1: twitter_id=44196397, display_name="Elon Musk", bio="CEO of Tesla, SpaceX, and X"
+- User 2: twitter_id=50393960, display_name="Bill Gates", bio="Sharing things I'm learning..."
+- Follower/following counts displayed (170M/500 and 63M/274)
+- Tweet count displayed
+- No mock data - all from real twitter_users table
+
+### Screenshots:
+- .playwright-mcp/feature40-user-detail-profile-info.png - User detail page for Elon Musk
+
+### Current Progress:
+- Features passing: 32/235 (~13.6%)
+- Feature #40 marked as passing
+
+### Commit:
+- df33a2a - Verify Feature #40: User detail shows profile info
+
+### Notes:
+- Feature was already fully implemented by previous sessions
+- This session verified all profile info displays correctly
+- No code changes required
+[Testing] 2026-01-20 15:23:34 - Feature #5 regression test PASSED - Environment configuration loads:
+- Backend running on configured PORT=3001
+- Database exists at configured path ./data/twitter_feels.db
+- Frontend configured with VITE_API_URL=http://localhost:3001
+- API requests going to correct backend URL (verified via network tab)
+- Health endpoint responding: {"status":"ok"}
+- All API requests returning 200 OK
+- Screenshot: .playwright-mcp/feature5-env-config-verification.png

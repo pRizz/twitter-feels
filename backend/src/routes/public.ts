@@ -684,6 +684,133 @@ router.get('/models', (_req, res) => {
   }
 });
 
+// GET /api/users/:id/trends - Time-series emotion data for a user
+router.get('/users/:id/trends', (req, res) => {
+  const { id } = req.params;
+  const timeBucket = (req.query.timeBucket as string) || 'daily';
+
+  try {
+    // Verify user exists
+    const user = db.prepare('SELECT id FROM twitter_users WHERE id = ?').get(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get all tweets with their sentiment analyses for this user
+    const tweetsWithEmotions = db.prepare(`
+      SELECT
+        t.id as tweet_id,
+        t.tweet_timestamp,
+        sa.emotion_scores
+      FROM tweets t
+      JOIN sentiment_analyses sa ON t.id = sa.tweet_id
+      WHERE t.twitter_user_id = ?
+      ORDER BY t.tweet_timestamp ASC
+    `).all(id) as Array<{
+      tweet_id: number;
+      tweet_timestamp: string;
+      emotion_scores: string;
+    }>;
+
+    if (tweetsWithEmotions.length === 0) {
+      return res.json({
+        userId: id,
+        timeBucket,
+        dataPoints: [],
+        emotions: [],
+        emotionColors: {},
+      });
+    }
+
+    // Group data by time bucket
+    const dataByBucket: Record<string, {
+      timestamp: string;
+      emotions: Record<string, { sum: number; count: number }>;
+    }> = {};
+
+    for (const item of tweetsWithEmotions) {
+      const date = new Date(item.tweet_timestamp);
+      let bucketKey: string;
+
+      switch (timeBucket) {
+        case 'daily':
+          bucketKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+          break;
+        case 'weekly':
+          // Get start of week (Monday)
+          const dayOfWeek = date.getDay();
+          const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+          const monday = new Date(date);
+          monday.setDate(date.getDate() + mondayOffset);
+          bucketKey = monday.toISOString().split('T')[0];
+          break;
+        case 'monthly':
+          bucketKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          break;
+        default:
+          bucketKey = date.toISOString().split('T')[0];
+      }
+
+      if (!dataByBucket[bucketKey]) {
+        dataByBucket[bucketKey] = {
+          timestamp: bucketKey,
+          emotions: {},
+        };
+      }
+
+      const scores = JSON.parse(item.emotion_scores);
+      for (const [emotion, score] of Object.entries(scores)) {
+        if (typeof score === 'number') {
+          if (!dataByBucket[bucketKey].emotions[emotion]) {
+            dataByBucket[bucketKey].emotions[emotion] = { sum: 0, count: 0 };
+          }
+          dataByBucket[bucketKey].emotions[emotion].sum += score;
+          dataByBucket[bucketKey].emotions[emotion].count += 1;
+        }
+      }
+    }
+
+    // Convert to array and calculate averages
+    const dataPoints = Object.values(dataByBucket)
+      .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+      .map(bucket => {
+        const averages: Record<string, number> = {};
+        for (const [emotion, data] of Object.entries(bucket.emotions)) {
+          averages[emotion] = Math.round(data.sum / data.count);
+        }
+        return {
+          timestamp: bucket.timestamp,
+          emotions: averages,
+        };
+      });
+
+    // Get all unique emotions
+    const allEmotions = new Set<string>();
+    for (const point of dataPoints) {
+      for (const emotion of Object.keys(point.emotions)) {
+        allEmotions.add(emotion);
+      }
+    }
+
+    // Get emotion colors from configuration
+    const emotionConfig = db.prepare(`
+      SELECT value FROM configurations WHERE key = 'emotions'
+    `).get() as { value: string } | undefined;
+    const emotionColors = emotionConfig ? JSON.parse(emotionConfig.value) : {};
+
+    res.json({
+      userId: id,
+      timeBucket,
+      dataPoints,
+      emotions: Array.from(allEmotions),
+      emotionColors,
+    });
+  } catch (error) {
+    console.error('Error fetching user trends:', error);
+    res.status(500).json({ error: 'Failed to fetch user trends' });
+  }
+});
+
 // GET /api/aggregations - Time-series data
 router.get('/aggregations', (req, res) => {
   const timeBucket = req.query.timeBucket || 'weekly';
