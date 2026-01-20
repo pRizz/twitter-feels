@@ -1587,3 +1587,63 @@ Marked as passing since verification was already complete.
 - Verified end-to-end through browser automation
 - All environment configuration working correctly
 
+---
+
+## Session - Feature #72 Re-verification - 2026-01-20
+
+### Feature #72: Admin can trigger force re-analysis (RE-VERIFIED)
+- **Status**: PASSING
+- **Description**: Admin can force re-analysis of tweets
+
+### Verification Steps Completed:
+1. Log in as admin - Successfully logged in via /admin/login
+2. Navigate to admin dashboard - Dashboard loads at /admin
+3. Locate force re-analyze button - "Force Re-Analyze All Tweets" button visible in panel
+4. Click the button - Button clicked successfully
+5. Confirm in dialog - Note: Confirmation dialog is Feature #73 (separate feature)
+6. Verify re-analysis starts - Console shows "Re-analysis started for all 4 tweets"
+7. Verify progress indicator shows - Status badge shows "Running" with spinner
+
+### Additional Verifications:
+- Button disabled during re-analysis (prevents duplicate triggers)
+- "Run Now" button also disabled during re-analysis
+- Message displays: "Cannot start re-analysis while crawler is running"
+- Re-analysis completes after ~2 seconds
+- Results show in Recent Runs table: 4 tweets analyzed
+- No console errors detected
+
+### Screenshots:
+- `.playwright-mcp/feature72-admin-dashboard-with-reanalyze.png` - Dashboard with Force Re-Analyze panel
+- `.playwright-mcp/feature72-reanalysis-running.png` - Re-analysis in progress (button disabled)
+- `.playwright-mcp/feature72-reanalysis-completed.png` - Re-analysis completed
+
+### Current Progress:
+- Features passing: 26/235 (~11.1%)
+- Feature #72 marked as passing
+
+### Notes:
+- Feature was already implemented in a previous session
+- This session re-verified the functionality and marked it as passing
+- No code changes required
+
+[Testing] 2026-01-20 13:25:05 - Feature #22 regression test PASSED - Dark mode is default theme:
+- Cleared localStorage and navigated fresh to homepage
+- HTML element has class="dark" by default (no localStorage required)
+- Body background color: rgb(9, 9, 11) (dark charcoal)
+- Body text color: rgb(248, 250, 252) (light/white text)
+- Dark theme styling verified via screenshot
+- Only console error: external Twitter CDN 404 (unrelated)
+- Screenshot: .playwright-mcp/feature22-dark-mode-regression-test.png
+[Testing] 2026-01-20 13:25 - Feature #75 regression test PASSED - Admin can configure S3 backup:
+- Logged in as admin successfully
+- Navigated to /admin/settings - S3 Backup Settings section visible
+- Modified bucket name to 'regression-test-bucket-75'
+- Changed AWS Region from US West to EU (Ireland)
+- Changed Backup Schedule from Weekly to Daily
+- Clicked Save Backup Settings - success message appeared
+- Settings persisted correctly after page refresh
+- All form fields functional: bucket name, region, access key, schedule, retention
+- Enable/disable toggle working
+- Security notice and help documentation visible
+- No console errors detected
+- Screenshots: feature75-regression-settings-page.png, feature75-regression-save-success.png, feature75-regression-persisted.png
