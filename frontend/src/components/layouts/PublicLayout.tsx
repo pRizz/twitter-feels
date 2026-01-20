@@ -2,10 +2,42 @@
 
 import { Outlet, Link } from 'react-router-dom';
 import { useTheme } from '@/components/theme-provider';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, Menu, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function PublicLayout() {
   const { theme, setTheme } = useTheme();
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    // Fetch last updated timestamp
+    const fetchLastUpdated = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/dashboard');
+        if (response.ok) {
+          const data = await response.json();
+          setLastUpdated(data.lastUpdated);
+        }
+      } catch {
+        // Ignore errors
+      }
+    };
+    fetchLastUpdated();
+    // Refresh every minute
+    const interval = setInterval(fetchLastUpdated, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTimestamp = (timestamp: string | null) => {
+    if (!timestamp) return '--';
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleString();
+    } catch {
+      return '--';
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -16,9 +48,19 @@ export default function PublicLayout() {
             <span className="text-xl font-bold text-primary">Twitter Feels</span>
           </Link>
 
-          <div className="flex items-center space-x-4">
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-md hover:bg-accent"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+
+          {/* Desktop navigation */}
+          <div className="hidden md:flex items-center space-x-4">
             <span className="text-sm text-muted-foreground">
-              Last updated: <span className="text-foreground">--</span>
+              Last updated: <span className="text-foreground">{formatTimestamp(lastUpdated)}</span>
             </span>
 
             <button
@@ -34,6 +76,33 @@ export default function PublicLayout() {
             </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border bg-background p-4">
+            <div className="flex flex-col space-y-4">
+              <span className="text-sm text-muted-foreground">
+                Last updated: <span className="text-foreground">{formatTimestamp(lastUpdated)}</span>
+              </span>
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="flex items-center gap-2 p-2 rounded-md hover:bg-accent w-fit"
+              >
+                {theme === 'dark' ? (
+                  <>
+                    <Sun className="h-5 w-5" />
+                    <span>Light Mode</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="h-5 w-5" />
+                    <span>Dark Mode</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Main content */}
