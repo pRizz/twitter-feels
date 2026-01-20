@@ -226,24 +226,152 @@ router.post('/crawler/trigger', (_req, res) => {
   }
 });
 
+// Type definitions for Twitter users
+interface TwitterUser {
+  id: number;
+  twitter_id: string;
+  username: string;
+  display_name: string;
+  bio: string | null;
+  avatar_url: string | null;
+  follower_count: number;
+  following_count: number;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // GET /api/admin/users - List tracked users (admin view)
 router.get('/users', (_req, res) => {
-  // TODO: Implement admin user listing
-  res.json({ users: [] });
+  try {
+    const users = db.prepare(`
+      SELECT id, twitter_id, username, display_name, bio, avatar_url,
+             follower_count, following_count, is_active, created_at, updated_at
+      FROM twitter_users
+      ORDER BY display_name ASC
+    `).all() as TwitterUser[];
+
+    // Get tweet counts for each user
+    const tweetCounts = db.prepare(`
+      SELECT twitter_user_id, COUNT(*) as count
+      FROM tweets
+      GROUP BY twitter_user_id
+    `).all() as Array<{ twitter_user_id: number; count: number }>;
+
+    const countMap = new Map(tweetCounts.map(tc => [tc.twitter_user_id, tc.count]));
+
+    const formattedUsers = users.map((user) => ({
+      id: user.id,
+      twitterId: user.twitter_id,
+      username: user.username,
+      displayName: user.display_name,
+      bio: user.bio,
+      avatarUrl: user.avatar_url,
+      followerCount: user.follower_count,
+      followingCount: user.following_count,
+      isActive: Boolean(user.is_active),
+      tweetCount: countMap.get(user.id) || 0,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+    }));
+
+    res.json({ users: formattedUsers });
+  } catch (error) {
+    console.error('Error getting users:', error);
+    res.status(500).json({ error: 'Failed to get users' });
+  }
 });
 
 // POST /api/admin/users - Add tracked user
 router.post('/users', (req, res) => {
-  const { handle } = req.body;
-  // TODO: Implement user addition
-  res.json({ success: true, message: `User @${handle} added` });
+  const { handle, displayName } = req.body;
+
+  if (!handle) {
+    return res.status(400).json({ error: 'Twitter handle is required' });
+  }
+
+  try {
+    // Check if user already exists
+    const existing = db.prepare('SELECT id FROM twitter_users WHERE username = ?').get(handle.replace('@', ''));
+    if (existing) {
+      return res.status(409).json({ error: 'User already being tracked' });
+    }
+
+    // Add new user (in production, this would call Twitter API to get user data)
+    const username = handle.replace('@', '');
+    const result = db.prepare(`
+      INSERT INTO twitter_users (twitter_id, username, display_name, is_active)
+      VALUES (?, ?, ?, 1)
+      RETURNING *
+    `).get(
+      `mock_${username}_${Date.now()}`, // Mock Twitter ID
+      username,
+      displayName || username
+    ) as TwitterUser;
+
+    res.json({
+      success: true,
+      message: `User @${username} added`,
+      user: {
+        id: result.id,
+        username: result.username,
+        displayName: result.display_name,
+        isActive: true,
+      },
+    });
+  } catch (error) {
+    console.error('Error adding user:', error);
+    res.status(500).json({ error: 'Failed to add user' });
+  }
+});
+
+// PUT /api/admin/users/:id - Update tracked user (enable/disable)
+router.put('/users/:id', (req, res) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+
+  try {
+    const user = db.prepare('SELECT * FROM twitter_users WHERE id = ?').get(id) as TwitterUser | undefined;
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    db.prepare(`
+      UPDATE twitter_users
+      SET is_active = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).run(isActive ? 1 : 0, id);
+
+    res.json({
+      success: true,
+      message: `User ${isActive ? 'enabled' : 'disabled'}`,
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
 });
 
 // DELETE /api/admin/users/:id - Remove tracked user
 router.delete('/users/:id', (req, res) => {
   const { id } = req.params;
-  // TODO: Implement user removal
-  res.json({ success: true, message: `User ${id} removed` });
+
+  try {
+    const user = db.prepare('SELECT * FROM twitter_users WHERE id = ?').get(id) as TwitterUser | undefined;
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    db.prepare('DELETE FROM twitter_users WHERE id = ?').run(id);
+
+    res.json({
+      success: true,
+      message: `User @${user.username} removed`,
+    });
+  } catch (error) {
+    console.error('Error removing user:', error);
+    res.status(500).json({ error: 'Failed to remove user' });
+  }
 });
 
 // GET /api/admin/settings
