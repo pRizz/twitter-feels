@@ -5658,3 +5658,99 @@ Added "Clear Filters" functionality to the Dashboard page:
 
 ### Commit:
 - 0897d12 - Implement Feature #148: Twitter handle format validated
+[Testing] 2026-01-20 - Feature #141 regression test PASSED - Filter returns zero results gracefully:
+- Navigated to dashboard at http://localhost:5173
+- Entered search term 'zzzznonexistentuser12345' (no matches)
+- Verified 'no results' message: 'No users found matching "zzzznonexistentuser12345". Try a different search term.'
+- UI remained intact (gauges, leaderboards, stats all visible)
+- Clear Filters button appeared and worked correctly
+- No JavaScript console errors
+- Screenshots: feature141-no-results-regression-test.png, feature141-no-results-message.png
+[Testing] Session complete - verified feature #141 (Filter returns zero results gracefully) - still passing
+[Testing] 2026-01-20 - Feature #61 regression test PASSED - Admin can browse Hugging Face models:
+- Logged in as admin at /admin/login
+- Navigated to /admin/models (LLM Models page)
+- Page loaded correctly with two sections:
+  * 'Installed Models' - showing 7 installed models (BERTweet, Emotion English DistilRoBERTa, Llama-3-Sentiment x3, RoBERTa GoEmotions, Twitter RoBERTa Sentiment)
+  * 'Available Models' - model browser section for Hugging Face models
+- Model browser shows available HF models:
+  * Llama 3.2 3B Instruct model displayed
+  * Model card shows: 1.3M downloads, 4.2K likes, ~6.4 GB size, Updated 2024-12-01
+  * 'View on Hugging Face' link present
+  * 'Download' button available
+- No JavaScript console errors
+- Screenshots: feature61-models-page.png, feature61-models-page-top.png
+[Testing] Session complete - verified feature #61 (Admin can browse Hugging Face models) - still passing
+
+---
+
+## Session - Feature #149 - 2026-01-20
+
+### Feature #149: S3 bucket name validated (COMPLETED)
+- **Status**: PASSING
+- **Category**: M-FormValidation
+- **Description**: S3 configuration validates bucket name
+
+### Implementation Changes:
+- Added `backupErrors` state to track validation errors for the backup form
+- Created `validateBucketName()` function that validates according to AWS S3 naming rules:
+  - Must be 3-63 characters long
+  - Must start with a lowercase letter or number
+  - Must end with a lowercase letter or number
+  - Can only contain lowercase letters, numbers, hyphens, and periods
+  - Cannot contain consecutive periods
+  - Cannot be formatted as an IP address
+- Created `validateBackupForm()` function that validates all backup form fields
+- Updated `handleSaveBackup()` to call validation before submitting
+- Updated bucket name input to show error styling (red border) and error messages
+- Error clears when user starts typing again
+- Reset backup errors when form is reset to defaults
+
+### Verification Steps Completed:
+
+1. **Navigate to backup settings** ✅
+   - Logged in as admin
+   - Navigated to /admin/settings
+   - S3 Backup Settings section visible
+
+2. **Enter invalid bucket name (uppercase)** ✅
+   - Entered "INVALID_BUCKET" in bucket name field
+   - Clicked "Save Backup Settings"
+   - Error displayed: "Bucket name must start with a lowercase letter or number"
+   - Input border turned red
+
+3. **Enter invalid bucket name (too short)** ✅
+   - Entered "ab" (2 characters) in bucket name field
+   - Clicked "Save Backup Settings"
+   - Error displayed: "Bucket name must be at least 3 characters"
+
+4. **Submit form** ✅
+   - Form submission blocked with invalid values
+   - Validation errors displayed correctly
+
+5. **Verify validation error** ✅
+   - Error messages shown in red text below input
+   - Input field has red border indicating error state
+
+6. **Enter valid bucket name, verify accepted** ✅
+   - Entered "my-valid-bucket-123" (valid format)
+   - Clicked "Save Backup Settings"
+   - Success message: "S3 backup settings saved successfully!"
+   - No validation errors
+
+### Screenshots:
+- `.playwright-mcp/feature149-initial-settings.png` - Initial settings page
+- `.playwright-mcp/feature149-invalid-bucket-error-shown.png` - Error for uppercase bucket name
+- `.playwright-mcp/feature149-bucket-too-short-visible.png` - Error for short bucket name
+- `.playwright-mcp/feature149-valid-bucket-saved.png` - Valid bucket name accepted
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 90/235 (~38.3%)
+- Feature #149 marked as passing
+
+### Commit:
+- a098418 - Implement Feature #149: S3 bucket name validated
+
