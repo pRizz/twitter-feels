@@ -3966,3 +3966,64 @@ This handles:
 - Server-side protection (unique constraints, idempotent operations) provides robust secondary defense
 - The combination of client and server protection ensures no duplicate data is created
 
+---
+
+## Session - Feature #124 - 2026-01-20
+
+### Feature #124: Rapid delete clicks handled (COMPLETED)
+- **Status**: PASSING
+- **Description**: Multiple delete clicks don't cause issues
+
+### Implementation Details:
+
+**Problem**: When users rapidly click the "Confirm" delete button multiple times, React state updates are asynchronous. This means multiple synchronous clicks can bypass state-based protection (all clicks see the initial state before it updates).
+
+**Solution**: Added a `useRef` for synchronous rapid-click prevention:
+1. `deletingRef` is a ref that is set synchronously BEFORE the async fetch starts
+2. All subsequent clicks check `deletingRef.current` and return early if a delete is in progress
+3. The ref is cleared in the `finally` block after the operation completes
+
+**Code changes in `frontend/src/pages/admin/Users.tsx`**:
+- Added `import { useRef }`
+- Added `const deletingRef = useRef<number | null>(null);`
+- Updated `handleDeleteUser` to check and set the ref synchronously
+- Added `disabled` prop to Confirm/Cancel buttons when deleting
+- Shows "Deleting..." text during operation
+
+### Verification Steps Completed:
+1. Navigate to admin user list - ✅ Logged in and navigated to /admin/users
+2. Click delete to show confirmation - ✅ Confirm/Cancel buttons appear
+3. Rapidly click Confirm button 5 times using JavaScript evaluation
+4. Verify only one delete operation occurs - ✅ **Only 1 DELETE request made** (verified via network tab)
+5. Verify no errors - ✅ No JavaScript console errors
+
+### Network Request Evidence:
+Before fix (Feature #124 initial test):
+- 5 DELETE requests made (1 x 200 OK, 4 x 404 Not Found)
+
+After fix with useRef:
+- **Only 1 DELETE request made** (1 x 200 OK)
+
+### Screenshots:
+- `.playwright-mcp/feature124-users-page-initial.png` - Initial users page with 5 users
+- `.playwright-mcp/feature124-delete-confirm-dialog.png` - Confirm/Cancel dialog shown
+- `.playwright-mcp/feature124-confirm-before-rapid-test.png` - Test user ready for deletion
+- `.playwright-mcp/feature124-after-successful-rapid-delete.png` - After deletion, 4 users remain
+
+### Console Errors:
+- No JavaScript errors related to the feature
+- Only external Twitter CDN 404s (profile images - unrelated)
+
+### Current Progress:
+- Features passing: 65/235 (~27.7%)
+- Feature #124 marked as passing
+
+### Commit:
+- b712a38 - Implement Feature #124: Rapid delete clicks handled
+
+### Technical Notes:
+- React state updates (`useState`) are asynchronous and batched
+- Multiple synchronous clicks can all read the same initial state value
+- `useRef` provides a synchronous, mutable value that survives between renders
+- Setting `ref.current` immediately before async operation blocks subsequent clicks
+
