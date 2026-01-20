@@ -4393,3 +4393,74 @@ Added user search functionality to the Dashboard page:
 - No code changes required - feature was already properly implemented
 - Hard delete ensures user is completely removed from all dashboard statistics
 - Statistics update immediately when navigating to dashboard after deletion
+
+---
+
+## Session - Feature #130 - 2026-01-20
+
+### Feature #130: Deleted user tweets removed (COMPLETED)
+- **Status**: PASSING
+- **Description**: User's tweets are removed when user deleted
+
+### Verification Steps Completed:
+1. **Admin deletes a user** ✅
+   - Deleted Barack Obama (user ID 3) who had 1 tweet
+   - Tweet count went from 26 to 25
+   
+2. **Query database for user's tweets** ✅
+   - Queried tweets table for twitter_user_id = 3
+   - Result: 0 tweets (was 1)
+
+3. **Verify no tweets exist for that user** ✅
+   - All tweets for the deleted user were removed via CASCADE
+
+### Additional Comprehensive Test:
+Created a test user with:
+- 3 tweets (IDs: 34, 35, 36)
+- 3 sentiment analyses (IDs: 7, 8, 9)
+- 1 user aggregation
+
+After deletion:
+- User: NOT FOUND ✅
+- Tweets: 0 (was 3) ✅
+- Sentiment analyses: 0 (was 3) ✅
+- User aggregations: 0 (was 1) ✅
+- UI tweet count: 25 (was 28) ✅
+
+### Technical Details:
+- SQLite foreign keys are enabled via `PRAGMA foreign_keys = ON`
+- Schema uses `ON DELETE CASCADE` for:
+  - tweets -> twitter_users
+  - sentiment_analyses -> tweets
+  - user_aggregations -> twitter_users
+- Cascade works automatically - no code changes required
+
+### Screenshots:
+- `.playwright-mcp/feature130-after-barack-delete.png` - After deleting Barack Obama
+- `.playwright-mcp/feature130-before-test-user-delete.png` - Test user with 3 tweets
+- `.playwright-mcp/feature130-after-test-user-delete.png` - After test user deletion
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 70/235 (~29.8%)
+- Feature #130 marked as passing
+
+### Commit:
+- 524dcad - Verify Feature #130: Deleted user tweets removed
+
+### Notes:
+- No code changes required - CASCADE was already implemented in schema
+- All related data (tweets, analyses, aggregations) properly cleaned up
+[Testing] 2026-01-20 - Feature #111 regression test PASSED - Page refresh preserves filter state:
+- Test 1: Set Time='All Time', Model='RoBERTa GoEmotions (base)', refreshed page
+  - URL preserved: ?period=all_time&model=6
+  - Time filter preserved: 'All Time' button active
+  - Model filter preserved: 'RoBERTa GoEmotions (base)' selected
+- Test 2: Set Time='Monthly', Model='RoBERTa GoEmotions (base)', Sort='Name', refreshed page
+  - URL preserved: ?period=monthly&model=6&sortBy=name
+  - All three filters preserved after refresh
+- No JavaScript console errors
+- Screenshots: feature111-before-refresh.png, feature111-after-refresh.png, feature111-all-filters-preserved.png
+[Testing] Session complete - verified feature #111 (Page refresh preserves filter state) - still passing
