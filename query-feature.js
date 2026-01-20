@@ -1,5 +1,19 @@
-const Database = require('/Users/peterryszkiewicz/Repos/twitter-feels/backend/node_modules/better-sqlite3');
-const db = new Database('/Users/peterryszkiewicz/Repos/twitter-feels/features.db');
-const row = db.prepare('SELECT id, category, name, description, steps, passes, in_progress FROM features WHERE id = 137').get();
-console.log(JSON.stringify(row, null, 2));
+const Database = require('./backend/node_modules/better-sqlite3');
+const db = new Database('./features.db');
+
+const featureId = process.argv[2] || 139;
+const row = db.prepare('SELECT * FROM features WHERE id = ?').get(featureId);
+
+if (row) {
+  console.log('Feature #' + row.id);
+  console.log('Name:', row.name);
+  console.log('Category:', row.category);
+  console.log('Description:', row.description);
+  console.log('Steps:', row.steps);
+  console.log('Passes:', row.passes);
+  console.log('In Progress:', row.in_progress);
+} else {
+  console.log('Feature not found');
+}
+
 db.close();

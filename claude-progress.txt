@@ -5232,3 +5232,90 @@ Added "Clear Filters" functionality to the Dashboard page:
 
 ### Commit:
 - 4161202 - Verify Feature #142: Multiple filters work together
+[Testing] 2026-01-20 - Feature #61 regression test PASSED - Admin can browse Hugging Face models:
+- Logged in as admin (admin/admin)
+- Navigated to /admin/models
+- Located model browser section: 'Available Models'
+- Model browser shows HF model: 'Llama 3.2 3B Instruct' v3.2
+- Model card shows:
+  * Downloads: 1.3M downloads
+  * Likes: 4.2K likes
+  * Size: ~6.4 GB
+  * Updated: 2024-12-01
+  * View on Hugging Face link
+- 'Installed Models' section shows 7 models with Ready status
+- No JavaScript errors (401 on /admin/me is expected before auth)
+- Screenshot: feature61-admin-models-page.png
+[Testing] Session complete - verified feature #61 (Admin can browse Hugging Face models) - still passing
+[Testing] 2026-01-20 - Feature #95 regression test PASSED - Empty user tweets shows message:
+- Navigated to user detail page for Elon Musk (user with 0 tweets)
+- URL: http://localhost:5173/users/28
+- Verified appropriate 'no tweets' messages displayed:
+  * Emotion Averages: 'No sentiment analysis data available yet'
+  * Emotion Trends: 'Not enough data to display trends'
+  * Recent Tweets: 'No tweets have been analyzed yet for this user'
+- All UI sections intact and properly displayed
+- No JavaScript console errors
+- Screenshot: feature95-no-tweets-user-detail.png
+[Testing] Session complete - verified feature #95 (Empty user tweets shows message) - still passing
+
+
+---
+
+## Session - Feature #143 - 2026-01-20
+
+### Feature #143: Filter persists after viewing detail (COMPLETED)
+- **Status**: PASSING
+- **Category**: L-SearchFilter
+- **Description**: Returning from detail keeps filters
+
+### Verification Steps Completed:
+
+1. **Apply filters on dashboard** ✅
+   - Changed Time Period from "Weekly" to "Monthly"
+   - Changed Sort By from "Followers" to "Name"
+   - URL updated to: `http://localhost:5173/?period=monthly&sortBy=name`
+   - "Clear Filters" button appeared indicating active filters
+
+2. **Click on user detail** ✅
+   - Clicked on Sam Altman user card
+   - Navigated to `/users/4` (user detail page)
+   - User detail page loaded with profile, emotion averages, trends, and tweets
+
+3. **Navigate back to dashboard** ✅
+   - Used browser back button (page.goBack())
+   - Returned to dashboard
+
+4. **Verify filters still applied** ✅
+   - URL preserved: `http://localhost:5173/?period=monthly&sortBy=name`
+   - Time Period: "Monthly" button highlighted (cyan background)
+   - Sort By: "Name" selected in dropdown
+   - "Clear Filters" button visible (indicating active filters)
+   - Data correctly shows Monthly filtered results (gauge values: Anger 21, Inspiration 34, etc.)
+
+### Technical Implementation:
+- Dashboard uses `useSearchParams` from react-router-dom to persist filter state in URL
+- Filter values (period, model, sortBy, sortOrder) are stored as query parameters
+- When navigating to user detail via Link component, filters remain in browser history
+- Browser back navigation restores the URL with preserved query parameters
+- Dashboard component reads initial state from URL params on mount
+
+### Note on Breadcrumb Navigation:
+- The "Dashboard" breadcrumb link in UserDetail goes to "/" without preserving filters
+- This is expected behavior - breadcrumb is a fresh navigation, not "back"
+- Feature specifically tests browser "back" navigation which works correctly
+
+### Screenshots:
+- `.playwright-mcp/feature143-filters-applied.png` - Dashboard with Monthly + Name filters applied
+- `.playwright-mcp/feature143-filters-persisted-after-back.png` - Dashboard after navigating back (filters preserved)
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 84/235 (~35.7%)
+- Feature #143 marked as passing
+
+### Notes:
+- No code changes required - feature was already properly implemented
+- URL-based state management ensures filter persistence across navigation
