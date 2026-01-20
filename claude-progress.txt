@@ -4624,3 +4624,91 @@ After deletion:
 - No JavaScript console errors (aside from temporary backend restart)
 - Screenshots: feature107-filter-and-sort-together.png, feature107-emotion-score-sort.png
 [Testing] Session complete - verified feature #107 (Filter and sort work together) - still passing
+[Testing] 2026-01-20 - Feature #8 regression test PASSED - User detail route loads:
+- Navigated to /users/1 (Elon Musk) - page loaded successfully
+- User profile section renders correctly:
+  - Avatar, name, handle with external link
+  - Bio: 'CEO of Tesla, SpaceX, and X'
+  - Stats: 170.0M Followers, 500 Following, 25 Tweets Analyzed
+  - Emotion Averages with 12 emotion bars
+  - Emotion Trends chart with Daily/Weekly/Monthly toggle
+  - Recent Tweets with pagination (Page 1 of 3)
+- URL correctly contains user ID: /users/1
+- Tested /users/4 (Sam Altman) - also loads correctly
+- Invalid user ID (/users/2) shows 'User not found' with return link
+- No JavaScript console errors
+- Screenshots: feature8-user-detail-page.png
+[Testing] Session complete - verified feature #8 (User detail route loads) - still passing
+
+
+---
+
+## Session - Feature #134 - 2026-01-20
+
+### Feature #134: Reset button returns to defaults (COMPLETED)
+- **Status**: PASSING
+- **Description**: Reset functionality restores default values in admin forms
+
+### Verification Steps Completed:
+1. **Navigate to admin settings** ✅
+   - Logged in as admin
+   - Navigated to /admin/settings
+   - Both Crawler Settings and S3 Backup Settings forms visible
+   - Both forms have "Reset to Defaults" buttons
+
+2. **Note current values (before reset)** ✅
+   - Crawler Interval: 2 hours
+   - History Depth: 91 days
+   - Rate Limit: 450/15 min
+   - S3 Backups: Enabled
+   - S3 Bucket: regression-test-bucket-75
+   - AWS Region: eu-west-1
+
+3. **Click reset button for Crawler Settings** ✅
+   - Values changed to defaults:
+   - Crawler Interval: 1 hour (was 2)
+   - History Depth: 90 days (was 91)
+   - Rate Limit: 450 (unchanged - already default)
+
+4. **Click reset button for S3 Backup Settings** ✅
+   - Values changed to defaults:
+   - S3 Backups: Disabled (was enabled)
+   - S3 Bucket: Empty (was regression-test-bucket-75)
+   - AWS Region: us-east-1 (was eu-west-1)
+   - All S3 fields became disabled/greyed out
+
+5. **Verify database values unchanged (no save)** ✅
+   - Reloaded page (session expired, re-logged in)
+   - Original database values restored:
+   - Crawler Interval: 2 hours
+   - History Depth: 91 days
+   - S3 Backups: Enabled
+   - Confirmed reset only affects form, not database
+
+### Implementation Details:
+- Added DEFAULT_CRAWLER_SETTINGS constant (intervalHours: 1, historyDepthDays: 90, rateLimitPer15Min: 450)
+- Added DEFAULT_BACKUP_SETTINGS constant (enabled: false, bucketName: "", region: "us-east-1", etc.)
+- Added handleResetCrawler() function to reset crawler form to defaults
+- Added handleResetBackup() function to reset backup form to defaults
+- Added "Reset to Defaults" buttons next to Save buttons in both forms
+
+### Screenshots:
+- `.playwright-mcp/feature134-settings-before-reset.png` - Initial settings state
+- `.playwright-mcp/feature134-crawler-reset-to-defaults.png` - Crawler values after reset
+- `.playwright-mcp/feature134-backup-reset-to-defaults.png` - S3 backup values after reset
+- `.playwright-mcp/feature134-all-reset-complete.png` - Both forms reset
+- `.playwright-mcp/feature134-final-verification.png` - Final verification
+
+### Console Errors:
+- No JavaScript errors related to the feature
+
+### Current Progress:
+- Features passing: 74/235 (~31.5%)
+- Feature #134 marked as passing
+
+### Notes:
+- Feature was already implemented in a previous session (commit c835efa)
+- This session verified the feature works correctly end-to-end
+- Reset only changes form values, requires Save to persist to database
+- Buttons are styled with muted background to differentiate from primary Save action
+
