@@ -1761,3 +1761,74 @@ Marked as passing since verification was already complete.
 - Emotion colors loaded from configurations table
 - No console errors detected
 
+[Testing] 2026-01-20 13:32:08 - Feature #46 regression test PASSED - Tweet detail shows full content:
+- Navigated to /tweets/1 - Full tweet content displayed
+- Tweet text: 'Just had an amazing breakthrough at Tesla!...' with emojis preserved
+- Navigated to /tweets/2 - Second tweet also displays full content
+- Tweet text: 'Some people never learn...' with emoji preserved
+- Content not truncated on either tweet
+- Text formatting (emojis) preserved correctly
+- Only console error: external Twitter CDN 404 (unrelated)
+- Screenshots: feature46-tweet-detail-full-content.png, feature46-tweet-detail-second-tweet.png
+
+---
+
+## Session - Feature #84 - 2026-01-20
+
+### Feature #84: Time filter actually filters data (COMPLETED)
+- **Status**: PASSING
+- **Description**: Selecting weekly shows only last week's data
+
+### Implementation Details:
+
+1. **Backend (public.ts) - getTimeBucketCutoff helper function**:
+   - Calculates date cutoff based on time bucket
+   - weekly: Last 7 days
+   - monthly: Last 30 days
+   - yearly: Last 365 days
+   - all_time: No filter (returns null)
+
+2. **Backend (public.ts) - /api/dashboard endpoint**:
+   - Now accepts `timeBucket` query parameter
+   - Filters sentiment_analyses by tweet_timestamp >= cutoff date
+   - Applies time filter to:
+     - Gauge calculations (emotion averages)
+     - User emotion scores
+     - Leaderboard rankings
+   - Returns timeBucket, timeCutoff, filteredAnalysisCount in response
+
+### Verification Steps Completed:
+1. Navigate to dashboard - Dashboard loads with Weekly selected by default
+2. Select 'Weekly' time filter - Weekly button is active
+3. Note displayed values - Gauges at 50 (default), leaderboards "No data yet", users "none: 0"
+4. Query database for weekly aggregation - API returns timeCutoff="2026-01-13", filteredAnalysisCount=0
+5. Verify displayed data matches weekly bucket - No data displayed (correct - tweets from 2024)
+
+### Additional Testing:
+- **All Time filter**: Shows real data (gauges 23-62, leaderboards populated, users with emotions)
+- **Yearly filter**: Shows no data (correct - tweets older than 365 days)
+- **Monthly filter**: Shows no data (correct - tweets older than 30 days)
+
+### API Response Verification:
+- Weekly: `{"timeBucket":"weekly","timeCutoff":"2026-01-13T...","filteredAnalysisCount":0}`
+- All Time: `{"timeBucket":"all_time","timeCutoff":null,"filteredAnalysisCount":6}`
+
+### Screenshots:
+- `.playwright-mcp/feature84-weekly-no-data.png` - Weekly filter with no matching data
+- `.playwright-mcp/feature84-weekly-filtered.png` - Weekly filter showing filtered state
+- `.playwright-mcp/feature84-all-time-with-data.png` - All Time filter with data displayed
+
+### Console Errors:
+- Only external Twitter CDN 404 (unrelated to feature)
+
+### Current Progress:
+- Features passing: 30/235 (~12.8%)
+- Feature #84 marked as passing
+
+### Commit:
+- a1fdf72 - Implement time filter for dashboard data - Feature #84
+
+### Notes:
+- Time filtering now properly filters all dashboard data (gauges, users, leaderboards)
+- Default gauge value is 50 when no data matches the time filter
+- No mock data - real-time filtering based on tweet_timestamp
