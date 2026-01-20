@@ -33,7 +33,7 @@ function calculateGaugeValue(
 // GET /api/dashboard - Main dashboard data
 router.get('/dashboard', (req, res) => {
   try {
-    const timeBucket = (req.query.timeBucket as string) || 'all_time';
+    void req.query.timeBucket; // TODO: implement time bucket filtering
     const modelId = req.query.modelId as string;
 
     // Get stats from database

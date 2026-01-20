@@ -108,6 +108,28 @@ const sampleTweets = [
     is_retweet: 0,
     is_reply: 0,
   },
+  {
+    twitter_user_id: 3, // Barack Obama
+    tweet_id: 'test_tweet_long_content_001',
+    content: `This is a test tweet with MUCH longer content to verify that the tweet detail page properly displays full tweet text without any truncation.
+
+Here's the second paragraph with some special formatting:
+- First bullet point about technology 🔧
+- Second point about innovation 💡
+- Third point with @mentions and #hashtags
+
+Some important notes:
+1. Line breaks should be preserved
+2. Emojis should display correctly: 🎉 🚀 ⭐ ❤️
+3. Special characters: "quotes", 'apostrophes', & ampersands
+4. URLs should display: https://example.com/test
+
+This final paragraph ensures we test truly long-form content. The sentiment analysis dashboard needs to handle tweets of varying lengths gracefully, from short quips to detailed threads. This comprehensive test helps verify that whitespace-pre-wrap styling is working correctly.`,
+    tweet_timestamp: '2024-01-16T18:45:00Z',
+    engagement_metrics: JSON.stringify({ likes: 95000, retweets: 12000, replies: 5500 }),
+    is_retweet: 0,
+    is_reply: 0,
+  },
 ];
 
 // Sample LLM model for testing
@@ -249,13 +271,6 @@ export function seedSentimentAnalyses() {
     VALUES (?, ?, ?, ?)
   `);
 
-  // Check if analyses already exist
-  const existing = db.prepare('SELECT COUNT(*) as count FROM sentiment_analyses').get() as { count: number };
-  if (existing.count > 0) {
-    console.log('Sentiment analyses already exist, skipping...');
-    return 0;
-  }
-
   let inserted = 0;
   for (const analysis of sampleAnalyses) {
     const result = insert.run(
@@ -269,7 +284,7 @@ export function seedSentimentAnalyses() {
     }
   }
 
-  console.log(`Seeded ${inserted} new sentiment analyses`);
+  console.log(`Seeded ${inserted} new sentiment analyses (${sampleAnalyses.length - inserted} already existed)`);
   return inserted;
 }
 

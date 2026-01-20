@@ -23,6 +23,6 @@ console.log('Database initialized successfully');
 
 // Verify tables created
 const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
-console.log('Tables created:', tables.map((t: { name: string }) => t.name));
+console.log('Tables created:', (tables as Array<{ name: string }>).map((t) => t.name));
 
 db.close();

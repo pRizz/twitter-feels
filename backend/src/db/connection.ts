@@ -14,7 +14,7 @@ if (!existsSync(DATA_DIR)) {
 }
 
 // Create singleton database instance
-const db = new Database(DB_PATH);
+const db: Database.Database = new Database(DB_PATH);
 
 // Enable foreign keys and WAL mode for better concurrent access
 db.pragma('foreign_keys = ON');
