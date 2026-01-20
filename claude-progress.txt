@@ -5049,3 +5049,50 @@ Added "Clear Filters" functionality to the Dashboard page:
 - Special characters are not interpreted as regex, just plain text matching
 - This ensures no regex injection vulnerabilities in search
 
+
+---
+
+## Session - Feature #140 - 2026-01-20
+
+### Feature #140: Very long search handled (COMPLETED)
+- **Status**: PASSING
+- **Category**: L-SearchFilter
+- **Description**: Extremely long search strings handled gracefully
+
+### Verification Steps Completed:
+1. **Enter very long string (500+ chars)** - PASSED
+   - Entered 1000 character string (all 'A's)
+   - Input accepted without crash
+   - Due to maxLength=200, only first 200 chars stored
+
+2. **Verify no crash** - PASSED
+   - UI remained responsive
+   - No JavaScript console errors
+   - All other dashboard functionality intact
+
+3. **Verify sensible behavior** - PASSED
+   - "No users found" message displayed with truncated query
+   - Display shows first 50 chars + "..." (e.g., "AAAAAA...")
+   - Text uses break-words CSS to prevent overflow
+   - Clear Filters button works to reset search
+
+### Implementation Changes:
+- Added maxLength=200 to search input to limit extremely long queries
+- Added truncation logic for display (50 chars + "...")
+- Added break-words CSS class to prevent text overflow
+
+### Screenshots:
+- feature140-long-search-1000-chars.png - UI with long search entered
+- feature140-long-search-no-users-message.png - Before fix (overflow visible)
+- feature140-long-search-handled-properly.png - After fix (truncated nicely)
+- feature140-after-clear-filters.png - After clearing filters
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 80/235 (~34.0%)
+- Feature #140 marked as passing
+
+### Commit:
+- 634779e - Implement Feature #140: Very long search handled gracefully
