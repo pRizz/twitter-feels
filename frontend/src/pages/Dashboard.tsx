@@ -420,6 +420,26 @@ export default function Dashboard() {
     [updateSearchParams]
   );
 
+  // Clear all filters and reset to defaults
+  const clearAllFilters = useCallback(() => {
+    // Reset state to defaults
+    setTimePeriodState('weekly');
+    setModelFilterState('combined');
+    setSortByState('followers');
+    setSortOrderState('desc');
+    setUserSearchQuery('');
+    // Clear all URL parameters (defaults are not stored in URL)
+    setSearchParams(new URLSearchParams(), { replace: true });
+  }, [setSearchParams]);
+
+  // Check if any filters are active (non-default values)
+  const hasActiveFilters =
+    timePeriod !== 'weekly' ||
+    modelFilter !== 'combined' ||
+    sortBy !== 'followers' ||
+    sortOrder !== 'desc' ||
+    userSearchQuery !== '';
+
   // Fetch available models once on mount
   useEffect(() => {
     const fetchModels = async () => {
@@ -500,6 +520,19 @@ export default function Dashboard() {
             onSortByChange={setSortBy}
             onSortOrderChange={setSortOrder}
           />
+          {/* Clear Filters button - only visible when filters are active */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearAllFilters}
+              className="px-3 py-1.5 text-sm bg-muted hover:bg-muted/80 text-foreground rounded-lg border border-border transition-colors flex items-center gap-1.5"
+              title="Reset all filters to default values"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Clear Filters
+            </button>
+          )}
         </div>
       </div>
 
