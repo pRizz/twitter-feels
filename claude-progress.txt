@@ -3361,3 +3361,69 @@ This handles:
 - Changes made in admin (Tab 1) are reflected in public dashboard (Tab 2) after refresh
 - No real-time sync between tabs (by design) - users refresh to see updates
 - Original label ("Peaceful") restored after testing to keep system in clean state
+[Testing] 2026-01-20 16:10:46 - Feature #108 regression test PASSED - API error responses handled by frontend:
+- User 404: Shows 'User not found' with 'Return to Dashboard' link
+- Tweet 404: Shows 'Error' heading with 'Tweet not found' and 'Back to Dashboard' button
+- Dashboard 500: Error banner with warning icon, 'Failed to load dashboard data', Retry button
+- Retry functionality: Page recovers when API is restored
+- No JavaScript errors related to feature
+- Screenshots: feature108-regression-*.png
+[Testing] Session complete - verified feature #108 (API error responses handled by frontend) - still passing
+[Testing] 2026-01-20 - Feature #80 regression test PASSED - Dashboard shows real aggregated data:
+- Queried API for dashboard data at /api/dashboard?timeBucket=all_time
+- Navigated to dashboard at http://localhost:5173/?period=all_time
+- Verified gauge values match API exactly:
+  - Anger Gauge: API=23, UI=23 ✓
+  - Inspiration Gauge: API=43, UI=43 ✓
+  - Gratitude Gauge: API=23, UI=23 ✓
+  - Mood Gauge: API=62, UI=62 ✓
+  - Intensity Gauge: API=31, UI=31 ✓
+  - Playfulness Gauge: API=30, UI=30 ✓
+- Verified stats match: Users=5, Tweets=27, Analyses=6 ✓
+- Verified leaderboard data matches API (happy, sad, angry, thankful leaderboards)
+- No JavaScript errors related to the feature (only external Twitter CDN 404)
+- Screenshot: feature80-dashboard-gauges.png
+[Testing] Session complete - verified feature #80 (Dashboard shows real aggregated data) - still passing
+
+---
+
+## Session - Feature #116 - 2026-01-20
+
+### Feature #116: Direct URL to user page works (COMPLETED)
+- **Status**: PASSING
+- **Description**: Deep linking to user detail works
+
+### Verification Steps Completed:
+1. Copy URL to user detail page - ✅ URL format is http://localhost:5173/users/{id}
+2. Open new browser tab - ✅ Opened new browser tab
+3. Paste and navigate to URL - ✅ Direct URL navigation works
+4. Verify correct user page loads - ✅ Tested 4 different users:
+   - User 1 (Elon Musk): Loads with profile, emotion averages, trends, 25 tweets
+   - User 2 (Bill Gates): Loads with profile, emotion averages, trends, 1 tweet
+   - User 3 (Barack Obama): Loads with profile, 1 tweet (no sentiment data yet)
+   - User 5 (Naval): Loads with profile, 0 tweets (shows appropriate empty messages)
+
+### Technical Details:
+- React Router handles /users/:id route
+- UserDetail component fetches user data via API on mount
+- User ID extracted from URL params with useParams() hook
+- No code changes required - feature was already implemented
+
+### Screenshots:
+- `.playwright-mcp/feature116-user1-direct-url.png` - Elon Musk user page via direct URL
+- `.playwright-mcp/feature116-user3-barack-obama.png` - Barack Obama user page via direct URL
+- `.playwright-mcp/feature116-new-tab-user5-naval.png` - Naval user page in new browser tab
+
+### Console Errors:
+- No JavaScript errors related to the feature
+- Only external Twitter CDN 404s (profile images from Twitter - unrelated)
+
+### Current Progress:
+- Features passing: 56/235 (~23.8%)
+- Feature #116 marked as passing
+
+### Notes:
+- Deep linking fully functional for all user IDs
+- Empty states handled gracefully when user has no tweets/analyses
+- Breadcrumb navigation shows correct user name
+- All user profile information (bio, followers, following) displays correctly
