@@ -4317,3 +4317,79 @@ Added user search functionality to the Dashboard page:
 - Empty search shows all users
 - Search is case-insensitive
 - This implementation provides foundation for Features #137-140, #144, #227-228
+[Testing] 2026-01-20 16:44 - Feature #3 regression test PASSED - Database connection works:
+- Database file exists: backend/data/twitter_feels.db (110KB + WAL)
+- All tables verified via API: twitter_users, tweets, llm_models, sentiment_analyses, crawler_runs, configurations, admin_users
+- Indexes working (fast query performance on dashboard and admin pages)
+- Admin login successful
+- No console errors
+- Screenshot: feature3-database-verification.png
+[Testing] Session complete - verified feature #3 (Database connection works) - still passing
+[Testing] 2026-01-20 - Feature #94 regression test PASSED - Empty dashboard shows appropriate message:
+- Verified empty state message displays when no data matches filters
+- Message: 'No sentiment data for selected filters' with helpful explanation
+- Leaderboards show 'No data yet' for each emotion
+- Gauges default to 50 (neutral) when no data
+- UI renders without errors or visual glitches
+- No JavaScript console errors
+- Screenshots: feature94-empty-filter-state.png, feature94-all-time-data.png, feature94-empty-state-with-filter.png, feature94-empty-dashboard-final.png
+[Testing] Session complete - verified feature #94 (Empty dashboard shows appropriate message) - still passing
+
+---
+
+## Session - Feature #129 - 2026-01-20
+
+### Feature #129: Delete user updates statistics (COMPLETED)
+- **Status**: PASSING
+- **Description**: Global stats update after user deletion
+
+### Verification Steps Completed:
+1. **Note current aggregate statistics** ✅
+   - Initial state: 4 Tracked Users, 26 Tweets Analyzed, 4 Sentiment Analyses
+   - Users visible: Elon Musk, Barack Obama, Sam Altman, Bill Gates
+   - Screenshot: feature129-initial-stats.png, feature129-initial-stats-bottom.png
+
+2. **Admin deletes a user** ✅
+   - Logged in as admin
+   - Navigated to /admin/users
+   - Deleted Bill Gates (0 tweets, 0 sentiment data)
+   - Admin stats updated: 3 Total Tracked, 3 Active
+   - Screenshot: feature129-admin-users-before-delete.png, feature129-admin-users-after-delete.png
+
+3. **Refresh dashboard** ✅
+   - Navigated to public dashboard at /?period=all_time
+   - Page loaded without errors
+
+4. **Verify statistics have changed appropriately** ✅
+   - **3** Tracked Users (was 4) - CHANGED ✅
+   - 26 Tweets Analyzed (unchanged - Bill Gates had 0 tweets)
+   - 4 Sentiment Analyses (unchanged - Bill Gates had no sentiment data)
+   - Only 3 users in grid: Elon Musk, Barack Obama, Sam Altman
+   - Bill Gates completely removed from all views
+   - Screenshot: feature129-dashboard-after-delete-top.png, feature129-dashboard-after-delete-bottom.png
+
+### Technical Details:
+- Backend DELETE /api/admin/users/:id performs hard delete from twitter_users table
+- Dashboard /api/dashboard dynamically calculates stats from current database state
+- Statistics reflect actual database counts after deletion
+- No code changes required - feature was already properly implemented
+
+### Screenshots:
+- `.playwright-mcp/feature129-initial-stats.png` - Dashboard stats before deletion (top)
+- `.playwright-mcp/feature129-initial-stats-bottom.png` - Dashboard stats before deletion (bottom)
+- `.playwright-mcp/feature129-admin-users-before-delete.png` - Admin users page with Bill Gates
+- `.playwright-mcp/feature129-admin-users-after-delete.png` - Admin users page after deletion
+- `.playwright-mcp/feature129-dashboard-after-delete-top.png` - Dashboard after deletion (top)
+- `.playwright-mcp/feature129-dashboard-after-delete-bottom.png` - Dashboard after deletion (bottom)
+
+### Console Errors:
+- No JavaScript errors related to the feature
+
+### Current Progress:
+- Features passing: 70/235 (~29.8%)
+- Feature #129 marked as passing
+
+### Notes:
+- No code changes required - feature was already properly implemented
+- Hard delete ensures user is completely removed from all dashboard statistics
+- Statistics update immediately when navigating to dashboard after deletion
