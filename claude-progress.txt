@@ -6234,3 +6234,70 @@ Added "Clear Filters" functionality to the Dashboard page:
 ### Commit:
 - 47311b7 - Implement Feature #156: Success message on user add
 
+[Testing] 2026-01-20 - Feature #139 regression test PASSED - Search special characters handled:
+- Tested special chars in search - No crash, shows No users found message
+- Tested SQL injection style input - Handled safely
+- Tested regex special characters - Handled safely
+- No JavaScript console errors
+- User data intact (1 tracked user: Sam Altman)
+- Clear Filters button works correctly
+- Screenshots: feature139-special-chars-search.png, feature139-regex-special-chars.png
+[Testing] Session complete - verified feature #139 (Search special characters handled) - still passing
+
+
+---
+
+## Session - Feature #157 - 2026-01-20
+
+### Feature #157: Success message on settings save (COMPLETED)
+- **Status**: PASSING
+- **Category**: N-Feedback
+- **Description**: Saving settings shows success feedback
+
+### Verification Steps Completed:
+
+1. **Change admin settings** ✅
+   - Logged in as admin at /admin/login
+   - Navigated to /admin/settings
+   - Changed Crawl Interval from 2 to 6 hours
+
+2. **Save settings** ✅
+   - Clicked "Save Crawler Settings" button
+
+3. **Verify success message appears** ✅
+   - Success message "Crawler settings saved successfully!" appeared
+   - Message displayed in green styling with border
+   - Message auto-dismisses after 3 seconds
+
+### Additional Testing:
+- S3 Backup Settings: "S3 backup settings saved successfully!" also appears when saving
+- Password change form has separate success message "Password changed successfully!"
+- All success messages are styled consistently (green background with border)
+
+### Implementation Details:
+- Settings.tsx line 74: `successMessage` state manages the message
+- Lines 574-579: Success message rendered at top of content area
+- Lines 463-464: Crawler save sets message and auto-clears after 3s
+- Lines 514-517: Backup save sets message and auto-clears after 3s
+
+### Screenshots:
+- .playwright-mcp/feature157-crawler-settings-success.png
+- .playwright-mcp/feature157-crawler-success-message.png
+- .playwright-mcp/feature157-crawler-success-final.png
+- .playwright-mcp/feature157-backup-success.png
+- .playwright-mcp/feature157-success-message-visible.png
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 97/235 (~41.3%)
+- Feature #157 marked as passing
+
+### Notes:
+- No code changes required - feature was already properly implemented
+- Success messages appear for all three settings sections:
+  1. Crawler Settings
+  2. S3 Backup Settings
+  3. Change Password
+
