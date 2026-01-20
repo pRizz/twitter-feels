@@ -4193,3 +4193,66 @@ There is no intermediate corrupted state possible because SQLite guarantees ACID
 - SQLite atomic operations ensure data consistency
 - Settings page correctly displays database values after any refresh
 - Both Crawler Settings and S3 Backup Settings use the same atomic save pattern
+[Testing] 2026-01-20 - Feature #120 regression test PASSED - Malformed URL parameters handled:
+- Test 1: URL with invalid encoding (?invalid=%%%&broken=) - App loaded without crash, defaults applied
+- Test 2: Invalid parameter values (timeRange=invalid, model=notamodel, sort=xyz) - App loaded without crash, defaults applied
+- Test 3: XSS/SQL injection patterns (<script>, DROP TABLE) - App loaded without crash, properly escaped, defaults applied
+- All tests: Sensible defaults applied (Weekly, Combined, Followers)
+- No JavaScript console errors related to the feature
+- Screenshots: feature120-malformed-url-test1.png, feature120-malformed-url-test2.png, feature120-malformed-url-test3-xss.png
+[Testing] Session complete - verified feature #120 (Malformed URL parameters handled) - still passing
+
+---
+
+## Session - Feature #128 - 2026-01-20
+
+### Feature #128: Delete user removes from leaderboard (COMPLETED)
+- **Status**: PASSING
+- **Description**: Deleted user no longer appears in leaderboards
+
+### Verification Steps Completed:
+1. Note user in leaderboard - Bill Gates appeared in all 6 emotion leaderboards (happy, sad, angry, fearful, hatred, thankful)
+2. Admin deletes that user - Logged in as admin, navigated to /admin/users, deleted Bill Gates
+3. Refresh dashboard - Navigated to public dashboard at /?period=all_time
+4. Verify user not in any leaderboard - All leaderboards now show ONLY Elon Musk (Bill Gates completely removed)
+
+### Test Evidence:
+
+**Before Deletion:**
+- Dashboard showed 5 Tracked Users
+- Leaderboards showed both Elon Musk AND Bill Gates in all 6 emotion categories
+- Bill Gates scores visible: happy=35, sad=18, angry=8, fearful=25, hatred=2, thankful=22
+
+**After Deletion:**
+- Dashboard showed 4 Tracked Users
+- Leaderboards show ONLY Elon Musk
+- Bill Gates completely removed from all leaderboards
+- Stats updated: 4 Tracked Users, 26 Tweets, 4 Analyses
+
+### Technical Implementation:
+- Backend DELETE /api/admin/users/:id performs hard delete from twitter_users table
+- Dashboard /api/dashboard builds leaderboards from users with is_active=1
+- Since user record is deleted (not just disabled), they are automatically excluded from all queries
+- No code changes required - feature was already properly implemented
+
+### Screenshots:
+- .playwright-mcp/feature128-initial-dashboard.png - Dashboard before deletion
+- .playwright-mcp/feature128-leaderboards-initial.png - Leaderboards showing Bill Gates and Elon Musk
+- .playwright-mcp/feature128-admin-users-before-delete.png - Admin users page with Bill Gates
+- .playwright-mcp/feature128-admin-users-after-delete.png - Admin users page after Bill Gates deleted
+- .playwright-mcp/feature128-dashboard-after-delete.png - Dashboard after deletion
+- .playwright-mcp/feature128-leaderboards-after-delete.png - Leaderboards showing ONLY Elon Musk
+
+### Console Errors:
+- No JavaScript errors related to the feature
+- Only external Twitter CDN 404s for profile images (unrelated)
+
+### Current Progress:
+- Features passing: 68/235 (~28.9%)
+- Feature #128 marked as passing
+
+### Notes:
+- No code changes required - feature was already properly implemented
+- Hard delete from twitter_users table ensures user is completely removed from all queries
+- Leaderboards are dynamically generated from active users with sentiment data
+- Re-added Bill Gates as new user (without historical sentiment data) to restore database state
