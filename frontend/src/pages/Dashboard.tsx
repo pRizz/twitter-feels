@@ -258,12 +258,35 @@ const DEFAULT_GAUGES: GaugeData[] = [
   { name: 'Playfulness Gauge', value: 58, lowLabel: 'Serious', highLabel: 'Comedian', color: '#BA55D3' },
 ];
 
+interface LLMModel {
+  id: string;
+  name: string;
+  provider: string;
+}
+
 export default function Dashboard() {
   const [timePeriod, setTimePeriod] = useState('weekly');
   const [modelFilter, setModelFilter] = useState('combined');
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [models, setModels] = useState<LLMModel[]>([]);
+
+  // Fetch available models once on mount
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/models');
+        if (response.ok) {
+          const modelsData = await response.json();
+          setModels(modelsData.models || []);
+        }
+      } catch (err) {
+        console.error('Error fetching models:', err);
+      }
+    };
+    fetchModels();
+  }, []);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -317,7 +340,7 @@ export default function Dashboard() {
           <ModelFilter
             value={modelFilter}
             onChange={setModelFilter}
-            models={[]} // Will be populated from API
+            models={models}
           />
         </div>
       </div>

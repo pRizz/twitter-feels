@@ -157,21 +157,25 @@ router.get('/dashboard', (req, res) => {
       bio: string | null;
     }>;
 
-    // Calculate top emotion for each user with time filtering
+    // Calculate top emotion for each user with time and model filtering
     const usersWithEmotions = users.map(user => {
-      // Build user-specific query with time filter
+      // Build user-specific query with time and model filters
       const userQueryParams: unknown[] = [user.id];
-      let userTimeFilter = '';
+      let userFilters = '';
       if (timeCutoff) {
-        userTimeFilter = ' AND t.tweet_timestamp >= ?';
+        userFilters += ' AND t.tweet_timestamp >= ?';
         userQueryParams.push(timeCutoff);
+      }
+      if (modelId && modelId !== 'combined') {
+        userFilters += ' AND sa.llm_model_id = ?';
+        userQueryParams.push(modelId);
       }
 
       const userAnalyses = db.prepare(`
         SELECT sa.emotion_scores
         FROM sentiment_analyses sa
         JOIN tweets t ON sa.tweet_id = t.id
-        WHERE t.twitter_user_id = ?${userTimeFilter}
+        WHERE t.twitter_user_id = ?${userFilters}
       `).all(...userQueryParams) as Array<{ emotion_scores: string }>;
 
       let topEmotion = 'none';
@@ -212,26 +216,30 @@ router.get('/dashboard', (req, res) => {
       };
     });
 
-    // Build leaderboards from user emotion data with time filtering
+    // Build leaderboards from user emotion data with time and model filtering
     const emotions = Object.keys(emotionColors);
     const leaderboards = emotions.slice(0, 6).map(emotion => {
       // Get users sorted by this emotion (highest)
       const usersWithEmotion = usersWithEmotions
         .filter(u => u.topEmotion !== 'none')
         .map(u => {
-          // Calculate this user's average for this specific emotion with time filter
+          // Calculate this user's average for this specific emotion with time and model filters
           const leaderboardQueryParams: unknown[] = [Number(u.id)];
-          let leaderboardTimeFilter = '';
+          let leaderboardFilters = '';
           if (timeCutoff) {
-            leaderboardTimeFilter = ' AND t.tweet_timestamp >= ?';
+            leaderboardFilters += ' AND t.tweet_timestamp >= ?';
             leaderboardQueryParams.push(timeCutoff);
+          }
+          if (modelId && modelId !== 'combined') {
+            leaderboardFilters += ' AND sa.llm_model_id = ?';
+            leaderboardQueryParams.push(modelId);
           }
 
           const userAnalyses = db.prepare(`
             SELECT sa.emotion_scores
             FROM sentiment_analyses sa
             JOIN tweets t ON sa.tweet_id = t.id
-            WHERE t.twitter_user_id = ?${leaderboardTimeFilter}
+            WHERE t.twitter_user_id = ?${leaderboardFilters}
           `).all(...leaderboardQueryParams) as Array<{ emotion_scores: string }>;
 
           let emotionSum = 0;
@@ -648,8 +656,32 @@ router.get('/tweets/:id', (req, res) => {
 
 // GET /api/models - Available LLM models
 router.get('/models', (_req, res) => {
-  // TODO: Implement model listing
-  res.json({ models: [] });
+  try {
+    // Get enabled models that have been downloaded (ready status)
+    const models = db.prepare(`
+      SELECT id, name, version, provider
+      FROM llm_models
+      WHERE is_enabled = 1 AND download_status = 'ready'
+      ORDER BY name ASC
+    `).all() as Array<{
+      id: number;
+      name: string;
+      version: string | null;
+      provider: string;
+    }>;
+
+    // Format for frontend dropdown
+    const formattedModels = models.map(model => ({
+      id: String(model.id),
+      name: model.version ? `${model.name} (${model.version})` : model.name,
+      provider: model.provider,
+    }));
+
+    res.json({ models: formattedModels });
+  } catch (error) {
+    console.error('Error fetching models:', error);
+    res.status(500).json({ error: 'Failed to fetch models' });
+  }
 });
 
 // GET /api/aggregations - Time-series data
