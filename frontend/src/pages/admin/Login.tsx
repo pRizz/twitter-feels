@@ -1,6 +1,4 @@
 // Admin Login page
-// TODO: Implement login functionality
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,19 +6,33 @@ export default function AdminLogin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    // TODO: Implement actual login API call
     try {
-      // Placeholder for login logic
-      console.log('Login attempt:', username);
+      const response = await fetch('http://localhost:3001/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Login failed');
+      }
+
+      // Successful login - navigate to admin dashboard
       navigate('/admin');
-    } catch {
-      setError('Invalid credentials');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid credentials');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,6 +62,7 @@ export default function AdminLogin() {
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-3 py-2 border border-input rounded-md bg-background"
               required
+              disabled={loading}
             />
           </div>
 
@@ -64,14 +77,16 @@ export default function AdminLogin() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-input rounded-md bg-background"
               required
+              disabled={loading}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity"
+            disabled={loading}
+            className="w-full py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            Log In
+            {loading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
       </div>

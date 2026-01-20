@@ -1,6 +1,47 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import db from '../db/connection.js';
 
 const router = Router();
+
+// Type definitions for crawler runs
+interface CrawlerRun {
+  id: number;
+  started_at: string;
+  completed_at: string | null;
+  status: 'running' | 'completed' | 'failed';
+  tweets_fetched: number;
+  tweets_analyzed: number;
+  errors_count: number;
+  error_details: string | null;
+}
+
+// Type definitions for models
+interface LLMModel {
+  id: number;
+  name: string;
+  version: string | null;
+  provider: string | null;
+  huggingface_model_id: string | null;
+  is_local: number;
+  is_enabled: number;
+  download_status: string;
+  disk_size_bytes: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface AvailableModel {
+  id: string;
+  name: string;
+  version: string;
+  provider: string;
+  description: string;
+  downloads: number;
+  likes: number;
+  lastUpdated: string;
+  estimatedSize: string;
+  taskType: string;
+}
 
 // Extend session type for admin authentication
 declare module 'express-session' {
@@ -52,20 +93,137 @@ router.use(requireAuth);
 
 // GET /api/admin/crawler/status
 router.get('/crawler/status', (_req, res) => {
-  // TODO: Implement crawler status checking
-  res.json({
-    status: 'idle',
-    lastRun: null,
-    nextRun: null,
-    tweetsFetched: 0,
-    tweetsAnalyzed: 0,
-  });
+  try {
+    // Get currently running crawler (if any)
+    const runningCrawler = db.prepare(`
+      SELECT * FROM crawler_runs
+      WHERE status = 'running'
+      ORDER BY started_at DESC
+      LIMIT 1
+    `).get() as CrawlerRun | undefined;
+
+    // Get latest completed crawler run
+    const latestRun = db.prepare(`
+      SELECT * FROM crawler_runs
+      ORDER BY started_at DESC
+      LIMIT 1
+    `).get() as CrawlerRun | undefined;
+
+    // Get crawler config
+    const configResult = db.prepare(`SELECT value FROM configurations WHERE key = 'crawler'`).get() as { value: string } | undefined;
+    const config = configResult
+      ? JSON.parse(configResult.value)
+      : { intervalHours: 1, historyDepthDays: 90, rateLimitPer15Min: 450 };
+
+    // Get recent runs
+    const recentRuns = db.prepare(`
+      SELECT * FROM crawler_runs
+      ORDER BY started_at DESC
+      LIMIT 5
+    `).all() as CrawlerRun[];
+
+    // Calculate next run time
+    let nextRun: string | null = null;
+    if (latestRun?.completed_at) {
+      const lastCompleted = new Date(latestRun.completed_at);
+      const nextRunTime = new Date(lastCompleted.getTime() + config.intervalHours * 60 * 60 * 1000);
+      nextRun = nextRunTime.toISOString();
+    } else if (!latestRun) {
+      // No runs yet, next run is now
+      nextRun = new Date().toISOString();
+    }
+
+    res.json({
+      status: runningCrawler ? 'running' : 'idle',
+      isRunning: !!runningCrawler,
+      lastRun: latestRun ? {
+        id: latestRun.id,
+        startedAt: latestRun.started_at,
+        completedAt: latestRun.completed_at,
+        status: latestRun.status,
+        tweetsFetched: latestRun.tweets_fetched,
+        tweetsAnalyzed: latestRun.tweets_analyzed,
+        errorsCount: latestRun.errors_count,
+      } : null,
+      nextRun,
+      config: {
+        intervalHours: config.intervalHours,
+        historyDepthDays: config.historyDepthDays,
+        rateLimitPer15Min: config.rateLimitPer15Min,
+      },
+      recentRuns: recentRuns.map(run => ({
+        id: run.id,
+        startedAt: run.started_at,
+        completedAt: run.completed_at,
+        status: run.status,
+        tweetsFetched: run.tweets_fetched,
+        tweetsAnalyzed: run.tweets_analyzed,
+        errorsCount: run.errors_count,
+      })),
+    });
+  } catch (error) {
+    console.error('Error getting crawler status:', error);
+    res.status(500).json({ error: 'Failed to get crawler status' });
+  }
 });
 
 // POST /api/admin/crawler/trigger
 router.post('/crawler/trigger', (_req, res) => {
-  // TODO: Implement crawler triggering
-  res.json({ success: true, message: 'Crawler started' });
+  try {
+    // Check if crawler is already running
+    const runningCrawler = db.prepare(`
+      SELECT * FROM crawler_runs
+      WHERE status = 'running'
+      ORDER BY started_at DESC
+      LIMIT 1
+    `).get() as CrawlerRun | undefined;
+
+    if (runningCrawler) {
+      return res.status(409).json({
+        success: false,
+        error: 'Crawler is already running',
+        currentRun: {
+          id: runningCrawler.id,
+          startedAt: runningCrawler.started_at,
+        },
+      });
+    }
+
+    // Create a new crawler run record
+    const newRun = db.prepare(`
+      INSERT INTO crawler_runs (status, tweets_fetched, tweets_analyzed, errors_count)
+      VALUES ('running', 0, 0, 0)
+      RETURNING *
+    `).get() as CrawlerRun;
+
+    res.json({
+      success: true,
+      message: 'Crawler started',
+      runId: newRun.id,
+      startedAt: newRun.started_at,
+    });
+
+    // Simulate crawler completion after 5 seconds (for demo purposes)
+    // In production, the Rust crawler would update this
+    setTimeout(() => {
+      db.prepare(`
+        UPDATE crawler_runs
+        SET status = 'completed',
+            completed_at = datetime('now'),
+            tweets_fetched = ?,
+            tweets_analyzed = ?
+        WHERE id = ?
+      `).run(
+        Math.floor(Math.random() * 50) + 10,
+        Math.floor(Math.random() * 40) + 5,
+        newRun.id
+      );
+      console.log(`Crawler run ${newRun.id} completed (simulated)`);
+    }, 5000);
+  } catch (error) {
+    console.error('Error triggering crawler:', error);
+    res.status(500).json({ error: 'Failed to trigger crawler' });
+  }
 });
 
 // GET /api/admin/users - List tracked users (admin view)
@@ -115,10 +273,109 @@ router.put('/settings', (req, res) => {
 
 // GET /api/admin/models
 router.get('/models', (_req, res) => {
-  // TODO: Implement model management listing
+  // Get installed models from database
+  const installedModels = db.prepare(`
+    SELECT id, name, version, provider, huggingface_model_id,
+           is_local, is_enabled, download_status, disk_size_bytes,
+           created_at, updated_at
+    FROM llm_models
+    ORDER BY name ASC
+  `).all() as LLMModel[];
+
+  // Format installed models for frontend
+  const installed = installedModels.map((model) => ({
+    id: model.id,
+    name: model.name,
+    version: model.version || 'latest',
+    provider: model.provider || 'local',
+    huggingfaceModelId: model.huggingface_model_id,
+    isLocal: Boolean(model.is_local),
+    isEnabled: Boolean(model.is_enabled),
+    downloadStatus: model.download_status,
+    diskSizeBytes: model.disk_size_bytes,
+    createdAt: model.created_at,
+    updatedAt: model.updated_at,
+  }));
+
+  // Simulated available models from Hugging Face
+  // In production, this would call the Hugging Face API
+  const available: AvailableModel[] = [
+    {
+      id: 'meta-llama/Llama-3.2-3B-Instruct',
+      name: 'Llama 3.2 3B Instruct',
+      version: '3.2',
+      provider: 'huggingface',
+      description: 'Meta\'s latest instruction-tuned Llama model, optimized for chat and instruction following',
+      downloads: 1250000,
+      likes: 4200,
+      lastUpdated: '2024-12-01',
+      estimatedSize: '6.4 GB',
+      taskType: 'text-generation',
+    },
+    {
+      id: 'cardiffnlp/twitter-roberta-base-sentiment-latest',
+      name: 'Twitter RoBERTa Sentiment',
+      version: 'latest',
+      provider: 'huggingface',
+      description: 'RoBERTa model fine-tuned on Twitter data for sentiment analysis',
+      downloads: 890000,
+      likes: 1850,
+      lastUpdated: '2024-09-15',
+      estimatedSize: '500 MB',
+      taskType: 'text-classification',
+    },
+    {
+      id: 'j-hartmann/emotion-english-distilroberta-base',
+      name: 'Emotion English DistilRoBERTa',
+      version: 'base',
+      provider: 'huggingface',
+      description: 'DistilRoBERTa fine-tuned for emotion classification (6 emotions)',
+      downloads: 650000,
+      likes: 1200,
+      lastUpdated: '2024-08-20',
+      estimatedSize: '330 MB',
+      taskType: 'text-classification',
+    },
+    {
+      id: 'SamLowe/roberta-base-go_emotions',
+      name: 'RoBERTa GoEmotions',
+      version: 'base',
+      provider: 'huggingface',
+      description: 'RoBERTa trained on Google\'s GoEmotions dataset (27 emotions + neutral)',
+      downloads: 520000,
+      likes: 980,
+      lastUpdated: '2024-07-10',
+      estimatedSize: '500 MB',
+      taskType: 'text-classification',
+    },
+    {
+      id: 'finiteautomata/bertweet-base-sentiment-analysis',
+      name: 'BERTweet Sentiment Analysis',
+      version: 'base',
+      provider: 'huggingface',
+      description: 'BERTweet pre-trained model for English tweets, fine-tuned for sentiment',
+      downloads: 380000,
+      likes: 750,
+      lastUpdated: '2024-06-05',
+      estimatedSize: '540 MB',
+      taskType: 'text-classification',
+    },
+  ];
+
+  // Filter out models that are already installed
+  const installedHuggingFaceIds = new Set(
+    installedModels
+      .filter((m) => m.huggingface_model_id)
+      .map((m) => m.huggingface_model_id)
+  );
+
+  const availableFiltered = available.filter(
+    (m) => !installedHuggingFaceIds.has(m.id)
+  );
+
   res.json({
-    installed: [],
-    available: [],
+    installed,
+    available: availableFiltered,
   });
 });
 
