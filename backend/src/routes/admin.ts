@@ -609,16 +609,124 @@ router.get('/models', (_req, res) => {
 // POST /api/admin/models/download
 router.post('/models/download', (req, res) => {
   const { modelId } = req.body;
-  // TODO: Implement model download
-  res.json({ success: true, message: `Download started for ${modelId}` });
+
+  if (!modelId) {
+    return res.status(400).json({ error: 'Model ID is required' });
+  }
+
+  // Available models from Hugging Face (same as in GET /models)
+  const availableModels: Record<string, { name: string; version: string; estimatedSize: number }> = {
+    'meta-llama/Llama-3.2-3B-Instruct': { name: 'Llama 3.2 3B Instruct', version: '3.2', estimatedSize: 6400000000 },
+    'cardiffnlp/twitter-roberta-base-sentiment-latest': { name: 'Twitter RoBERTa Sentiment', version: 'latest', estimatedSize: 500000000 },
+    'j-hartmann/emotion-english-distilroberta-base': { name: 'Emotion English DistilRoBERTa', version: 'base', estimatedSize: 330000000 },
+    'SamLowe/roberta-base-go_emotions': { name: 'RoBERTa GoEmotions', version: 'base', estimatedSize: 500000000 },
+    'finiteautomata/bertweet-base-sentiment-analysis': { name: 'BERTweet Sentiment Analysis', version: 'base', estimatedSize: 540000000 },
+  };
+
+  const modelInfo = availableModels[modelId];
+  if (!modelInfo) {
+    return res.status(404).json({ error: 'Model not found in available models' });
+  }
+
+  try {
+    // Check if model already exists
+    const existingModel = db.prepare(`
+      SELECT id, download_status FROM llm_models WHERE huggingface_model_id = ?
+    `).get(modelId) as { id: number; download_status: string } | undefined;
+
+    if (existingModel) {
+      if (existingModel.download_status === 'ready') {
+        return res.status(409).json({ error: 'Model is already downloaded' });
+      }
+      if (existingModel.download_status === 'downloading') {
+        return res.status(409).json({ error: 'Model is already being downloaded' });
+      }
+      // If status is 'error' or 'not_downloaded', allow re-download
+      db.prepare(`
+        UPDATE llm_models SET download_status = 'downloading', updated_at = datetime('now')
+        WHERE id = ?
+      `).run(existingModel.id);
+
+      // Simulate download completion after 3 seconds
+      setTimeout(() => {
+        db.prepare(`
+          UPDATE llm_models
+          SET download_status = 'ready', is_enabled = 1, updated_at = datetime('now')
+          WHERE id = ?
+        `).run(existingModel.id);
+      }, 3000);
+
+      return res.json({
+        success: true,
+        message: `Download started for ${modelInfo.name}`,
+        modelId: existingModel.id,
+      });
+    }
+
+    // Insert new model with 'downloading' status
+    const result = db.prepare(`
+      INSERT INTO llm_models (name, version, provider, huggingface_model_id, is_local, is_enabled, download_status, disk_size_bytes)
+      VALUES (?, ?, 'huggingface', ?, 0, 0, 'downloading', ?)
+    `).run(modelInfo.name, modelInfo.version, modelId, modelInfo.estimatedSize);
+
+    const newModelId = result.lastInsertRowid;
+
+    // Simulate download completion after 3 seconds (in production, this would be actual download)
+    setTimeout(() => {
+      db.prepare(`
+        UPDATE llm_models
+        SET download_status = 'ready', is_enabled = 1, updated_at = datetime('now')
+        WHERE id = ?
+      `).run(newModelId);
+    }, 3000);
+
+    res.json({
+      success: true,
+      message: `Download started for ${modelInfo.name}`,
+      modelId: newModelId,
+    });
+  } catch (error) {
+    console.error('Error starting model download:', error);
+    res.status(500).json({ error: 'Failed to start model download' });
+  }
 });
 
 // PUT /api/admin/models/:id
 router.put('/models/:id', (req, res) => {
   const { id } = req.params;
   const { enabled } = req.body;
-  // TODO: Implement model enable/disable
-  res.json({ success: true, message: `Model ${id} ${enabled ? 'enabled' : 'disabled'}` });
+
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({ error: 'enabled must be a boolean' });
+  }
+
+  try {
+    // Check if model exists
+    const model = db.prepare('SELECT id, name, download_status FROM llm_models WHERE id = ?').get(id) as { id: number; name: string; download_status: string } | undefined;
+
+    if (!model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+
+    // Only allow enabling models that are ready
+    if (enabled && model.download_status !== 'ready') {
+      return res.status(400).json({ error: 'Cannot enable a model that is not downloaded' });
+    }
+
+    db.prepare(`
+      UPDATE llm_models
+      SET is_enabled = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).run(enabled ? 1 : 0, id);
+
+    res.json({
+      success: true,
+      message: `Model "${model.name}" ${enabled ? 'enabled' : 'disabled'}`,
+    });
+  } catch (error) {
+    console.error('Error toggling model:', error);
+    res.status(500).json({ error: 'Failed to update model status' });
+  }
 });
 
 // POST /api/admin/reanalyze
