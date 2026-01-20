@@ -1,5 +1,5 @@
 // Admin Users - Manage tracked Twitter users
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface TrackedUser {
@@ -27,6 +27,9 @@ export default function AdminUsers() {
   const [newDisplayName, setNewDisplayName] = useState('');
   const [adding, setAdding] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  // Ref for synchronous rapid-click prevention (state updates are async in React)
+  const deletingRef = useRef<number | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -124,6 +127,16 @@ export default function AdminUsers() {
   };
 
   const handleDeleteUser = async (userId: number) => {
+    // Synchronous check using ref to prevent rapid double-clicks
+    // State updates in React are async, so multiple rapid clicks can bypass state checks
+    if (deletingRef.current !== null) {
+      return;
+    }
+
+    // Set ref synchronously to block any subsequent rapid clicks
+    deletingRef.current = userId;
+    setDeletingUserId(userId);
+
     try {
       const response = await fetch(`http://localhost:3001/api/admin/users/${userId}`, {
         method: 'DELETE',
@@ -143,6 +156,9 @@ export default function AdminUsers() {
       await fetchUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete user');
+    } finally {
+      deletingRef.current = null;
+      setDeletingUserId(null);
     }
   };
 
@@ -381,13 +397,15 @@ export default function AdminUsers() {
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleDeleteUser(user.id)}
-                              className="px-3 py-1 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
+                              disabled={deletingUserId === user.id}
+                              className="px-3 py-1 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              Confirm
+                              {deletingUserId === user.id ? 'Deleting...' : 'Confirm'}
                             </button>
                             <button
                               onClick={() => setDeleteConfirm(null)}
-                              className="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
+                              disabled={deletingUserId === user.id}
+                              className="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               Cancel
                             </button>
@@ -395,7 +413,8 @@ export default function AdminUsers() {
                         ) : (
                           <button
                             onClick={() => setDeleteConfirm(user.id)}
-                            className="px-3 py-1 text-sm bg-destructive/20 text-destructive rounded-lg hover:bg-destructive/30 transition-colors"
+                            disabled={deletingUserId !== null}
+                            className="px-3 py-1 text-sm bg-destructive/20 text-destructive rounded-lg hover:bg-destructive/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Delete user"
                           >
                             Delete

@@ -3890,3 +3890,25 @@ This handles:
 - Time period buttons show visual selection (highlighted cyan background)
 - Model dropdown reflects selected model ID from URL
 - Feature enables sharing dashboard views with specific filter combinations
+[Testing] 2026-01-20 - Feature #51 regression test PASSED - Admin dashboard loads after authentication:
+- Logged in as admin successfully
+- Redirected to /admin after login
+- Admin Dashboard heading and timestamp visible
+- Crawler Status panel showing: Idle status, Last Run, Next Run, Interval
+- Quick stats showing: Tweets Fetched (18), Tweets Analyzed (19), Completed status
+- Force Re-Analyze section visible
+- Recent Runs table visible with completed runs
+- No console errors
+- Screenshot: .playwright-mcp/feature51-admin-dashboard-regression-test.png
+[Testing] Session complete - verified feature #51 (Admin dashboard loads after authentication) - still passing
+[Testing] 2026-01-20 - Feature #105 regression test PASSED - Pagination works correctly:
+- Navigated to user profile for Elon Musk (25 tweets, 3 pages)
+- Page 1: Shows tweets from Jan 4, 2026 to Dec 17, 2025
+- Clicked Next: Page 2 shows different tweets (Dec 15, 2025 to Nov 27, 2025)
+- Clicked Next again: Page 3 shows remaining tweets, Next button disabled
+- Clicked Previous: Returned to original Page 1 tweets
+- Previous button correctly disabled on Page 1, enabled on Pages 2-3
+- Next button correctly disabled on Page 3, enabled on Pages 1-2
+- No console errors
+- Screenshots: feature105-page1-initial.png, feature105-page2-different-tweets.png, feature105-back-to-page1.png, feature105-page3-last-page.png
+[Testing] Session complete - verified feature #105 (Pagination works correctly) - still passing
