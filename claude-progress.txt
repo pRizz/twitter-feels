@@ -3846,3 +3846,47 @@ This handles:
 - React Router and browser handle long URLs properly by default
 - Valid filter parameters in long URLs work correctly (period, model, sortBy, sortOrder)
 - Unknown/extra parameters are safely ignored
+
+---
+
+## Session - Feature #122 - 2026-01-20
+
+### Feature #122: URL parameters reflected in UI (COMPLETED)
+- **Status**: PASSING
+- **Description**: Query params for filters show in UI state
+
+### Verification Steps Completed:
+1. Navigate with ?period=weekly&model=1 - Tested, URL loaded correctly
+2. Verify time period selector shows weekly - Weekly button highlighted (cyan background)
+3. Verify model filter shows correct model - Model dropdown shows "Llama-3-Sentiment (3.1)" selected
+
+### Additional Testing:
+- Tested ?period=monthly&model=5:
+  - Monthly button highlighted (cyan background)
+  - Model dropdown shows "Emotion English DistilRoBERTa (base)" selected
+
+### Implementation Details:
+- No code changes required - feature was already implemented in Feature #111
+- Dashboard.tsx uses useSearchParams from react-router-dom
+- URL parameters (period, model, sortBy, sortOrder) sync with UI state on load
+
+### Screenshots:
+- `.playwright-mcp/feature122-url-params-reflected.png` - Weekly + Llama-3 model selected via URL
+- `.playwright-mcp/feature122-monthly-model5.png` - Monthly + DistilRoBERTa model selected via URL
+
+### Console Errors:
+- No JavaScript errors related to the feature
+- Only external Twitter CDN 404s (profile images - unrelated)
+
+### Current Progress:
+- Features passing: 62/235 (~26.4%)
+- Feature #122 marked as passing
+
+### Commit:
+- 775f649 - Verify Feature #122: URL parameters reflected in UI
+
+### Notes:
+- URL state management implemented via React Router's useSearchParams
+- Time period buttons show visual selection (highlighted cyan background)
+- Model dropdown reflects selected model ID from URL
+- Feature enables sharing dashboard views with specific filter combinations
