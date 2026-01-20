@@ -767,12 +767,82 @@ router.get('/errors/stats', (_req, res) => {
   }
 });
 
+// GET /api/admin/theme
+router.get('/theme', (_req, res) => {
+  try {
+    // Fetch emotions config
+    const emotionsResult = db.prepare(
+      `SELECT value FROM configurations WHERE key = 'emotions'`
+    ).get() as { value: string } | undefined;
+
+    const emotions = emotionsResult
+      ? JSON.parse(emotionsResult.value)
+      : {
+          happy: { color: '#FFD700' },
+          sad: { color: '#4169E1' },
+          angry: { color: '#FF4444' },
+          fearful: { color: '#9932CC' },
+          hatred: { color: '#8B0000' },
+          thankful: { color: '#32CD32' },
+          excited: { color: '#FF6B35' },
+          hopeful: { color: '#00CED1' },
+          frustrated: { color: '#FF8C00' },
+          sarcastic: { color: '#BA55D3' },
+          inspirational: { color: '#FFD700' },
+          anxious: { color: '#708090' },
+        };
+
+    // Fetch gauges config
+    const gaugesResult = db.prepare(
+      `SELECT value FROM configurations WHERE key = 'gauges'`
+    ).get() as { value: string } | undefined;
+
+    const gauges = gaugesResult
+      ? JSON.parse(gaugesResult.value)
+      : [
+          { name: 'Anger Gauge', lowLabel: 'Chill', highLabel: 'Angry', emotions: ['angry', 'frustrated', 'hatred'] },
+          { name: 'Inspiration Gauge', lowLabel: 'Doomer', highLabel: 'Kurzweilian', emotions: ['inspirational', 'hopeful', 'excited'] },
+          { name: 'Gratitude Gauge', lowLabel: 'Entitled', highLabel: 'Thankful', emotions: ['thankful'] },
+          { name: 'Mood Gauge', lowLabel: 'Gloomy', highLabel: 'Joyful', emotions: ['happy'], invertedEmotions: ['sad'] },
+          { name: 'Intensity Gauge', lowLabel: 'Zen', highLabel: 'Heated', emotions: ['angry', 'excited', 'anxious', 'frustrated'] },
+          { name: 'Playfulness Gauge', lowLabel: 'Serious', highLabel: 'Comedian', emotions: ['sarcastic', 'happy', 'excited'] },
+        ];
+
+    res.json({ emotions, gauges });
+  } catch (error) {
+    console.error('Error fetching theme settings:', error);
+    res.status(500).json({ error: 'Failed to fetch theme settings' });
+  }
+});
+
 // PUT /api/admin/theme
 router.put('/theme', (req, res) => {
-  const theme = req.body;
-  // TODO: Implement theme update
-  console.log('Theme update:', theme);
-  res.json({ success: true, message: 'Theme updated' });
+  const { emotions, gauges } = req.body;
+
+  try {
+    // Update emotions config if provided
+    if (emotions) {
+      db.prepare(`
+        INSERT INTO configurations (key, value, updated_at)
+        VALUES ('emotions', ?, datetime('now'))
+        ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
+      `).run(JSON.stringify(emotions), JSON.stringify(emotions));
+    }
+
+    // Update gauges config if provided
+    if (gauges) {
+      db.prepare(`
+        INSERT INTO configurations (key, value, updated_at)
+        VALUES ('gauges', ?, datetime('now'))
+        ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
+      `).run(JSON.stringify(gauges), JSON.stringify(gauges));
+    }
+
+    res.json({ success: true, message: 'Theme settings updated successfully' });
+  } catch (error) {
+    console.error('Error updating theme settings:', error);
+    res.status(500).json({ error: 'Failed to update theme settings' });
+  }
 });
 
 // GET /api/admin/backup/status
