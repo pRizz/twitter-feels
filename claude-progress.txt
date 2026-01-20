@@ -1277,3 +1277,60 @@ Marked as passing since verification was already complete.
 - All verification steps passed
 - Backend properly saves S3 config to database (configurations table, key='s3_backup')
 - Frontend properly displays saved values and masks secret key
+[Testing] 2026-01-20 13:16:28 - Feature #61 regression test PASSED - Admin can browse Hugging Face models:
+- Logged in as admin successfully
+- Navigated to /admin/models
+- Model browser section visible with 'Available Models' heading
+- Multiple models displayed from Hugging Face API (Llama 3.2, Twitter RoBERTa, etc.)
+- Model cards show downloads (1.3M, 890K, etc.)
+- Model cards show likes (4.2K, 1.9K, etc.)
+- Additional info shown: size, update date, HF links
+- Download buttons present for each model
+- No console errors detected
+- Screenshot: .playwright-mcp/.playwright-mcp/feature61-regression-model-browser.png
+
+---
+
+## Session - Feature #22 - 2026-01-20
+
+### Feature #22: Dark mode is default theme (COMPLETED)
+- **Status**: PASSING
+- **Description**: Application loads with dark mode as the default theme
+
+### Verification Steps Completed:
+1. Clear local storage - ✅ Cleared localStorage.theme
+2. Navigate to homepage - ✅ Loaded http://localhost:5173
+3. Verify dark theme colors are applied - ✅ Dark backgrounds visible
+4. Verify background is dark navy/charcoal - ✅ Background color rgb(9, 9, 11)
+
+### Technical Verification:
+- HTML element has `class="dark"` on initial load
+- `localStorage.getItem('theme')` returns null (no stored preference)
+- `index.html` has `class="dark"` on `<html>` tag (prevents flash)
+- `App.tsx` uses `<ThemeProvider defaultTheme="dark">`
+- Computed background color: rgb(9, 9, 11) (deep charcoal)
+
+### Visual Verification:
+- Dark navy/charcoal background
+- Light text (white/gray)
+- Cyan accent color for branding
+- Cards and gauges styled for dark mode
+- Theme toggle shows sun icon (indicating dark mode is active)
+
+### Screenshots:
+- `.playwright-mcp/feature22-dark-mode-default.png` - Initial dark theme
+- `.playwright-mcp/feature22-dark-mode-verification-final.png` - Final verification
+
+### Console Errors:
+- Only external Twitter CDN 404 (not related to this feature)
+
+### Current Progress:
+- Features passing: 22/235 (~9.4%)
+- Feature #22 marked as passing
+- This unblocks: Feature #23 (Theme toggle switches to light mode)
+
+### Notes:
+- Dark mode is correctly set as the default
+- Both index.html and ThemeProvider are configured for dark mode default
+- No code changes required - feature was already implemented correctly
+
