@@ -273,11 +273,107 @@ export function seedSentimentAnalyses() {
   return inserted;
 }
 
+// Sample API errors for testing the error logs page
+const sampleApiErrors = [
+  {
+    error_type: 'rate_limit',
+    error_message: 'Rate limit exceeded for Twitter API endpoint',
+    error_code: '429',
+    endpoint: '/api/twitter/timeline',
+    occurred_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
+    resolved: 0,
+  },
+  {
+    error_type: 'rate_limit',
+    error_message: 'Too many requests to search endpoint',
+    error_code: '429',
+    endpoint: '/api/twitter/search',
+    occurred_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 minutes ago
+    resolved: 1,
+  },
+  {
+    error_type: 'auth',
+    error_message: 'Authentication token expired',
+    error_code: '401',
+    endpoint: '/api/twitter/user',
+    occurred_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+    resolved: 1,
+  },
+  {
+    error_type: 'network',
+    error_message: 'Connection timeout to Twitter API',
+    error_code: 'ETIMEDOUT',
+    endpoint: '/api/twitter/timeline',
+    occurred_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
+    resolved: 0,
+  },
+  {
+    error_type: 'api_change',
+    error_message: 'Unknown field in API response: expanded_metrics',
+    error_code: 'SCHEMA_MISMATCH',
+    endpoint: '/api/twitter/tweets',
+    occurred_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+    resolved: 0,
+  },
+  {
+    error_type: 'other',
+    error_message: 'Unexpected error processing tweet content',
+    error_code: 'INTERNAL_ERROR',
+    endpoint: '/api/sentiment/analyze',
+    occurred_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
+    resolved: 1,
+  },
+  {
+    error_type: 'network',
+    error_message: 'DNS resolution failed',
+    error_code: 'ENOTFOUND',
+    endpoint: '/api/twitter/timeline',
+    occurred_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
+    resolved: 1,
+  },
+];
+
+export function seedApiErrors() {
+  console.log('Seeding sample API errors...');
+
+  // Check if errors already exist
+  const existing = db.prepare('SELECT COUNT(*) as count FROM api_errors').get() as { count: number };
+  if (existing.count > 0) {
+    console.log('API errors already exist, skipping...');
+    return 0;
+  }
+
+  const insert = db.prepare(`
+    INSERT INTO api_errors
+    (error_type, error_message, error_code, endpoint, occurred_at, resolved)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  let inserted = 0;
+  for (const error of sampleApiErrors) {
+    const result = insert.run(
+      error.error_type,
+      error.error_message,
+      error.error_code,
+      error.endpoint,
+      error.occurred_at,
+      error.resolved
+    );
+    if (result.changes > 0) {
+      inserted++;
+    }
+  }
+
+  console.log(`Seeded ${inserted} new API errors`);
+  return inserted;
+}
+
 export function seedAll() {
   seedUsers();
   seedTweets();
   seedLLMModels();
   seedSentimentAnalyses();
+  seedApiErrors();
 }
 
 // Run if executed directly

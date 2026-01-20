@@ -376,27 +376,114 @@ router.delete('/users/:id', (req, res) => {
 
 // GET /api/admin/settings
 router.get('/settings', (_req, res) => {
-  // TODO: Implement settings fetching
-  res.json({
-    crawler: {
-      intervalHours: 1,
-      historyDepthDays: 90,
-      rateLimitPer15Min: 450,
-    },
-    backup: {
-      enabled: false,
-      bucket: '',
-      schedule: '',
-    },
-  });
+  try {
+    // Fetch crawler config
+    const crawlerConfigResult = db.prepare(
+      `SELECT value FROM configurations WHERE key = 'crawler'`
+    ).get() as { value: string } | undefined;
+    const crawlerConfig = crawlerConfigResult
+      ? JSON.parse(crawlerConfigResult.value)
+      : { intervalHours: 1, historyDepthDays: 90, rateLimitPer15Min: 450 };
+
+    // Fetch S3 backup config
+    const s3ConfigResult = db.prepare(
+      `SELECT value FROM configurations WHERE key = 's3_backup'`
+    ).get() as { value: string } | undefined;
+    const s3Config = s3ConfigResult
+      ? JSON.parse(s3ConfigResult.value)
+      : {
+          enabled: false,
+          bucketName: '',
+          region: 'us-east-1',
+          accessKeyId: '',
+          secretAccessKey: '',
+          schedule: 'daily',
+          retentionDays: 30,
+        };
+
+    res.json({
+      crawler: {
+        intervalHours: crawlerConfig.intervalHours ?? 1,
+        historyDepthDays: crawlerConfig.historyDepthDays ?? 90,
+        rateLimitPer15Min: crawlerConfig.rateLimitPer15Min ?? 450,
+      },
+      backup: {
+        enabled: s3Config.enabled ?? false,
+        bucketName: s3Config.bucketName ?? '',
+        region: s3Config.region ?? 'us-east-1',
+        accessKeyId: s3Config.accessKeyId ?? '',
+        // Never return the full secret, only indicate if it's set
+        secretAccessKeySet: Boolean(s3Config.secretAccessKey),
+        schedule: s3Config.schedule ?? 'daily',
+        retentionDays: s3Config.retentionDays ?? 30,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
 });
 
 // PUT /api/admin/settings
 router.put('/settings', (req, res) => {
-  const settings = req.body;
-  // TODO: Implement settings update
-  console.log('Settings update:', settings);
-  res.json({ success: true, message: 'Settings updated' });
+  const { crawler, backup } = req.body;
+
+  try {
+    // Update crawler settings if provided
+    if (crawler) {
+      const existingCrawlerResult = db.prepare(
+        `SELECT value FROM configurations WHERE key = 'crawler'`
+      ).get() as { value: string } | undefined;
+      const existingCrawler = existingCrawlerResult
+        ? JSON.parse(existingCrawlerResult.value)
+        : {};
+
+      const newCrawlerConfig = {
+        ...existingCrawler,
+        intervalHours: crawler.intervalHours ?? existingCrawler.intervalHours ?? 1,
+        historyDepthDays: crawler.historyDepthDays ?? existingCrawler.historyDepthDays ?? 90,
+        rateLimitPer15Min: crawler.rateLimitPer15Min ?? existingCrawler.rateLimitPer15Min ?? 450,
+      };
+
+      db.prepare(`
+        INSERT INTO configurations (key, value, updated_at)
+        VALUES ('crawler', ?, datetime('now'))
+        ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
+      `).run(JSON.stringify(newCrawlerConfig), JSON.stringify(newCrawlerConfig));
+    }
+
+    // Update S3 backup settings if provided
+    if (backup) {
+      const existingS3Result = db.prepare(
+        `SELECT value FROM configurations WHERE key = 's3_backup'`
+      ).get() as { value: string } | undefined;
+      const existingS3 = existingS3Result
+        ? JSON.parse(existingS3Result.value)
+        : {};
+
+      const newS3Config = {
+        enabled: backup.enabled ?? existingS3.enabled ?? false,
+        bucketName: backup.bucketName ?? existingS3.bucketName ?? '',
+        region: backup.region ?? existingS3.region ?? 'us-east-1',
+        accessKeyId: backup.accessKeyId ?? existingS3.accessKeyId ?? '',
+        // Only update secretAccessKey if a new one is provided
+        secretAccessKey: backup.secretAccessKey || existingS3.secretAccessKey || '',
+        schedule: backup.schedule ?? existingS3.schedule ?? 'daily',
+        retentionDays: backup.retentionDays ?? existingS3.retentionDays ?? 30,
+      };
+
+      db.prepare(`
+        INSERT INTO configurations (key, value, updated_at)
+        VALUES ('s3_backup', ?, datetime('now'))
+        ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
+      `).run(JSON.stringify(newS3Config), JSON.stringify(newS3Config));
+    }
+
+    res.json({ success: true, message: 'Settings updated successfully' });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
 });
 
 // GET /api/admin/models
@@ -528,20 +615,156 @@ router.post('/reanalyze', (_req, res) => {
   res.json({ success: true, message: 'Re-analysis started' });
 });
 
+// Type definitions for API errors
+interface ApiError {
+  id: number;
+  error_type: string;
+  error_message: string | null;
+  error_code: string | null;
+  endpoint: string | null;
+  occurred_at: string;
+  resolved: number;
+}
+
+interface ErrorStatRow {
+  period: string;
+  count: number;
+}
+
+interface ErrorTypeCount {
+  error_type: string;
+  count: number;
+}
+
 // GET /api/admin/errors
-router.get('/errors', (_req, res) => {
-  // TODO: Implement error log fetching
-  res.json({ errors: [] });
+router.get('/errors', (req, res) => {
+  try {
+    const { type, page = '1', limit = '50' } = req.query;
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = Math.min(parseInt(limit as string, 10), 100);
+    const offset = (pageNum - 1) * limitNum;
+
+    // Build query with optional type filter
+    let query = `
+      SELECT id, error_type, error_message, error_code, endpoint, occurred_at, resolved
+      FROM api_errors
+    `;
+    const params: (string | number)[] = [];
+
+    if (type && type !== 'all') {
+      query += ` WHERE error_type = ?`;
+      params.push(type as string);
+    }
+
+    query += ` ORDER BY occurred_at DESC LIMIT ? OFFSET ?`;
+    params.push(limitNum, offset);
+
+    const errors = db.prepare(query).all(...params) as ApiError[];
+
+    // Get total count
+    let countQuery = `SELECT COUNT(*) as total FROM api_errors`;
+    if (type && type !== 'all') {
+      countQuery += ` WHERE error_type = ?`;
+    }
+    const countParams = type && type !== 'all' ? [type] : [];
+    const { total } = db.prepare(countQuery).get(...countParams) as { total: number };
+
+    // Format for frontend
+    const formattedErrors = errors.map((err) => ({
+      id: err.id,
+      errorType: err.error_type,
+      errorMessage: err.error_message,
+      errorCode: err.error_code,
+      endpoint: err.endpoint,
+      occurredAt: err.occurred_at,
+      resolved: Boolean(err.resolved),
+    }));
+
+    res.json({
+      errors: formattedErrors,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    console.error('Error getting error logs:', error);
+    res.status(500).json({ error: 'Failed to get error logs' });
+  }
 });
 
 // GET /api/admin/errors/stats
 router.get('/errors/stats', (_req, res) => {
-  // TODO: Implement error statistics
-  res.json({
-    hourly: [],
-    daily: [],
-    byType: {},
-  });
+  try {
+    // Get hourly error counts (last 24 hours)
+    const hourlyErrors = db.prepare(`
+      SELECT
+        strftime('%Y-%m-%d %H:00:00', occurred_at) as period,
+        COUNT(*) as count
+      FROM api_errors
+      WHERE occurred_at >= datetime('now', '-24 hours')
+      GROUP BY strftime('%Y-%m-%d %H:00:00', occurred_at)
+      ORDER BY period ASC
+    `).all() as ErrorStatRow[];
+
+    // Get daily error counts (last 7 days)
+    const dailyErrors = db.prepare(`
+      SELECT
+        date(occurred_at) as period,
+        COUNT(*) as count
+      FROM api_errors
+      WHERE occurred_at >= datetime('now', '-7 days')
+      GROUP BY date(occurred_at)
+      ORDER BY period ASC
+    `).all() as ErrorStatRow[];
+
+    // Get error counts by type
+    const byTypeRows = db.prepare(`
+      SELECT error_type, COUNT(*) as count
+      FROM api_errors
+      GROUP BY error_type
+      ORDER BY count DESC
+    `).all() as ErrorTypeCount[];
+
+    const byType: Record<string, number> = {};
+    byTypeRows.forEach((row) => {
+      byType[row.error_type] = row.count;
+    });
+
+    // Get total errors count
+    const { total } = db.prepare(`SELECT COUNT(*) as total FROM api_errors`).get() as { total: number };
+
+    // Get unresolved errors count
+    const { unresolved } = db.prepare(`SELECT COUNT(*) as unresolved FROM api_errors WHERE resolved = 0`).get() as { unresolved: number };
+
+    // Get errors in last 24 hours
+    const { last24h } = db.prepare(`
+      SELECT COUNT(*) as last24h FROM api_errors
+      WHERE occurred_at >= datetime('now', '-24 hours')
+    `).get() as { last24h: number };
+
+    res.json({
+      hourly: hourlyErrors.map((row) => ({
+        period: row.period,
+        count: row.count,
+      })),
+      daily: dailyErrors.map((row) => ({
+        period: row.period,
+        count: row.count,
+      })),
+      byType,
+      summary: {
+        total,
+        unresolved,
+        last24h,
+      },
+    });
+  } catch (error) {
+    console.error('Error getting error stats:', error);
+    res.status(500).json({ error: 'Failed to get error statistics' });
+  }
 });
 
 // PUT /api/admin/theme
