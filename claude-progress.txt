@@ -5880,3 +5880,75 @@ Added "Clear Filters" functionality to the Dashboard page:
 - Backend validates uniqueness by username field
 - Frontend displays clear error message to user
 
+[Testing] 2026-01-20 - Feature #80 regression test PASSED - Dashboard shows real aggregated data:
+- Called /api/dashboard API endpoint to get actual database values
+- Navigated to dashboard at http://localhost:5173
+- Switched to 'All Time' filter to match API data
+- Verified ALL gauge values match API exactly:
+  * Anger: 19, Inspiration: 37, Gratitude: 30
+  * Mood: 65, Intensity: 29, Playfulness: 38
+- Verified stats match: 2 Tracked Users, 15 Tweets Analyzed, 15 Sentiment Analyses
+- Verified leaderboard scores match: happy=53, sad=23, angry=24, fearful=12, hatred=9, thankful=30
+- No JavaScript console errors
+- Screenshots: feature80-dashboard-initial.png, feature80-dashboard-all-time.png
+[Testing] Session complete - verified feature #80 (Dashboard shows real aggregated data) - still passing
+[Testing] 2026-01-20 - Feature #132 regression test PASSED - New form has correct defaults:
+- Add User form: Twitter Handle has placeholder '@elonmusk', Display Name has placeholder 'Elon Musk'
+- Add User button is disabled by default (correct - requires input)
+- Crawler Settings: Defaults are Crawl Interval=1hr, History Depth=90 days, Rate Limit=450
+- Reset to Defaults button works correctly
+- All fields have descriptive helper text
+- No JavaScript console errors
+- Screenshots: feature132-add-user-form-defaults.png, feature132-settings-defaults.png, feature132-crawler-reset-defaults.png
+[Testing] Session complete - verified feature #132 (New form has correct defaults) - still passing
+
+---
+
+## Session - Feature #152 - 2026-01-20
+
+### Feature #152: Error messages are specific (COMPLETED)
+- **Status**: PASSING
+- **Category**: M-FormValidation
+- **Description**: Validation errors describe the issue
+
+### Verification Steps Completed:
+
+1. **Submit form with multiple errors** ✅
+   - Submitted Change Password form with all fields empty
+   - Each field showed specific error: "Current password is required", "New password is required", "Please confirm your new password"
+
+2. **Verify each field shows specific error** ✅
+   - Change Password form shows specific complexity errors: "Must be at least 12 characters, Must contain an uppercase letter, Must contain a number, Must contain a special character"
+   - Confirm password shows: "Passwords do not match"
+   - Crawler Settings shows: "Value must be greater than or equal to 1" (HTML5) or "Must be between 1 and 168 hours" (JS)
+   - Add User form shows: "Handle can only contain letters, numbers, and underscores" or "Handle must be 15 characters or less" or "Twitter handle is required"
+
+3. **Verify errors are not generic 'invalid'** ✅
+   - All errors are specific to the field and describe exactly what the issue is
+   - No generic "invalid" or "error" messages found
+   - Each validation rule has its own specific message
+
+### Forms Tested:
+- Change Password (Settings page) - 3 fields with specific errors
+- Crawler Settings (Settings page) - 3 fields with range validation errors
+- S3 Backup Settings (Settings page) - bucket name has multiple specific errors
+- Add User (Tracked Users page) - handle format validation errors
+
+### Screenshots:
+- `.playwright-mcp/feature152-password-form-empty-errors.png` - Empty form shows specific required errors
+- `.playwright-mcp/feature152-password-multiple-specific-errors.png` - Weak password shows complexity requirements
+- `.playwright-mcp/feature152-crawler-html5-validation.png` - HTML5 validation with specific message
+- `.playwright-mcp/feature152-handle-specific-error.png` - Invalid characters error
+- `.playwright-mcp/feature152-handle-length-error.png` - Too long handle error
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 92/235 (~39.1%)
+- Feature #152 marked as passing
+
+### Notes:
+- No code changes required - validation was already properly implemented
+- Multiple layers of validation: HTML5 attributes + JavaScript validation
+- Each form field has its own error state and specific message
