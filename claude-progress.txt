@@ -4836,3 +4836,143 @@ Added "Clear Filters" functionality to the Dashboard page:
 - No code changes required - feature was already properly implemented
 - Search filter works correctly with empty string showing all results
 - This is expected behavior for search functionality
+[Testing] 2026-01-20 - Feature #93 regression test PASSED - 404 for non-existent tweet shows not found:
+- Navigated to /tweets/99999999 (non-existent tweet ID)
+- Error page displayed correctly with 'Error' heading and 'Tweet not found' message
+- Console shows expected 404 responses from API (correct behavior)
+- 'Back to Dashboard' link navigates successfully to main dashboard
+- Screenshots: feature93-tweet-not-found.png, feature93-back-to-dashboard.png
+[Testing] Session complete - verified feature #93 (404 for non-existent tweet) - still passing
+[Testing] 2026-01-20 - Feature #124 regression test PASSED - Rapid delete clicks handled:
+- Navigated to admin user list
+- Clicked delete button for Elon Musk
+- Used JavaScript to rapidly click Confirm button 5 times
+- Only ONE delete operation occurred (verified via network requests)
+- User was deleted successfully, no errors
+- Stats updated correctly: 2 -> 1 tracked users
+- No console errors
+- Database restored by re-adding Elon Musk
+- Screenshots: feature124-users-before-delete.png, feature124-confirm-dialog.png, feature124-after-rapid-delete.png, feature124-database-restored.png
+[Testing] Session complete - verified feature #124 (Rapid delete clicks handled) - still passing
+
+---
+
+## Session - Feature #138 - 2026-01-20
+
+### Feature #138: Search with spaces handled (COMPLETED)
+- **Status**: PASSING
+- **Description**: Whitespace-only search handled correctly
+
+### Verification Steps Completed:
+1. **Navigate to user list** ✅
+   - Loaded dashboard at http://localhost:5173
+   - Tracked Influencers section visible with search box
+
+2. **Enter only spaces in search** ✅
+   - Typed 5 spaces ("     ") in the search box
+   - Search box accepted the input
+
+3. **Verify handled gracefully (shows all or message)** ✅
+   - All users still displayed (Sam Altman visible)
+   - No "Clear Filters" button appeared (whitespace treated as empty)
+   - No JavaScript console errors
+   - Search filtering works correctly after fix
+
+### Implementation Fix:
+- Updated `hasActiveFilters` computation to use `trim()` when checking `userSearchQuery`
+- Before: `userSearchQuery !== ''` (5 spaces = active filter)
+- After: `userSearchQuery.trim() !== ''` (5 spaces = NOT active filter)
+
+### Technical Details:
+- Search filtering already used `.trim()` in the filter function (line 683)
+- This caused whitespace-only searches to show all users correctly
+- The fix ensures `hasActiveFilters` is consistent with filter behavior
+- "Clear Filters" button now only appears for real search terms
+
+### Screenshots:
+- `.playwright-mcp/feature138-initial-all-users.png` - Initial dashboard state
+- `.playwright-mcp/feature138-spaces-search-shows-all.png` - Before fix (Clear Filters visible)
+- `.playwright-mcp/feature138-spaces-handled-gracefully.png` - After fix (all users shown, no Clear Filters)
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 78/235 (~33.2%)
+- Feature #138 marked as passing
+
+### Commit:
+- 4213faa - Implement Feature #138: Search with spaces handled correctly
+
+### Notes:
+- Minor UX improvement: whitespace-only search no longer triggers Clear Filters button
+- Behavior consistent: trimmed empty string = show all users, no filter badge
+
+---
+
+## Session - Feature #136 - 2026-01-20
+
+### Feature #136: Pagination resets on filter change (COMPLETED)
+- **Status**: PASSING
+- **Category**: K-Defaults
+- **Description**: Changing filters resets to page 1
+
+### Implementation Details:
+
+**Backend changes (`backend/src/routes/public.ts`):**
+- Added `period` query parameter support to `/api/users/:id/tweets` endpoint
+- Used existing `getTimeBucketCutoff` helper function to calculate time filter cutoff
+- Modified SQL queries to filter tweets by `tweet_timestamp >= timeCutoff` when period is set
+- Supports: `weekly` (7 days), `monthly` (30 days), `yearly` (365 days), `all_time` (no filter)
+
+**Frontend changes (`frontend/src/pages/UserDetail.tsx`):**
+- Added `tweetTimePeriod` state (default: 'all_time')
+- Added `handleTimePeriodChange` function that:
+  1. Updates the time period state
+  2. Calls `fetchTweets(1, period)` to reset pagination to page 1
+- Added time filter button group (Weekly/Monthly/Yearly/All Time) to Recent Tweets section
+- Active filter button is highlighted with cyan background
+
+### Verification Steps Completed:
+1. **Navigate to page 2 of tweets** ✅
+   - User detail page /users/4 shows 15 tweets with "All Time" filter
+   - Clicked "Next" to go to Page 2 of 2
+   - Shows tweets #11-15 (Dec 6-18, 2025)
+
+2. **Change time filter** ✅
+   - Clicked "Monthly" filter button
+   - Tweet count changed from 15 to 9 (only last 30 days)
+   - Shows tweets from Dec 24, 2025 to Jan 17, 2026
+
+3. **Verify back on page 1** ✅
+   - No pagination controls shown (9 tweets fit on 1 page)
+   - Tweets start from #1 (Jan 17, 2026) - confirms page 1
+   - Changed back to "All Time" - shows "Page 1 of 2"
+   - Previous button disabled, Next button enabled - confirms page 1
+
+### Test Data Created:
+- Added 15 test tweets for user 4 (Sam Altman) spanning Dec 6, 2025 to Jan 17, 2026
+- Added 15 sentiment analyses for the tweets
+
+### Screenshots:
+- `.playwright-mcp/feature136-initial-state.png` - User detail page initial state
+- `.playwright-mcp/feature136-tweets-section.png` - Tweets section with time filters visible
+- `.playwright-mcp/feature136-pagination-visible.png` - Page 1 of 2 with pagination controls
+- `.playwright-mcp/feature136-page2-before-filter-change.png` - Page 2 of 2 before filter change
+- `.playwright-mcp/feature136-after-filter-change-page1.png` - After Monthly filter (9 tweets, page 1)
+- `.playwright-mcp/feature136-final-verification-page1.png` - Back to All Time, Page 1 of 2
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 76/235 (~32.3%)
+- Feature #136 marked as passing
+
+### Commit:
+- 38a843e - Implement Feature #136: Pagination resets on filter change
+
+### Notes:
+- The time filter on the tweet list is separate from the EmotionTrends chart time bucket
+- This allows users to independently filter tweets by time period
+- The implementation follows the same pattern as the Dashboard time filter
