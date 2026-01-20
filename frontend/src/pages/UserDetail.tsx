@@ -640,14 +640,17 @@ export default function UserDetail() {
   } | null>(null);
   const [tweetColors, setTweetColors] = useState<Record<string, { color: string }>>({});
 
+  // Time filter state for tweets
+  const [tweetTimePeriod, setTweetTimePeriod] = useState<string>('all_time');
+
   // Fetch user tweets
-  const fetchTweets = async (page: number = 1) => {
+  const fetchTweets = async (page: number = 1, period: string = tweetTimePeriod) => {
     if (!id) return;
 
     try {
       setTweetsLoading(true);
       const response = await fetch(
-        `http://localhost:3001/api/users/${id}/tweets?page=${page}&limit=10`
+        `http://localhost:3001/api/users/${id}/tweets?page=${page}&limit=10&period=${period}`
       );
 
       if (!response.ok) {
@@ -667,7 +670,14 @@ export default function UserDetail() {
   };
 
   const handlePageChange = (page: number) => {
-    fetchTweets(page);
+    fetchTweets(page, tweetTimePeriod);
+  };
+
+  // Handle time period change - reset to page 1
+  const handleTimePeriodChange = (period: string) => {
+    setTweetTimePeriod(period);
+    // Reset pagination to page 1 when filter changes
+    fetchTweets(1, period);
   };
 
   useEffect(() => {
@@ -747,15 +757,38 @@ export default function UserDetail() {
 
           {/* Tweet List Section */}
           <div className="mt-6 bg-card rounded-lg p-6 border border-border shadow-md">
-            <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-              <span className="text-primary-violet">💬</span>
-              Recent Tweets
-              {tweetPagination && (
-                <span className="text-sm font-normal text-muted-foreground">
-                  ({tweetPagination.total} {tweetPagination.total === 1 ? 'tweet' : 'tweets'})
-                </span>
-              )}
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                <span className="text-primary-violet">💬</span>
+                Recent Tweets
+                {tweetPagination && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    ({tweetPagination.total} {tweetPagination.total === 1 ? 'tweet' : 'tweets'})
+                  </span>
+                )}
+              </h2>
+              {/* Time Filter Buttons */}
+              <div className="flex gap-2">
+                {[
+                  { value: 'weekly', label: 'Weekly' },
+                  { value: 'monthly', label: 'Monthly' },
+                  { value: 'yearly', label: 'Yearly' },
+                  { value: 'all_time', label: 'All Time' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => handleTimePeriodChange(option.value)}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                      tweetTimePeriod === option.value
+                        ? 'bg-primary-cyan text-background'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <TweetList
               tweets={tweets}
               emotionColors={tweetColors}

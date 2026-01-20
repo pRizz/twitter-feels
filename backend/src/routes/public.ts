@@ -420,6 +420,8 @@ router.get('/users/:id/tweets', (req, res) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 20;
   const offset = (page - 1) * limit;
+  const period = (req.query.period as string) || 'all_time';
+  const timeCutoff = getTimeBucketCutoff(period);
 
   try {
     // Verify user exists
@@ -428,24 +430,31 @@ router.get('/users/:id/tweets', (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get total count for pagination
+    // Build WHERE clause with optional time filter
+    const whereClause = timeCutoff
+      ? 'WHERE twitter_user_id = ? AND tweet_timestamp >= ?'
+      : 'WHERE twitter_user_id = ?';
+    const countParams = timeCutoff ? [id, timeCutoff] : [id];
+
+    // Get total count for pagination (with time filter)
     const countResult = db.prepare(`
       SELECT COUNT(*) as total
       FROM tweets
-      WHERE twitter_user_id = ?
-    `).get(id) as { total: number };
+      ${whereClause}
+    `).get(...countParams) as { total: number };
 
-    // Get tweets with their sentiment analyses
+    // Get tweets with their sentiment analyses (with time filter)
+    const tweetsParams = timeCutoff ? [id, timeCutoff, limit, offset] : [id, limit, offset];
     const tweets = db.prepare(`
       SELECT
         t.id, t.tweet_id, t.content, t.tweet_timestamp,
         t.engagement_metrics, t.is_retweet, t.is_reply,
         t.created_at, t.updated_at
       FROM tweets t
-      WHERE t.twitter_user_id = ?
+      ${whereClause}
       ORDER BY t.tweet_timestamp DESC
       LIMIT ? OFFSET ?
-    `).all(id, limit, offset) as Array<{
+    `).all(...tweetsParams) as Array<{
       id: number;
       tweet_id: string;
       content: string;
