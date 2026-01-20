@@ -47,6 +47,24 @@ const SCHEDULE_OPTIONS = [
   { value: 'manual', label: 'Manual Only' },
 ];
 
+// Default values for crawler settings
+const DEFAULT_CRAWLER_SETTINGS = {
+  intervalHours: 1,
+  historyDepthDays: 90,
+  rateLimitPer15Min: 450,
+};
+
+// Default values for backup settings
+const DEFAULT_BACKUP_SETTINGS = {
+  enabled: false,
+  bucketName: '',
+  region: 'us-east-1',
+  accessKeyId: '',
+  secretAccessKey: '',
+  schedule: 'daily',
+  retentionDays: 30,
+};
+
 export default function AdminSettings() {
   const navigate = useNavigate();
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -292,6 +310,21 @@ export default function AdminSettings() {
     }
   };
 
+  // Reset crawler settings to defaults
+  const handleResetCrawler = () => {
+    setCrawlerForm({ ...DEFAULT_CRAWLER_SETTINGS });
+    setCrawlerErrors({});
+    setError(null);
+    setSuccessMessage(null);
+  };
+
+  // Reset backup settings to defaults
+  const handleResetBackup = () => {
+    setBackupForm({ ...DEFAULT_BACKUP_SETTINGS });
+    setError(null);
+    setSuccessMessage(null);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -446,7 +479,15 @@ export default function AdminSettings() {
             </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleResetCrawler}
+              disabled={saving}
+              className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors disabled:opacity-50"
+            >
+              Reset to Defaults
+            </button>
             <button
               type="submit"
               disabled={saving}
@@ -629,7 +670,15 @@ export default function AdminSettings() {
             </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleResetBackup}
+              disabled={saving}
+              className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors disabled:opacity-50"
+            >
+              Reset to Defaults
+            </button>
             <button
               type="submit"
               disabled={saving}

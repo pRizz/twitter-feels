@@ -4598,3 +4598,29 @@ After deletion:
 - All forms have sensible defaults and helpful placeholder text
 - Required fields are correctly validated (Add User button disabled until filled)
 - No 1970 epoch dates appear anywhere in the application
+[Testing] 2026-01-20 - Feature #112 regression test PASSED - Browser back maintains state:
+- Applied filters: Time='All Time', Model='RoBERTa GoEmotions (base)'
+- URL before navigation: ?period=all_time&model=6
+- Clicked on Elon Musk user card, navigated to /users/1
+- Pressed browser back button
+- URL after back: ?period=all_time&model=6 (preserved!)
+- Time filter: 'All Time' button active (cyan highlight)
+- Model filter: 'RoBERTa GoEmotions (base)' selected
+- Data correctly filtered (shows 'No sentiment data' for this filter combo)
+- No JavaScript console errors
+- Screenshots: feature112-dashboard-with-filters.png, feature112-after-back-button.png
+[Testing] Session complete - verified feature #112 (Browser back maintains state) - still passing
+[Testing] 2026-01-20 - Feature #107 regression test PASSED - Filter and sort work together:
+- Test 1: Time='All Time' + Sort='Name' (ascending)
+  - URL: ?period=all_time&sortBy=name&sortOrder=asc
+  - Users sorted alphabetically: Elon Musk, Sam Altman
+  - All Time data displayed in gauges (31, 40, 24, 64, 37, 34)
+- Test 2: Time='All Time' + Sort='Emotion Score' (ascending)
+  - URL: ?period=all_time&sortBy=score&sortOrder=asc
+  - Users sorted by score: Sam Altman (0), Elon Musk (44)
+  - All Time data still displayed correctly
+- Both filter AND sort parameters preserved in URL
+- Data correctly filtered AND sorted simultaneously
+- No JavaScript console errors (aside from temporary backend restart)
+- Screenshots: feature107-filter-and-sort-together.png, feature107-emotion-score-sort.png
+[Testing] Session complete - verified feature #107 (Filter and sort work together) - still passing
