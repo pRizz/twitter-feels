@@ -3133,3 +3133,75 @@ Sort functionality already implemented in backend:
 - UserDetail and TweetDetail pages also have loading states (ProfileSkeleton and spinner)
 - All loading states verified working correctly
 
+[Testing] 2026-01-20 16:02:45 - Feature #101 regression test PASSED - API returns correctly formatted tweet data:
+- GET /api/tweets/1 returns 200 OK
+- Response has all expected fields: id, tweetId, content, tweetTimestamp, engagement, user
+- Emotion breakdown properly formatted with all 12 emotions and scores
+- emotionColors included with hex color codes for each emotion
+- Model info included in analyses array: id, name (Llama-3-Sentiment), version (v3.1), provider
+- Each analysis has emotionScores, analyzedAt, durationMs
+- No JavaScript console errors
+- Screenshots: .playwright-mcp/.playwright-mcp/feature101-api-response-verified.png
+[Testing] Session complete - verified feature #101 (API returns correctly formatted tweet data) - still passing
+[Testing] 2026-01-20 16:03:30 - Feature #108 regression test PASSED - API error responses handled by frontend:
+- Dashboard error handling: Error banner with warning icon, error message, retry button
+- Error message: 'Failed to load dashboard data' with explanation text
+- Retry button: Successfully recovers when API is restored
+- Fallback behavior: Gauges show default values, page layout intact
+- User 404: Shows 'User not found' with 'Return to Dashboard' link
+- Tweet 404: Shows 'Error' heading with 'Tweet not found' and 'Back to Dashboard' button
+- No JavaScript console crashes
+- Screenshots: feature108-regression-error-displayed.png, feature108-regression-retry-success.png, feature108-regression-user-404.png, feature108-regression-tweet-404.png
+[Testing] Session complete - verified feature #108 (API error responses handled by frontend) - still passing
+
+---
+
+## Session - Feature #111 - 2026-01-20
+
+### Feature #111: Page refresh preserves filter state (COMPLETED)
+- **Status**: PASSING
+- **Description**: Selected filters persist across page refresh
+
+### Verification Steps Completed:
+1. Select time period filter (All Time) - URL updated to ?period=all_time
+2. Select LLM model filter - URL updated to ?model=5
+3. Select sort by (Name) and order (asc) - URL updated with sortBy=name&sortOrder=asc
+4. Refresh the page - Pressed F5 to refresh
+5. Verify filters are still selected - All four filters preserved
+
+### Implementation Details:
+- **Dashboard.tsx**: Added useSearchParams hook from react-router-dom
+- **URL Parameters**: period, model, sortBy, sortOrder
+- **Validation**: Invalid param values fall back to defaults
+- **Clean URLs**: Default values are omitted from URL to keep it clean
+- **Replace mode**: Using replace: true to avoid polluting browser history
+
+### Filter State After Refresh Verified:
+- Time period: "All Time" button highlighted
+- Model: "Emotion English DistilRoBERTa (base)" selected
+- Sort by: "Name" selected
+- Sort order: "ascending" icon active
+- Users sorted A-Z: Barack Obama, Bill Gates, Elon Musk, Naval, Sam Altman
+
+### Screenshots:
+- .playwright-mcp/feature111-before-refresh.png - Dashboard with filters before refresh
+- .playwright-mcp/feature111-after-refresh.png - Dashboard after page refresh (filters preserved)
+- .playwright-mcp/feature111-all-filters-preserved.png - All four filters in URL and UI
+
+### Console Errors:
+- No JavaScript errors
+- Only external Twitter CDN 404s (profile images from Twitter - unrelated to feature)
+
+### Current Progress:
+- Features passing: 52/235 (~22.1%)
+- Feature #111 marked as passing
+
+### Commit:
+- 4ce2b8d - Implement Feature #111: Page refresh preserves filter state
+
+### Notes:
+- Implementation adds ~100 lines to Dashboard.tsx
+- Uses React Router's useSearchParams for URL state management
+- All four filters (time period, model, sort by, sort order) sync with URL
+- Works with direct URL navigation (deep linking supported)
+- Feature also enables Feature #118 (URL with filters works)
