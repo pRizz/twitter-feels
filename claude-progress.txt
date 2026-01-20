@@ -3912,3 +3912,57 @@ This handles:
 - No console errors
 - Screenshots: feature105-page1-initial.png, feature105-page2-different-tweets.png, feature105-back-to-page1.png, feature105-page3-last-page.png
 [Testing] Session complete - verified feature #105 (Pagination works correctly) - still passing
+
+
+---
+
+## Session - Feature #123 - 2026-01-20
+
+### Feature #123: Double-click submit does not duplicate (COMPLETED)
+- **Status**: PASSING
+- **Description**: Rapid clicks on forms do not create duplicates
+
+### Verification Steps Completed:
+1. Logged in as admin
+2. Navigated to add user form
+3. Filled in user details (testuser_doubleclick_123)
+4. Double-clicked submit rapidly using JavaScript evaluation
+5. Verified only one user created (despite 2 API calls)
+
+### Test Results:
+
+**Add User Form (Users.tsx)**:
+- Button has `disabled={adding || \!newHandle.trim()}`
+- `adding` state set to true on submission
+- Server-side protection: 409 Conflict prevents duplicates
+- Result: 2 API calls made, but only ONE user created (server rejected second as duplicate)
+
+**Settings Forms (Settings.tsx)**:
+- Button has `disabled={saving}`
+- `saving` state set to true on submission
+- Settings saves are idempotent (saving same data twice has same result)
+- Result: Settings saved correctly, no duplicate or error issues
+
+### Protection Mechanisms:
+1. **Client-side**: React state (`adding`/`saving`) disables buttons during API calls
+2. **Server-side**: Database constraints (unique username) return 409 Conflict for duplicates
+3. **Idempotent operations**: Settings updates are inherently safe for multiple submissions
+
+### Screenshots:
+- `.playwright-mcp/feature123-user-added-once.png` - User added only once despite double-click
+- `.playwright-mcp/feature123-users-after-cleanup.png` - Users page after cleanup
+- `.playwright-mcp/feature123-settings-saved-success.png` - Settings saved successfully
+
+### Console Errors:
+- 409 Conflict on duplicate user creation attempt (expected, proves protection works)
+- External Twitter CDN 404s for profile images (unrelated)
+
+### Current Progress:
+- Features passing: 64/235 (~27.2%)
+- Feature #123 marked as passing
+
+### Notes:
+- React state updates are asynchronous, so client-side protection alone may not catch extremely rapid clicks
+- Server-side protection (unique constraints, idempotent operations) provides robust secondary defense
+- The combination of client and server protection ensures no duplicate data is created
+
