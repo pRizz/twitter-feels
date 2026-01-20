@@ -1,6 +1,6 @@
 // Dashboard page - Main public dashboard with gauges, leaderboards, and user grid
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 
 // Types for dashboard data
 interface GaugeData {
@@ -309,15 +309,115 @@ function SortSelector({
   );
 }
 
+// Valid values for filters
+const VALID_TIME_PERIODS = ['weekly', 'monthly', 'yearly', 'all_time'];
+const VALID_SORT_BY = ['followers', 'name', 'score'];
+const VALID_SORT_ORDER = ['asc', 'desc'];
+
 export default function Dashboard() {
-  const [timePeriod, setTimePeriod] = useState('weekly');
-  const [modelFilter, setModelFilter] = useState('combined');
-  const [sortBy, setSortBy] = useState('followers');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read initial values from URL params, falling back to defaults
+  const getInitialTimePeriod = () => {
+    const param = searchParams.get('period');
+    return param && VALID_TIME_PERIODS.includes(param) ? param : 'weekly';
+  };
+
+  const getInitialModelFilter = () => {
+    const param = searchParams.get('model');
+    return param || 'combined';
+  };
+
+  const getInitialSortBy = () => {
+    const param = searchParams.get('sortBy');
+    return param && VALID_SORT_BY.includes(param) ? param : 'followers';
+  };
+
+  const getInitialSortOrder = () => {
+    const param = searchParams.get('sortOrder');
+    return param && VALID_SORT_ORDER.includes(param) ? param : 'desc';
+  };
+
+  const [timePeriod, setTimePeriodState] = useState(getInitialTimePeriod);
+  const [modelFilter, setModelFilterState] = useState(getInitialModelFilter);
+  const [sortBy, setSortByState] = useState(getInitialSortBy);
+  const [sortOrder, setSortOrderState] = useState(getInitialSortOrder);
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [models, setModels] = useState<LLMModel[]>([]);
+
+  // Update URL params when filter values change
+  const updateSearchParams = useCallback(
+    (newParams: { period?: string; model?: string; sortBy?: string; sortOrder?: string }) => {
+      const updatedParams = new URLSearchParams(searchParams);
+
+      if (newParams.period !== undefined) {
+        if (newParams.period === 'weekly') {
+          updatedParams.delete('period');
+        } else {
+          updatedParams.set('period', newParams.period);
+        }
+      }
+      if (newParams.model !== undefined) {
+        if (newParams.model === 'combined') {
+          updatedParams.delete('model');
+        } else {
+          updatedParams.set('model', newParams.model);
+        }
+      }
+      if (newParams.sortBy !== undefined) {
+        if (newParams.sortBy === 'followers') {
+          updatedParams.delete('sortBy');
+        } else {
+          updatedParams.set('sortBy', newParams.sortBy);
+        }
+      }
+      if (newParams.sortOrder !== undefined) {
+        if (newParams.sortOrder === 'desc') {
+          updatedParams.delete('sortOrder');
+        } else {
+          updatedParams.set('sortOrder', newParams.sortOrder);
+        }
+      }
+
+      setSearchParams(updatedParams, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
+
+  // Wrapper functions to update both state and URL
+  const setTimePeriod = useCallback(
+    (value: string) => {
+      setTimePeriodState(value);
+      updateSearchParams({ period: value });
+    },
+    [updateSearchParams]
+  );
+
+  const setModelFilter = useCallback(
+    (value: string) => {
+      setModelFilterState(value);
+      updateSearchParams({ model: value });
+    },
+    [updateSearchParams]
+  );
+
+  const setSortBy = useCallback(
+    (value: string) => {
+      setSortByState(value);
+      updateSearchParams({ sortBy: value });
+    },
+    [updateSearchParams]
+  );
+
+  const setSortOrder = useCallback(
+    (value: string) => {
+      setSortOrderState(value);
+      updateSearchParams({ sortOrder: value });
+    },
+    [updateSearchParams]
+  );
 
   // Fetch available models once on mount
   useEffect(() => {
