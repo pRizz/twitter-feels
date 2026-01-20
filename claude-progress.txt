@@ -781,3 +781,53 @@ From 3 sample sentiment analyses in database:
 - 'View on Hugging Face' links work correctly
 - No console errors detected
 
+[Testing] 2026-01-20 12:59:41 - Feature #2 regression test PASSED - API server responds to health check:
+- GET /api/health returns status 200
+- Response contains {"status":"ok","timestamp":"..."}
+- Frontend successfully communicates with backend
+- Screenshot: .playwright-mcp/feature2-api-health-regression.png
+
+
+---
+
+## Session 12 - 2026-01-20
+
+### Feature #6: Header navigation displays correctly (COMPLETED)
+- **Status**: PASSING
+- **Description**: Main navigation header is visible with all expected elements
+
+### Verification Steps Completed:
+1. Navigate to homepage - ✅ Navigated to http://localhost:5173
+2. Verify header is visible - ✅ Fixed header at top with sticky positioning
+3. Verify logo/brand is displayed - ✅ "Twitter Feels" in cyan accent color
+4. Verify navigation links are present - ✅ Logo links to /
+5. Verify theme toggle is visible - ✅ Sun/Moon icon for dark/light mode
+
+### Additional Testing:
+- Desktop header: Shows logo, last updated timestamp, theme toggle
+- Theme toggle: Switches between dark and light mode correctly
+- Mobile (375px): Hamburger menu replaces desktop nav
+- Mobile menu: Opens to show timestamp and theme toggle
+- Mobile theme toggle: Works to switch themes
+- Logo navigation: Clicking logo navigates to home from any page
+- Console errors: Only external Twitter image 404 (not our bug)
+
+### Screenshots:
+- `.playwright-mcp/.playwright-mcp/feature6-header-desktop.png` - Desktop header in dark mode
+- `.playwright-mcp/.playwright-mcp/feature6-header-light-mode.png` - Desktop header in light mode
+- `.playwright-mcp/.playwright-mcp/feature6-header-mobile.png` - Mobile header with hamburger
+- `.playwright-mcp/.playwright-mcp/feature6-header-mobile-menu-open.png` - Mobile menu expanded
+- `.playwright-mcp/.playwright-mcp/feature6-header-mobile-dark-mode.png` - Mobile in dark mode
+- `.playwright-mcp/.playwright-mcp/feature6-final-verification.png` - Final desktop verification
+
+### Current Progress:
+- Features passing: 14/235 (~6.0%)
+- Feature #6 marked as passing
+- This unblocks: Feature #22 (Dark mode is default theme) which depends on Features #1 and #6
+
+### Notes:
+- Header implemented in PublicLayout.tsx component
+- Uses Lucide icons (Sun, Moon, Menu, X)
+- Mobile breakpoint at md (768px)
+- Last updated timestamp fetches from /api/dashboard endpoint
+- Theme preference persists to localStorage
