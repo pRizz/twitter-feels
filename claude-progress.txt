@@ -4533,3 +4533,68 @@ After deletion:
 - No code changes required - feature was already properly implemented
 - The enable/disable is a soft toggle that preserves all historical data
 - This is important for maintaining audit trail and allowing model comparisons
+
+---
+
+## Session - Feature #132 - 2026-01-20
+
+### Feature #132: New form has correct defaults (COMPLETED)
+- **Status**: PASSING
+- **Description**: Admin forms show sensible default values
+
+### Verification Steps Completed:
+
+1. **Navigate to add user form** ✅
+   - Logged in as admin
+   - Clicked "+ Add User" button on /admin/users page
+   - Form displayed with empty fields and helpful placeholders
+
+2. **Verify fields have appropriate defaults** ✅
+   - Twitter Handle: Empty value with placeholder "@elonmusk" (example)
+   - Display Name: Empty value with placeholder "Elon Musk" (example)
+   - Add User button correctly disabled until required field is filled
+
+3. **Navigate to settings** ✅
+   - Navigated to /admin/settings
+   - All settings fields loaded with database values
+
+4. **Verify default crawl interval shown** ✅
+   - Crawl Interval: 2 hours (sensible)
+   - History Depth: 91 days (sensible)
+   - Rate Limit: 450/15 min (sensible)
+   - Backup Schedule: Daily (sensible)
+   - Retention Period: 30 days (sensible)
+
+### Additional Verifications:
+
+**Dashboard Filters (/):**
+- Time filter: "Weekly" default (sensible)
+- Model filter: "Combined" default (sensible)
+- Sort filter: "Followers" default with descending order (sensible)
+- Search field: Empty with placeholder "Search users..." (correct)
+- Gauges default to 50 (neutral) when no data matches filters
+
+**No 1970 Dates:**
+- Last updated timestamp: "1/20/2026, 7:08:50 PM" ✅
+- Tweet dates: "Jan 4, 2026", "Dec 31, 2025", etc. ✅
+- Chart x-axis: "Jan 13", "Jan 14" ✅
+- No epoch dates (1970) anywhere ✅
+
+### Screenshots:
+- `.playwright-mcp/feature132-add-user-form-defaults.png` - Add User form with empty fields and placeholders
+- `.playwright-mcp/feature132-settings-form-defaults.png` - Settings page with sensible defaults
+- `.playwright-mcp/feature132-dashboard-filters-defaults.png` - Dashboard with sensible filter defaults
+- `.playwright-mcp/feature132-user-detail-dates.png` - User detail page showing correct dates
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 72/235 (~30.6%)
+- Feature #132 marked as passing
+
+### Notes:
+- No code changes required - feature was already properly implemented
+- All forms have sensible defaults and helpful placeholder text
+- Required fields are correctly validated (Add User button disabled until filled)
+- No 1970 epoch dates appear anywhere in the application
