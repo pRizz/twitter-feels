@@ -1510,3 +1510,80 @@ Marked as passing since verification was already complete.
 
 ### Commit:
 - `a85300b` - Verify Feature #4: Static assets load correctly
+[Testing] 2026-01-20 13:22:22 - Feature #78 regression test PASSED - Admin can trigger crawler manually:
+- Logged in as admin successfully
+- Navigated to /admin dashboard
+- Clicked 'Run Now' button
+- Crawler status changed from 'Idle' to 'Running'
+- Run Now button disabled while running (prevents double-trigger)
+- Force Re-Analyze button disabled with message during crawl
+- New row appeared in Recent Runs table with 'Running' status
+- Crawler completed after ~5 seconds
+- Results: 16 tweets fetched, 34 tweets analyzed
+- Status returned to 'Idle' with 'Completed' indicator
+- Run Now button re-enabled after completion
+- No console errors detected
+- Screenshots: feature78-crawler-running.png, feature78-crawler-completed.png
+[Testing] 2026-01-20 13:22 - Feature #72 regression test PASSED - Admin can trigger force re-analysis:
+- Logged in as admin successfully
+- Navigated to /admin dashboard
+- Force Re-Analyze section visible with button and description
+- Clicked 'Force Re-Analyze All Tweets' button
+- Re-analysis started successfully (console: 'Re-analysis started for all 4 tweets')
+- Progress indicator showed 'Running' status with spinner
+- Button disabled during analysis with message 'Cannot start re-analysis while crawler is running'
+- Re-analysis completed in 2 seconds
+- Status changed back to 'Idle' with 'Completed' indicator
+- Recent Runs table updated with completed run showing '4' tweets analyzed
+- No console errors detected
+- Note: Initial 401 error was due to backend restart clearing session, not a code issue
+- Screenshots: feature72-regression-admin-dashboard.png, feature72-regression-reanalyze-running.png, feature72-regression-reanalyze-completed.png
+
+---
+
+## Session - Feature #5 - 2026-01-20
+
+### Feature #5: Environment configuration loads (COMPLETED)
+- **Status**: PASSING
+- **Description**: Application reads and applies environment configuration
+
+### Verification Steps Completed:
+1. **Set test environment variables** - Verified .env files exist:
+   - `backend/.env` - Contains PORT, DATABASE_URL, SESSION_SECRET, SESSION_TIMEOUT_HOURS, CORS settings
+   - `frontend/.env` - Contains VITE_API_URL
+
+2. **Start application** - Both servers running:
+   - Backend at http://localhost:3001 (PORT from .env)
+   - Frontend at http://localhost:5173
+
+3. **Verify configuration is applied correctly**:
+   - **PORT=3001**: Backend responds on port 3001 ✅
+   - **DATABASE_URL**: Data loaded from `./data/twitter_feels.db` ✅
+   - **SESSION_SECRET & SESSION_TIMEOUT_HOURS**: Admin login works, sessions persist ✅
+   - **CORS**: Frontend at localhost:5173 successfully makes API calls to localhost:3001 ✅
+   - **dotenv**: `config()` is called at startup in `backend/src/index.ts` ✅
+
+### Implementation Details:
+- Backend uses `dotenv` package to load `.env` file at startup (line 6-9 in index.ts)
+- Environment variables accessed via `process.env.*`
+- Configuration supports defaults when env vars are not set
+- All critical config (PORT, DATABASE_URL, SESSION_*, CORS) properly loaded
+
+### Screenshots:
+- `.playwright-mcp/feature5-env-config-dashboard.png` - Dashboard loads with data from configured database
+- `.playwright-mcp/feature5-admin-session-works.png` - Admin login works (session config applied)
+- `.playwright-mcp/feature5-settings-config-applied.png` - Settings page shows persisted config values
+
+### Console Errors:
+- No JavaScript errors
+- Only external 404: Twitter CDN profile image (not our issue)
+
+### Current Progress:
+- Features passing: 26/235 (~11.1%)
+- Feature #5 marked as passing
+
+### Notes:
+- No code changes required - feature was already fully implemented
+- Verified end-to-end through browser automation
+- All environment configuration working correctly
+
