@@ -479,3 +479,45 @@ pnpm --dir frontend run dev
 - All navigation works correctly (back to user, back to dashboard)
 - Error handling gracefully shows user-friendly messages
 [Testing] 2026-01-20 12:50:51 - Feature #10 regression test PASSED - Admin login route loads correctly with form, username field, password field, and login button. No console errors.
+[Testing] 2026-01-20 12:51:35 - Feature #8 regression test PASSED - User detail route loads correctly:
+- /users/1 loads Elon Musk profile with avatar, name, username, bio, stats
+- /users/2 loads Bill Gates profile with correct different data
+- /users/999 shows 'User not found' error with dashboard link
+- No console errors detected
+- All UI elements render correctly
+
+---
+
+## Session 10 - 2026-01-20
+
+### Feature #2: API server responds to health check (COMPLETED)
+- **Status**: PASSING
+- **Description**: Backend API server is running and responds to requests
+
+### Verification Steps Completed:
+1. Verified backend server running on port 3001
+2. Sent GET request to `/api/health` endpoint via curl - returned 200
+3. Verified response: `{"status":"ok","timestamp":"2026-01-20T18:51:03.545Z"}`
+4. Tested from browser using fetch API - returned 200
+5. Verified CORS headers are correctly configured
+6. Took screenshot of working dashboard (confirms API connectivity)
+7. Checked browser console - no errors
+
+### Test Results:
+- **Endpoint**: `GET http://localhost:3001/api/health`
+- **Status**: 200 OK
+- **Response Structure**: 
+  - `status`: "ok"
+  - `timestamp`: ISO 8601 timestamp
+
+### Screenshots:
+- `.playwright-mcp/feature2-health-check-verified.png` - Dashboard showing API connectivity
+
+### Current Progress:
+- Features passing: 10/235 (~4.3%)
+- Feature #2 marked as passing
+
+### Notes:
+- Health endpoint implemented in `backend/src/index.ts` at lines 45-48
+- CORS properly configured for localhost:5173 and localhost:5174
+- Frontend displays "Last updated" timestamp from API, confirming connectivity
