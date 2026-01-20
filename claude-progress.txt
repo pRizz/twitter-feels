@@ -4027,3 +4027,86 @@ After fix with useRef:
 - `useRef` provides a synchronous, mutable value that survives between renders
 - Setting `ref.current` immediately before async operation blocks subsequent clicks
 
+[Testing] 2026-01-20 - Feature #78 regression test PASSED - Admin can trigger crawler manually:
+- Logged in as admin successfully
+- Navigated to admin dashboard
+- Clicked 'Run Now' button
+- Crawler status changed from 'Idle' to 'Running'
+- Run Now button disabled while crawler running
+- Force Re-Analyze button also disabled with message during run
+- New row appeared in Recent Runs table showing 'Running' status
+- After ~5 seconds, crawler completed
+- Tweets Fetched: 46, Tweets Analyzed: 40
+- Status changed to 'Completed', then 'Idle'
+- Run Now button re-enabled
+- No console errors
+- Screenshots: feature78-crawler-running.png, feature78-crawler-completed.png
+[Testing] Session complete - verified feature #78 (Admin can trigger crawler manually) - still passing
+[Testing] 2026-01-20 - Feature #104 regression test PASSED - Changes sync between admin and public views:
+- Logged in as admin successfully
+- Navigated to Theme settings page
+- Changed Happy emotion color from #00FF00 (green) to #FF00FF (magenta)
+- Saved emotion colors successfully
+- Changed Anger Gauge low label from 'Peaceful' to 'Calm'
+- Saved gauge settings successfully
+- Navigated to public dashboard (http://localhost:5173/)
+- VERIFIED: Anger Gauge now shows 'Calm' instead of 'Peaceful' - SYNCED!
+- Reverted changes back to original values (Happy=#00FF00, Anger low label='Peaceful')
+- All changes saved and synced correctly
+- No JavaScript errors related to the feature
+- Screenshots: feature104-dashboard-before-change.png, feature104-admin-theme-before.png, feature104-admin-theme-after-changes.png, feature104-dashboard-after-changes.png
+[Testing] Session complete - verified feature #104 (Changes sync between admin and public views) - still passing
+
+---
+
+## Session - Feature #125 - 2026-01-20
+
+### Feature #125: Submit button disabled during processing (COMPLETED)
+- **Status**: PASSING
+- **Description**: Forms disable submit while processing
+
+### Verification Steps Completed:
+1. Navigate to admin settings - Logged in and navigated to /admin/settings
+2. Make changes and click submit - Changed Crawl Interval from 2 to 3 hours
+3. Verify button becomes disabled - Button shows "Saving..." and disabled=true during API call
+4. Verify button re-enables after completion - Button shows "Save Crawler Settings" and disabled=false after completion
+
+### Forms Verified:
+
+**Crawler Settings Form (Settings.tsx)**:
+- Button has disabled={saving} attribute (line 452)
+- Text changes to "Saving..." during processing (line 455)
+- State transitions captured via MutationObserver:
+  1. Before click: "Save Crawler Settings", disabled=false
+  2. During API call: "Saving...", disabled=true
+  3. After completion: "Save Crawler Settings", disabled=false
+
+**S3 Backup Settings Form (Settings.tsx)**:
+- Button has disabled={saving} attribute (line 636)
+- Text changes to "Saving..." during processing (line 638)
+- Same state transitions verified
+
+**Add User Form (Users.tsx)**:
+- Button has disabled={adding} attribute (line 253)
+- Text changes to "Adding..." during processing (line 256)
+- Same pattern implemented
+
+### Screenshots:
+- .playwright-mcp/feature125-settings-initial-state.png - Initial form state
+- .playwright-mcp/feature125-save-success.png - After successful save
+- .playwright-mcp/feature125-backup-settings-saved.png - Backup settings saved
+- .playwright-mcp/feature125-users-page-verification.png - Users page verification
+
+### Console Errors:
+- No JavaScript errors related to the feature
+- Only external Twitter CDN 404s for profile images (unrelated)
+
+### Current Progress:
+- Features passing: 66/235 (~28.1%)
+- Feature #125 marked as passing
+
+### Notes:
+- Feature was already fully implemented - no code changes required
+- Both Settings forms and the Add User form have proper disabled state handling
+- Button text changes to indicate processing state ("Saving...", "Adding...")
+- All forms use React state to manage the processing flag
