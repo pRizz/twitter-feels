@@ -36,9 +36,10 @@ app.use(session({
 }));
 
 // Rate limiting for public API
+// Note: Higher limit in development to support automated testing
 const publicLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit for dev/testing
   message: { error: 'Too many requests, please try again later.' },
 });
 
