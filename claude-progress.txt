@@ -95,3 +95,62 @@ pnpm --dir frontend run dev
 - Session cookies are properly set with credentials: 'include'
 - Available models list shows realistic data (simulated Hugging Face models)
 - Model cards are fully responsive and styled with the futuristic dark theme
+[Testing] 2026-01-20 12:42:48 - Feature #1 regression test PASSED - App loads without errors, theme toggle works, no console errors
+
+---
+
+## Session 3 - 2026-01-20
+
+### Feature #52: Admin crawler status panel displays (COMPLETED)
+- **Status**: PASSING
+- **Description**: Shows running/idle status, last run, next scheduled run
+
+### Implementation Details:
+
+1. **Backend (admin.ts):**
+   - Updated `/api/admin/crawler/status` endpoint to query `crawler_runs` table
+   - Returns current status (idle/running), last run details, next run time, config, and recent runs
+   - Updated `/api/admin/crawler/trigger` endpoint to create new crawler runs
+   - Added singleton protection (prevents starting if already running)
+   - Added simulated 5-second crawler completion for testing
+
+2. **Frontend (admin/Dashboard.tsx):**
+   - Created CrawlerStatusPanel component with:
+     - Status indicator (Idle/Running with animated spinner)
+     - Last Run section with relative time ("Just now", "5 min ago", etc.)
+     - Next Run section with countdown ("in 6 hours")
+     - Interval display ("Every 1 hour", "90 day history")
+     - Tweets fetched/analyzed stats
+     - Status badge (Completed/Running/Failed)
+   - Created RecentRunsTable component showing run history
+   - Added Run Now button (disabled when running)
+   - Added Refresh button
+   - Auto-login handling for 401 errors
+   - Auto-refresh polling when crawler is running
+
+### Verification Steps Completed:
+1. Navigated to /admin dashboard
+2. Verified idle state displays correctly
+3. Triggered crawler and verified "Running" status with spinner
+4. Verified Run Now button disabled while running
+5. Verified completion updates with random tweet counts
+6. Verified Recent Runs table populates with multiple runs
+7. Verified status badges work correctly (Idle, Running, Completed)
+
+### Screenshots:
+- `.playwright-mcp/admin-dashboard-crawler-status.png` - Initial idle state
+- `.playwright-mcp/admin-dashboard-crawler-running.png` - Running state
+- `.playwright-mcp/admin-dashboard-crawler-completed.png` - Completed state
+- `.playwright-mcp/admin-dashboard-multiple-runs.png` - Multiple runs in history
+
+### Current Progress:
+- Features passing: 3/235 (~1.3%)
+- Feature #52 marked as passing
+
+### Commit:
+- `8c103eb` - Implement admin crawler status panel (Feature #52)
+
+### Notes:
+- Feature #78 (Admin can trigger crawler manually) is now unblocked since it depends on Feature #52
+- The "Next Run" time calculation uses UTC timestamps from the backend
+- Crawler runs are simulated with 5-second completion for demo/testing purposes
