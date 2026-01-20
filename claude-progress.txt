@@ -587,3 +587,72 @@ pnpm --dir frontend run dev
 - Error type badges use distinct colors: Rate Limit (amber), Auth (red), Network (blue), API Change (purple), Other (gray)
 - Charts show "No data available" when empty
 - Table shows relative time (e.g., "30m ago") plus full timestamp
+
+---
+
+## Session 11 - 2026-01-20
+
+### Feature #80: Dashboard shows real aggregated data (COMPLETED)
+- **Status**: PASSING
+- **Description**: Dashboard gauges reflect actual database values
+
+### Implementation Details:
+1. **Backend API (/api/dashboard):**
+   - Rewrote the endpoint to compute real emotion averages from `sentiment_analyses` table
+   - Added `calculateGaugeValue()` helper function supporting inverted emotions (e.g., sad for Mood Gauge)
+   - Queries emotion scores from all analyses (or filtered by modelId)
+   - Aggregates scores to compute averages for all 12 emotions
+   - Calculates gauge values based on gauge configuration (emotion mappings)
+   - Returns real stats: totalUsers, totalTweets, totalAnalyses from database
+   - Generates leaderboards with top/bottom users per emotion
+   - Includes tracked users with their calculated top emotions
+
+2. **Data Flow:**
+   - Reads gauge config from `configurations` table (key='gauges')
+   - Reads emotion colors from `configurations` table (key='emotions')
+   - Queries `sentiment_analyses` joined with `tweets` for emotion data
+   - Aggregates all emotion scores to compute averages
+   - Maps averages to gauge values using gauge config
+
+### Verification Steps Completed:
+1. Query database for aggregation values - ✅ API returns real computed values
+2. Navigate to dashboard - ✅ Dashboard loads at http://localhost:5173
+3. Compare displayed gauge values to database - ✅ Values match exactly:
+   - Anger Gauge: **23** (API: 23) ✓
+   - Inspiration Gauge: **43** (API: 43) ✓
+   - Gratitude Gauge: **23** (API: 23) ✓
+   - Mood Gauge: **62** (API: 62) ✓
+   - Intensity Gauge: **31** (API: 31) ✓
+   - Playfulness Gauge: **30** (API: 30) ✓
+4. Verify values match exactly - ✅ All 6 gauges match API response
+
+### API Response Sample:
+```json
+{
+  "emotionAverages": {"happy":39,"excited":38,"hopeful":46,"inspirational":44,"thankful":23,"sad":16,"angry":25,"frustrated":33,"fearful":14,"anxious":27,"sarcastic":12,"hatred":10},
+  "stats": {"totalUsers":5,"totalTweets":3,"totalAnalyses":3}
+}
+```
+
+### Manual Calculation Verification:
+From 3 sample sentiment analyses in database:
+- happy: (75+8+35)/3 = 39.3 ≈ 39 ✓
+- angry: (3+65+8)/3 = 25.3 ≈ 25 ✓
+- Anger Gauge = avg(angry, frustrated, hatred) = (25+33+10)/3 = 22.7 ≈ 23 ✓
+
+### Screenshots:
+- `.playwright-mcp/feature80-dashboard-real-data.png` - Dashboard showing real aggregated data
+
+### Current Progress:
+- Features passing: 11/235 (~4.7%)
+- Feature #80 marked as passing
+
+### Commit:
+- `3df9430` - Implement dashboard with real aggregated data (Feature #80)
+
+### Notes:
+- No mock data - all values computed from real database records
+- Gauge calculations use proper emotion mappings from config
+- Leaderboards show real user rankings by emotion scores
+- Stats footer shows accurate counts from database
+- Only console error is external Twitter profile image 404 (not our bug)
