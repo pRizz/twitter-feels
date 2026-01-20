@@ -5952,3 +5952,71 @@ Added "Clear Filters" functionality to the Dashboard page:
 - No code changes required - validation was already properly implemented
 - Multiple layers of validation: HTML5 attributes + JavaScript validation
 - Each form field has its own error state and specific message
+
+---
+
+## Session - Feature #153 - 2026-01-20
+
+### Feature #153: Errors clear when fixed (COMPLETED)
+- **Status**: PASSING
+- **Category**: M-FormValidation
+- **Description**: Fixing field clears its error
+
+### Verification Steps Completed:
+
+#### Test 1: Add User Form - Twitter Handle Validation
+1. ✅ Navigated to /admin/users and opened Add User form
+2. ✅ Entered invalid handle "bad!handle" 
+3. ✅ Error displayed: "Handle can only contain letters, numbers, and underscores"
+4. ✅ Fixed by entering "validhandle123"
+5. ✅ Error cleared, "Add User" button enabled
+
+#### Test 2: Crawler Settings Form - Interval Validation
+1. ✅ Navigated to /admin/settings
+2. ✅ Entered invalid value "0" in Crawl Interval field
+3. ✅ Browser validation error: "Value must be greater than or equal to 1."
+4. ✅ Fixed by entering "2"
+5. ✅ Error cleared
+
+#### Test 3: S3 Backup Settings Form - Bucket Name Validation
+1. ✅ Entered invalid bucket name "INVALID_BUCKET"
+2. ✅ Clicked Save Backup Settings
+3. ✅ Error displayed: "Bucket name must start with a lowercase letter or number"
+4. ✅ Fixed by entering "my-valid-bucket"
+5. ✅ Error cleared immediately upon input
+
+#### Test 4: Change Password Form - Password Complexity Validation
+1. ✅ Entered weak password "weak"
+2. ✅ Clicked Change Password
+3. ✅ Multiple errors displayed: "Must be at least 12 characters, Must contain an uppercase letter, Must contain a number, Must contain a special character"
+4. ✅ Fixed by entering "StrongPass123!"
+5. ✅ All errors cleared
+
+### Screenshots:
+- `.playwright-mcp/feature153-error-displayed.png` - Twitter handle validation error shown
+- `.playwright-mcp/feature153-error-cleared.png` - Error cleared after valid input
+- `.playwright-mcp/feature153-crawler-interval-invalid.png` - Crawl interval validation error
+- `.playwright-mcp/feature153-crawler-interval-fixed.png` - Error cleared after valid value
+- `.playwright-mcp/feature153-s3-bucket-error-visible.png` - S3 bucket validation error
+- `.playwright-mcp/feature153-s3-bucket-error-cleared.png` - Error cleared after valid name
+- `.playwright-mcp/feature153-password-error.png` - Password complexity errors
+- `.playwright-mcp/feature153-password-error-cleared.png` - Errors cleared after strong password
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 93/235 (~39.6%)
+- Feature #153 marked as passing
+
+### Commit:
+- e3cfa1e - Verify Feature #153: Errors clear when fixed
+
+### Notes:
+- No code changes required - validation error clearing was already properly implemented
+- Forms tested include:
+  1. Add User form (custom JavaScript validation)
+  2. Crawler Settings form (HTML5 browser validation)
+  3. S3 Backup Settings form (custom JavaScript validation)
+  4. Change Password form (custom JavaScript validation)
+- All forms correctly clear errors when the user fixes the invalid field value
