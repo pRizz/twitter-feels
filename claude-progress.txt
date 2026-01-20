@@ -521,3 +521,69 @@ pnpm --dir frontend run dev
 - Health endpoint implemented in `backend/src/index.ts` at lines 45-48
 - CORS properly configured for localhost:5173 and localhost:5174
 - Frontend displays "Last updated" timestamp from API, confirming connectivity
+[Testing] 2026-01-20 12:53:06 - Feature #10 regression test PASSED - Admin login route loads correctly with form, username field, password field, and login button. No console errors.
+[Testing] 2026-01-20 12:54:27 - Feature #53 regression test PASSED - Admin user management table displays correctly:
+- Login works
+- Navigation to /admin/users works
+- Table shows 5 tracked users with all columns
+- User (avatar, name, bio), Handle (Twitter link), Status (Active), Followers (formatted), Tweets, Added, Actions
+- Disable and Delete buttons present for each row
+- Only external image 404 (Twitter CDN - not our code)
+
+---
+
+## Session 11 - 2026-01-20
+
+### Feature #66: Admin error logs page displays (COMPLETED)
+- **Status**: PASSING
+- **Description**: Shows API error logs and statistics
+
+### Implementation Details:
+
+1. **Backend API (admin.ts):**
+   - `GET /api/admin/errors` - Returns paginated error logs with optional type filtering
+   - `GET /api/admin/errors/stats` - Returns hourly/daily error charts and breakdown by type
+   - Proper pagination with page/limit parameters
+   - Type filtering (rate_limit, auth, network, api_change, other)
+   - Summary stats (total, unresolved, last24h)
+
+2. **Frontend (admin/Errors.tsx):**
+   - Summary stats cards: Total Errors, Unresolved, Last 24 Hours
+   - Error rate charts: Hourly (24h) and Daily (7d) bar charts
+   - Errors by Type breakdown chart with percentages
+   - Error log table with columns: Timestamp, Type, Message, Endpoint, Status
+   - Type filter buttons (All, Rate Limit, Authentication, Network, API Change, Other)
+   - Pagination controls
+   - Empty state with "No errors recorded - All systems running smoothly"
+   - Error type badges with color-coded icons
+
+3. **Seed Data (seed.ts):**
+   - Added `seedApiErrors()` function with 7 sample errors
+   - Covers all error types: rate_limit, auth, network, api_change, other
+   - Mix of resolved and unresolved errors
+
+### Verification Steps Completed:
+1. Logged in as admin
+2. Navigated to /admin/errors
+3. Verified error log table renders with columns for timestamp, type, message
+4. Verified error rate charts display (hourly and daily)
+5. Verified type filter works (tested Network filter - shows 2/7 errors)
+6. Verified no console errors
+
+### Screenshots:
+- `.playwright-mcp/feature66-admin-errors-page.png` - Empty state
+- `.playwright-mcp/feature66-admin-errors-with-data.png` - Full page with data
+
+### Current Progress:
+- Features passing: 10/235 (~4.3%)
+- Feature #66 marked as passing
+- This unblocks: Features #67 (Error categorization), #68 (Error rate charts), #98 (Twitter API errors logged)
+
+### Commit:
+- `ca470b9` - Implement Admin Error Logs page - Feature #66
+
+### Notes:
+- Page styled consistently with other admin pages
+- Error type badges use distinct colors: Rate Limit (amber), Auth (red), Network (blue), API Change (purple), Other (gray)
+- Charts show "No data available" when empty
+- Table shows relative time (e.g., "30m ago") plus full timestamp
