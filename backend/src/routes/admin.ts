@@ -416,6 +416,35 @@ router.get('/users', (_req, res) => {
   }
 });
 
+// Twitter handle validation helper
+function validateTwitterHandle(handle: string): { isValid: boolean; error?: string; username: string } {
+  const trimmed = handle.trim();
+
+  if (!trimmed) {
+    return { isValid: false, error: 'Twitter handle is required', username: '' };
+  }
+
+  // Remove leading @ if present
+  const username = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed;
+
+  if (!username) {
+    return { isValid: false, error: 'Twitter handle is required', username: '' };
+  }
+
+  // Check length (1-15 characters)
+  if (username.length > 15) {
+    return { isValid: false, error: 'Handle must be 15 characters or less', username };
+  }
+
+  // Check for valid characters (alphanumeric and underscore only)
+  const validPattern = /^[A-Za-z0-9_]+$/;
+  if (!validPattern.test(username)) {
+    return { isValid: false, error: 'Handle can only contain letters, numbers, and underscores', username };
+  }
+
+  return { isValid: true, username };
+}
+
 // POST /api/admin/users - Add tracked user
 router.post('/users', (req, res) => {
   const { handle, displayName } = req.body;
@@ -424,15 +453,21 @@ router.post('/users', (req, res) => {
     return res.status(400).json({ error: 'Twitter handle is required' });
   }
 
+  // Validate handle format
+  const validation = validateTwitterHandle(handle);
+  if (!validation.isValid) {
+    return res.status(400).json({ error: validation.error });
+  }
+
   try {
     // Check if user already exists
-    const existing = db.prepare('SELECT id FROM twitter_users WHERE username = ?').get(handle.replace('@', ''));
+    const existing = db.prepare('SELECT id FROM twitter_users WHERE username = ?').get(validation.username);
     if (existing) {
       return res.status(409).json({ error: 'User already being tracked' });
     }
 
     // Add new user (in production, this would call Twitter API to get user data)
-    const username = handle.replace('@', '');
+    const username = validation.username;
     const result = db.prepare(`
       INSERT INTO twitter_users (twitter_id, username, display_name, is_active)
       VALUES (?, ?, ?, 1)

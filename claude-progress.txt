@@ -6020,3 +6020,12 @@ Added "Clear Filters" functionality to the Dashboard page:
   3. S3 Backup Settings form (custom JavaScript validation)
   4. Change Password form (custom JavaScript validation)
 - All forms correctly clear errors when the user fixes the invalid field value
+[Testing] 2026-01-20 - Feature #101 regression test PASSED - API returns correctly formatted tweet data:
+- Tested /api/tweets/37 endpoint via UI at http://localhost:5173/tweets/37
+- Verified response has expected fields: id, tweetId, content, tweetTimestamp, engagement, user, analyses, combinedEmotions, emotionColors
+- Verified emotion breakdown is properly formatted: 12 emotions with numeric scores (excited=79, happy=48, angry=26, etc.)
+- Verified model info is included: Llama-3-Sentiment v3.1, analyzed 1/20/2026, duration 607ms
+- UI correctly displays all API data (tweet content, engagement metrics, emotion bars, model analysis)
+- No JavaScript console errors
+- Screenshots: feature101-tweet-detail-api.png, feature101-tweet-model-info.png
+[Testing] Session complete - verified feature #101 (API returns correctly formatted tweet data) - still passing
