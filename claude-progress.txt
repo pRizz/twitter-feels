@@ -3785,3 +3785,64 @@ This handles:
 - Only console error: External Twitter CDN 404 (unrelated to feature)
 - Screenshot: .playwright-mcp/feature57-crawler-settings-panel.png
 [Testing] Session complete - verified feature #57 (Admin crawler settings panel displays) - still passing
+
+---
+
+## Session - Feature #121 - 2026-01-20
+
+### Feature #121: Very long URL handled (COMPLETED)
+- **Status**: PASSING
+- **Description**: Extremely long URLs don't break navigation
+
+### Verification Steps Completed:
+1. Create URL with very long query string - ✅ Created URLs with 1000-4000+ character query strings
+2. Navigate to the URL - ✅ Tested multiple pages
+3. Verify page loads - ✅ All pages loaded successfully
+4. Verify no errors - ✅ No JavaScript errors
+
+### Test Cases Verified:
+
+1. **Dashboard with ~2000+ character URL** ✅
+   - URL: `http://localhost:5173/?period=all_time&longparam=aaa...(1000 chars)...&extra=test&model=5&sortBy=name&sortOrder=asc&anotherlongparam=bbb...(500 chars)...`
+   - Result: Page loaded correctly, valid filters applied, unknown params ignored gracefully
+   - Screenshot: feature121-very-long-url.png
+
+2. **User detail page with ~1000+ character URL** ✅
+   - URL: `http://localhost:5173/users/1?verylongparam=aaa...(1000 chars)...`
+   - Result: Page loaded correctly, user data displayed properly (Elon Musk with tweets/emotions)
+
+3. **Tweet detail page with ~4000+ character URL** ✅
+   - URL: `http://localhost:5173/tweets/1?superlongparam=aaa...(4000 chars)...`
+   - Result: Page loaded correctly, tweet content and emotion breakdown displayed
+   - Screenshot: feature121-tweet-page-long-url.png
+
+4. **Admin login page with ~1000+ character URL** ✅
+   - URL: `http://localhost:5173/admin/login?verylongparam=aaa...(1000 chars)...`
+   - Result: Page loaded correctly, login form displayed
+   - Screenshot: feature121-admin-login-long-url.png
+
+### Technical Details:
+- React Router handles long URLs without issues
+- Browser's URL length limits are typically 2000-8000+ chars depending on browser
+- Application gracefully ignores unknown query parameters
+- Valid parameters from long URLs are correctly parsed and applied
+- No memory issues or performance degradation observed
+
+### Screenshots:
+- `.playwright-mcp/feature121-very-long-url.png` - Dashboard with long URL
+- `.playwright-mcp/feature121-tweet-page-long-url.png` - Tweet detail with long URL
+- `.playwright-mcp/feature121-admin-login-long-url.png` - Admin login with long URL
+
+### Console Errors:
+- No JavaScript errors related to the feature
+- Only external Twitter CDN 404s (profile images - unrelated)
+
+### Current Progress:
+- Features passing: 62/235 (~26.4%)
+- Feature #121 marked as passing
+
+### Notes:
+- No code changes required - feature was already implemented correctly
+- React Router and browser handle long URLs properly by default
+- Valid filter parameters in long URLs work correctly (period, model, sortBy, sortOrder)
+- Unknown/extra parameters are safely ignored
