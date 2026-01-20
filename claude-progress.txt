@@ -5535,3 +5535,56 @@ Added "Clear Filters" functionality to the Dashboard page:
 - No JavaScript console errors
 - Screenshot: .playwright-mcp/feature9-tweet-detail-regression.png
 [Testing] Session complete - verified feature #9 (Tweet detail route loads) - still passing
+[Testing] 2026-01-20 - Feature #115 regression test PASSED - Unsaved admin form shows warning:
+- Logged in as admin at /admin/login
+- Navigated to Settings page at /admin/settings
+- Changed Crawl Interval from 2 to 5 (making form dirty)
+- Clicked Dashboard navigation link
+- Warning dialog appeared with:
+  * Title: 'Unsaved Changes'
+  * Message: 'You have unsaved changes to your settings. If you leave this page, your changes will be lost.'
+  * Buttons: 'Stay on Page' and 'Leave Page'
+- Tested 'Stay on Page' button - stayed on Settings with changes preserved
+- Tested 'Leave Page' button - successfully navigated to Dashboard
+- No JavaScript console errors
+- Screenshots: feature115-settings-initial.png, feature115-settings-modified.png, feature115-unsaved-warning-dialog.png, feature115-navigated-away.png
+[Testing] Session complete - verified feature #115 (Unsaved admin form shows warning) - still passing
+
+---
+
+## Session - 2026-01-20
+
+### Feature #147: History depth validates range (COMPLETED)
+- **Status**: PASSING
+- **Description**: History depth must be within valid range
+
+### Verification Steps Completed:
+1. ✅ Navigate to crawler settings - Settings page loaded at /admin/settings
+2. ✅ Enter invalid history depth (9999) - Browser validation rejected: "Value must be less than or equal to 365"
+3. ✅ Enter invalid history depth (-1) - Browser validation rejected: "Value must be greater than or equal to 1"
+4. ✅ Submit form with invalid values - Validation errors displayed, form not submitted
+5. ✅ Enter valid value (180) - Form accepted and saved
+6. ✅ Verify success message - "Crawler settings saved successfully!" displayed
+7. ✅ Verify persistence - Value (180) persisted after page refresh
+8. ✅ No console errors - Clean console
+
+### Implementation Details:
+- Validation is implemented via:
+  1. HTML5 `min="1"` and `max="365"` attributes on input (browser validation)
+  2. Custom JavaScript validation in `validateCrawlerForm()` function (defense in depth)
+- Valid range: 1-365 days
+- Error messages: "Must be between 1 and 365 days"
+
+### Screenshots:
+- `.playwright-mcp/feature147-invalid-9999.png` - Error for value 9999 (too high)
+- `.playwright-mcp/feature147-invalid-negative.png` - Error for value -1 (too low)
+- `.playwright-mcp/feature147-valid-success.png` - Success after saving valid value
+- `.playwright-mcp/feature147-final-persisted.png` - Value persisted after refresh
+
+### Current Progress:
+- Features passing: 87/235 (~37.0%)
+- Feature #147 marked as passing
+
+### Notes:
+- No code changes required - validation was already properly implemented
+- Both HTML5 and JavaScript validation work together for robust protection
