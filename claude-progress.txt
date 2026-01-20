@@ -2630,3 +2630,76 @@ The empty state message was implemented in Dashboard.tsx (lines 394-422):
 - This session verified the API data flows correctly to the UI dropdown
 - No code changes required - verification only
 
+[Testing] 2026-01-20 15:41:27 - Feature #1 regression test PASSED - App loads without errors:
+- Navigated to http://localhost:5173 successfully
+- Page title: 'Twitter Feels'
+- All main sections render correctly:
+  * Header with branding and theme toggle
+  * Time and Model filters
+  * 6 Emotion Gauges with proper styling
+  * Emotion Leaderboards section
+  * Tracked Influencers with 5 user cards
+  * Statistics footer (5 users, 4 tweets, 6 analyses)
+- No JavaScript console errors
+- Only external Twitter CDN 404 (expected - profile images from Twitter)
+- Screenshot: .playwright-mcp/.playwright-mcp/feature1-regression-test.png
+[Testing] 2026-01-20 15:42:03 - Feature #4 regression test PASSED - Static assets load correctly:
+- Navigated to http://localhost:5173 successfully
+- All CSS files loaded (200 OK): /src/index.css, theme styles applied
+- All JavaScript files loaded (200 OK): main.tsx, vite client, react-refresh, all page components
+- All node_modules dependencies loaded (200 OK): react, react-dom, recharts, lucide-react, tanstack/react-query
+- favicon.svg loaded (200 OK)
+- No 404 errors for application static assets
+- Only error: external Twitter CDN profile image 404 (unrelated to app assets)
+- Screenshot: .playwright-mcp/.playwright-mcp/feature4-static-assets-regression.png
+
+---
+
+## Session - Feature #103 - 2026-01-20
+
+### Feature #103: User list populates from database (COMPLETED)
+- **Status**: PASSING
+- **Description**: Tracked users list comes from actual database records
+
+### Verification Steps Completed:
+1. Query database for twitter_users - ✅ API returns 5 users from database
+2. Navigate to dashboard - ✅ Dashboard loads successfully at http://localhost:5173
+3. Compare displayed users to database records - ✅ All 5 users match exactly
+4. Verify count matches - ✅ "5 Tracked Users" matches API totalUsers
+
+### API Response Verification:
+GET /api/dashboard?timeBucket=all_time returns:
+- users array with 5 entries:
+  1. Elon Musk (@elonmusk) - ID: 1, topEmotion: "excited", score: 44
+  2. Barack Obama (@BarackObama) - ID: 3, topEmotion: "none", score: 0
+  3. Bill Gates (@BillGates) - ID: 2, topEmotion: "inspirational", score: 62
+  4. Sam Altman (@sama) - ID: 4, topEmotion: "none", score: 0
+  5. Naval (@naval) - ID: 5, topEmotion: "none", score: 0
+- stats.totalUsers: 5
+- stats.totalTweets: 4
+- stats.totalAnalyses: 6
+
+### UI Verification:
+- "Tracked Influencers" section shows all 5 users with correct:
+  - Display names and usernames
+  - Bios
+  - Top emotions with scores
+- Statistics section shows "5 Tracked Users"
+- All data comes from real database (no mock data)
+
+### Screenshots:
+- `.playwright-mcp/feature103-user-list-from-database.png` - Dashboard with gauges and filters
+- `.playwright-mcp/feature103-tracked-influencers.png` - Tracked Influencers section with 5 users
+
+### Console Errors:
+- No JavaScript errors
+- Only external Twitter CDN 404s (profile images from Twitter - unrelated to feature)
+
+### Current Progress:
+- Features passing: 44/235 (~18.7%)
+- Feature #103 marked as passing
+
+### Notes:
+- Feature was already fully implemented in previous sessions
+- This session verified the user list data flows correctly from database -> API -> UI
+- No code changes required - verification only
