@@ -26,6 +26,7 @@ export default function AdminUsers() {
   const [newHandle, setNewHandle] = useState('');
   const [newDisplayName, setNewDisplayName] = useState('');
   const [adding, setAdding] = useState(false);
+  const [handleTouched, setHandleTouched] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   // Ref for synchronous rapid-click prevention (state updates are async in React)
@@ -92,6 +93,7 @@ export default function AdminUsers() {
 
       setNewHandle('');
       setNewDisplayName('');
+      setHandleTouched(false);
       setShowAddForm(false);
       setError(null);
       await fetchUsers();
@@ -229,10 +231,18 @@ export default function AdminUsers() {
                 type="text"
                 value={newHandle}
                 onChange={(e) => setNewHandle(e.target.value)}
+                onBlur={() => setHandleTouched(true)}
                 placeholder="@elonmusk"
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className={`w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  handleTouched && !newHandle.trim()
+                    ? 'border-destructive'
+                    : 'border-border'
+                }`}
                 disabled={adding}
               />
+              {handleTouched && !newHandle.trim() && (
+                <p className="mt-1 text-sm text-destructive">Twitter handle is required</p>
+              )}
             </div>
             <div className="flex-1 min-w-[200px]">
               <label className="block text-sm text-muted-foreground mb-1">
@@ -261,6 +271,7 @@ export default function AdminUsers() {
                   setShowAddForm(false);
                   setNewHandle('');
                   setNewDisplayName('');
+                  setHandleTouched(false);
                 }}
                 className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
               >

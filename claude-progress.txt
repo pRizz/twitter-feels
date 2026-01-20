@@ -5371,3 +5371,26 @@ Added "Clear Filters" functionality to the Dashboard page:
 ### Notes:
 - No code changes required - feature was already properly implemented
 - Search is case-insensitive across all user fields (displayName, username, handle)
+[Testing] 2026-01-20 - Feature #114 regression test PASSED - LocalStorage cleared gracefully handled:
+- Set preferences: theme to light, time filter to Monthly
+- Cleared localStorage via browser evaluate
+- Refreshed page
+- App loaded with defaults: dark theme, Weekly filter, Combined model, Followers sort
+- All dashboard sections displayed correctly (gauges, leaderboards, tracked users)
+- No JavaScript console errors
+- App fully functional - toggled theme, localStorage now stores new preference
+- Screenshots: feature114-before-clear.png, feature114-after-clear.png, feature114-app-functional.png
+[Testing] Session complete - verified feature #114 (LocalStorage cleared gracefully handled) - still passing
+[Testing] 2026-01-20 - Feature #143 regression test PASSED - Filter persists after viewing detail:
+- Applied filters: Time=Monthly, Sort=Name
+- Navigated to user detail page: /users/4 (Sam Altman)
+- Used browser back button to return to dashboard
+- URL preserved: http://localhost:5173/?period=monthly&sortBy=name
+- Both filters correctly displayed:
+  * Monthly button highlighted (cyan background)
+  * Name selected in Sort dropdown
+  * Clear Filters button visible
+- Data correctly shows Monthly filtered values (gauge: 21, 34, 32, 70, 29, 40)
+- No JavaScript console errors
+- Screenshots: feature143-filters-applied.png, feature143-filters-persisted-regression.png
+[Testing] Session complete - verified feature #143 (Filter persists after viewing detail) - still passing
