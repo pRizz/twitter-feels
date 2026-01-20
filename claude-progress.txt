@@ -3092,3 +3092,44 @@ Sort functionality already implemented in backend:
 - Changes take effect immediately after saving (on next page load)
 - Restored original Excited color (#FF6B35) to leave system in clean state
 
+
+---
+
+## Session - Feature #109 - 2026-01-20
+
+### Feature #109: Loading spinners appear during API calls (COMPLETED)
+- **Status**: PASSING
+- **Description**: Loading indicators show during data fetch
+
+### Verification Steps Completed:
+1. Add network delay to API calls - ✅ Added delay middleware to backend (dev only)
+2. Navigate to dashboard - ✅ Navigated to http://localhost:5173/?testDelay=5000
+3. Verify loading spinner appears - ✅ Screenshot shows cyan spinner centered on page
+4. Verify spinner disappears when data loads - ✅ Screenshot shows content after loading completes
+
+### Implementation Changes:
+1. **Backend (index.ts)**: Added delay middleware that accepts `?delay=N` query parameter (dev only)
+2. **Dashboard.tsx**: Added `testDelay` URL parameter support to pass delay to API
+3. **Dashboard.tsx**: Improved loading UX by wrapping content in `{!isLoading && (...)}` condition
+4. **Dashboard.tsx**: Added ARIA accessibility attributes to loading spinner (role="status", aria-label, sr-only)
+
+### Screenshots:
+- `.playwright-mcp/feature109-loading-spinner-visible.png` - Loading spinner visible during API call
+- `.playwright-mcp/feature109-data-loaded.png` - Data fully loaded after API response
+- `.playwright-mcp/feature109-user-detail-loaded.png` - User detail page showing emotion data
+
+### Console Errors:
+- No JavaScript errors
+- Only external Twitter CDN 404s (profile images - unrelated to feature)
+
+### Current Progress:
+- Features passing: 51/235 (~21.7%)
+- Feature #109 marked as passing
+
+### Notes:
+- Loading spinner was already implemented but content was not hidden during loading
+- Improved UX by hiding content sections while loading to make spinner more prominent
+- Delay middleware only works in development environment (NODE_ENV !== 'production')
+- UserDetail and TweetDetail pages also have loading states (ProfileSkeleton and spinner)
+- All loading states verified working correctly
+
