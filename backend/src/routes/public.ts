@@ -263,14 +263,6 @@ router.get('/users/:id', (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get aggregations for this user (if available)
-    const aggregations = db.prepare(`
-      SELECT time_bucket, emotion_averages, emotion_medians, tweet_count, computed_at
-      FROM user_aggregations
-      WHERE twitter_user_id = ?
-      ORDER BY computed_at DESC
-    `).all(id);
-
     // Get tweet count for this user
     const tweetStats = db.prepare(`
       SELECT COUNT(*) as total_tweets
@@ -278,9 +270,55 @@ router.get('/users/:id', (req, res) => {
       WHERE twitter_user_id = ?
     `).get(id) as { total_tweets: number } | undefined;
 
+    // Calculate emotion averages directly from sentiment analyses
+    const userAnalyses = db.prepare(`
+      SELECT sa.emotion_scores
+      FROM sentiment_analyses sa
+      JOIN tweets t ON sa.tweet_id = t.id
+      WHERE t.twitter_user_id = ?
+    `).all(id) as Array<{ emotion_scores: string }>;
+
+    // Aggregate emotion scores
+    const emotionSums: Record<string, number> = {};
+    const emotionCounts: Record<string, number> = {};
+
+    for (const analysis of userAnalyses) {
+      const scores = JSON.parse(analysis.emotion_scores);
+      for (const [emotion, score] of Object.entries(scores)) {
+        if (typeof score === 'number') {
+          emotionSums[emotion] = (emotionSums[emotion] || 0) + score;
+          emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
+        }
+      }
+    }
+
+    // Calculate averages
+    const emotionAverages: Record<string, number> = {};
+    for (const emotion of Object.keys(emotionSums)) {
+      emotionAverages[emotion] = Math.round(emotionSums[emotion] / emotionCounts[emotion]);
+    }
+
+    // Get emotion colors from configuration
+    const emotionConfig = db.prepare(`
+      SELECT value FROM configurations WHERE key = 'emotions'
+    `).get() as { value: string } | undefined;
+
+    const emotionColors = emotionConfig ? JSON.parse(emotionConfig.value) : {};
+
+    // Also get pre-computed aggregations for time-bucket views (if available)
+    const aggregations = db.prepare(`
+      SELECT time_bucket, emotion_averages, emotion_medians, tweet_count, computed_at
+      FROM user_aggregations
+      WHERE twitter_user_id = ?
+      ORDER BY computed_at DESC
+    `).all(id);
+
     res.json({
       ...user,
       aggregations,
+      emotionAverages, // Real-time calculated averages from sentiment_analyses
+      emotionColors,
+      analysisCount: userAnalyses.length,
       tweetCount: tweetStats?.total_tweets || 0,
     });
   } catch (error) {
@@ -294,13 +332,133 @@ router.get('/users/:id/tweets', (req, res) => {
   const { id } = req.params;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 20;
+  const offset = (page - 1) * limit;
 
-  // TODO: Implement tweet listing
-  res.json({
-    userId: id,
-    tweets: [],
-    pagination: { page, limit, total: 0 },
-  });
+  try {
+    // Verify user exists
+    const user = db.prepare('SELECT id FROM twitter_users WHERE id = ?').get(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get total count for pagination
+    const countResult = db.prepare(`
+      SELECT COUNT(*) as total
+      FROM tweets
+      WHERE twitter_user_id = ?
+    `).get(id) as { total: number };
+
+    // Get tweets with their sentiment analyses
+    const tweets = db.prepare(`
+      SELECT
+        t.id, t.tweet_id, t.content, t.tweet_timestamp,
+        t.engagement_metrics, t.is_retweet, t.is_reply,
+        t.created_at, t.updated_at
+      FROM tweets t
+      WHERE t.twitter_user_id = ?
+      ORDER BY t.tweet_timestamp DESC
+      LIMIT ? OFFSET ?
+    `).all(id, limit, offset) as Array<{
+      id: number;
+      tweet_id: string;
+      content: string;
+      tweet_timestamp: string;
+      engagement_metrics: string | null;
+      is_retweet: number;
+      is_reply: number;
+      created_at: string;
+      updated_at: string;
+    }>;
+
+    // Get emotion colors from configuration
+    const emotionConfig = db.prepare(`
+      SELECT value FROM configurations WHERE key = 'emotions'
+    `).get() as { value: string } | undefined;
+    const emotionColors = emotionConfig ? JSON.parse(emotionConfig.value) : {};
+
+    // Enrich each tweet with sentiment data
+    const enrichedTweets = tweets.map(tweet => {
+      // Get sentiment analyses for this tweet
+      const analyses = db.prepare(`
+        SELECT
+          sa.emotion_scores, sa.analyzed_at,
+          m.name as model_name, m.version as model_version
+        FROM sentiment_analyses sa
+        JOIN llm_models m ON sa.llm_model_id = m.id
+        WHERE sa.tweet_id = ?
+        ORDER BY sa.analyzed_at DESC
+      `).all(tweet.id) as Array<{
+        emotion_scores: string;
+        analyzed_at: string;
+        model_name: string;
+        model_version: string | null;
+      }>;
+
+      // Calculate combined emotion scores (average across all models)
+      let combinedEmotions: Record<string, number> = {};
+      let topEmotion = 'none';
+      let topEmotionScore = 0;
+
+      if (analyses.length > 0) {
+        const emotionSums: Record<string, number> = {};
+        const emotionCounts: Record<string, number> = {};
+
+        for (const analysis of analyses) {
+          const scores = JSON.parse(analysis.emotion_scores);
+          for (const [emotion, score] of Object.entries(scores)) {
+            if (typeof score === 'number') {
+              emotionSums[emotion] = (emotionSums[emotion] || 0) + score;
+              emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
+            }
+          }
+        }
+
+        for (const emotion of Object.keys(emotionSums)) {
+          const avg = Math.round(emotionSums[emotion] / emotionCounts[emotion]);
+          combinedEmotions[emotion] = avg;
+          if (avg > topEmotionScore) {
+            topEmotionScore = avg;
+            topEmotion = emotion;
+          }
+        }
+      }
+
+      // Parse engagement metrics
+      const engagement = tweet.engagement_metrics
+        ? JSON.parse(tweet.engagement_metrics)
+        : null;
+
+      return {
+        id: tweet.id,
+        tweetId: tweet.tweet_id,
+        content: tweet.content,
+        tweetTimestamp: tweet.tweet_timestamp,
+        engagement,
+        isRetweet: Boolean(tweet.is_retweet),
+        isReply: Boolean(tweet.is_reply),
+        createdAt: tweet.created_at,
+        topEmotion,
+        topEmotionScore,
+        combinedEmotions,
+        analysisCount: analyses.length,
+      };
+    });
+
+    res.json({
+      userId: id,
+      tweets: enrichedTweets,
+      pagination: {
+        page,
+        limit,
+        total: countResult.total,
+        totalPages: Math.ceil(countResult.total / limit),
+      },
+      emotionColors,
+    });
+  } catch (error) {
+    console.error('Error fetching user tweets:', error);
+    res.status(500).json({ error: 'Failed to fetch user tweets' });
+  }
 });
 
 // GET /api/tweets/:id - Tweet detail

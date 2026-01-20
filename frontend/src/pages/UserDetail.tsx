@@ -2,6 +2,34 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
+// Types for tweet data
+interface TweetData {
+  id: number;
+  tweetId: string;
+  content: string;
+  tweetTimestamp: string;
+  engagement: { likes: number; retweets: number; replies: number } | null;
+  isRetweet: boolean;
+  isReply: boolean;
+  createdAt: string;
+  topEmotion: string;
+  topEmotionScore: number;
+  combinedEmotions: Record<string, number>;
+  analysisCount: number;
+}
+
+interface TweetListResponse {
+  userId: string;
+  tweets: TweetData[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  emotionColors: Record<string, { color: string }>;
+}
+
 // Types for user data
 interface UserData {
   id: number;
@@ -16,6 +44,9 @@ interface UserData {
   created_at: string;
   updated_at: string;
   aggregations: AggregationData[];
+  emotionAverages: Record<string, number>; // Real-time calculated averages
+  emotionColors: Record<string, { color: string; enabled: boolean }>;
+  analysisCount: number;
   tweetCount: number;
 }
 
@@ -123,8 +154,19 @@ function UserProfileHeader({ user }: { user: UserData }) {
 }
 
 // Emotion averages display
-function EmotionAverages({ aggregations }: { aggregations: AggregationData[] }) {
-  if (!aggregations || aggregations.length === 0) {
+function EmotionAverages({
+  emotionAverages,
+  emotionColors,
+  analysisCount,
+}: {
+  emotionAverages: Record<string, number>;
+  emotionColors: Record<string, { color: string; enabled: boolean }>;
+  analysisCount: number;
+}) {
+  // Check if we have any data
+  const hasData = emotionAverages && Object.keys(emotionAverages).length > 0;
+
+  if (!hasData) {
     return (
       <div className="bg-card rounded-lg p-6 border border-border shadow-md">
         <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
@@ -138,15 +180,8 @@ function EmotionAverages({ aggregations }: { aggregations: AggregationData[] }) 
     );
   }
 
-  // Parse the first aggregation's emotion averages
-  let emotionData: Record<string, number> = {};
-  try {
-    emotionData = JSON.parse(aggregations[0].emotion_averages);
-  } catch {
-    // Empty object if parsing fails
-  }
-
-  const emotionColors: Record<string, string> = {
+  // Default colors if not provided from API
+  const defaultColors: Record<string, string> = {
     happy: '#FFD700',
     sad: '#4169E1',
     angry: '#FF4444',
@@ -161,13 +196,25 @@ function EmotionAverages({ aggregations }: { aggregations: AggregationData[] }) 
     anxious: '#708090',
   };
 
-  const emotions = Object.entries(emotionData).sort((a, b) => b[1] - a[1]);
+  // Sort emotions by value (highest first)
+  const emotions = Object.entries(emotionAverages).sort((a, b) => b[1] - a[1]);
+
+  // Get color for an emotion - prefer API colors, fall back to defaults
+  const getColor = (emotion: string): string => {
+    if (emotionColors && emotionColors[emotion]?.color) {
+      return emotionColors[emotion].color;
+    }
+    return defaultColors[emotion] || '#888';
+  };
 
   return (
     <div className="bg-card rounded-lg p-6 border border-border shadow-md">
       <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
         <span className="text-primary-violet">📊</span>
-        Emotion Averages ({aggregations[0].time_bucket})
+        Emotion Averages
+        <span className="text-sm font-normal text-muted-foreground">
+          ({analysisCount} {analysisCount === 1 ? 'analysis' : 'analyses'})
+        </span>
       </h2>
       <div className="space-y-3">
         {emotions.map(([emotion, value]) => (
@@ -178,7 +225,7 @@ function EmotionAverages({ aggregations }: { aggregations: AggregationData[] }) 
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${value}%`,
-                  backgroundColor: emotionColors[emotion] || '#888',
+                  backgroundColor: getColor(emotion),
                 }}
               />
             </div>
@@ -192,11 +239,200 @@ function EmotionAverages({ aggregations }: { aggregations: AggregationData[] }) 
   );
 }
 
+// Tweet list component
+function TweetList({
+  tweets,
+  emotionColors,
+  isLoading,
+  pagination,
+  onPageChange,
+}: {
+  tweets: TweetData[];
+  emotionColors: Record<string, { color: string }>;
+  isLoading: boolean;
+  pagination: { page: number; limit: number; total: number; totalPages: number } | null;
+  onPageChange: (page: number) => void;
+}) {
+  const defaultColors: Record<string, string> = {
+    happy: '#FFD700',
+    sad: '#4169E1',
+    angry: '#FF4444',
+    fearful: '#9932CC',
+    hatred: '#8B0000',
+    thankful: '#32CD32',
+    excited: '#FF6B35',
+    hopeful: '#00CED1',
+    frustrated: '#FF8C00',
+    sarcastic: '#BA55D3',
+    inspirational: '#FFD700',
+    anxious: '#708090',
+  };
+
+  const getColor = (emotion: string): string => {
+    if (emotionColors && emotionColors[emotion]?.color) {
+      return emotionColors[emotion].color;
+    }
+    return defaultColors[emotion] || '#888';
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const formatEngagement = (num: number): string => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse p-4 border border-border rounded-lg">
+            <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+            <div className="h-4 bg-muted rounded w-1/2"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (tweets.length === 0) {
+    return (
+      <p className="text-muted-foreground text-center py-8">
+        No tweets have been analyzed yet for this user.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {tweets.map((tweet) => (
+        <Link
+          key={tweet.id}
+          to={`/tweets/${tweet.id}`}
+          className="block p-4 border border-border rounded-lg hover:border-primary-cyan/50 hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-xs text-muted-foreground">
+              {formatDate(tweet.tweetTimestamp)}
+            </span>
+            {tweet.topEmotion !== 'none' && (
+              <span
+                className="text-xs px-2 py-1 rounded-full font-medium"
+                style={{
+                  backgroundColor: `${getColor(tweet.topEmotion)}20`,
+                  color: getColor(tweet.topEmotion),
+                }}
+              >
+                {tweet.topEmotion} ({tweet.topEmotionScore})
+              </span>
+            )}
+          </div>
+          <p className="text-foreground text-sm line-clamp-3 mb-3 whitespace-pre-wrap">
+            {tweet.content}
+          </p>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex gap-4">
+              {tweet.engagement && (
+                <>
+                  <span>❤️ {formatEngagement(tweet.engagement.likes)}</span>
+                  <span>🔁 {formatEngagement(tweet.engagement.retweets)}</span>
+                  <span>💬 {formatEngagement(tweet.engagement.replies)}</span>
+                </>
+              )}
+            </div>
+            {tweet.analysisCount > 0 && (
+              <span className="text-primary-cyan">
+                {tweet.analysisCount} {tweet.analysisCount === 1 ? 'analysis' : 'analyses'}
+              </span>
+            )}
+          </div>
+        </Link>
+      ))}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex justify-center gap-2 pt-4">
+          <button
+            onClick={() => onPageChange(pagination.page - 1)}
+            disabled={pagination.page <= 1}
+            className="px-3 py-1 text-sm border border-border rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <span className="px-3 py-1 text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <button
+            onClick={() => onPageChange(pagination.page + 1)}
+            disabled={pagination.page >= pagination.totalPages}
+            className="px-3 py-1 text-sm border border-border rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function UserDetail() {
   const { id } = useParams();
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Tweet list state
+  const [tweets, setTweets] = useState<TweetData[]>([]);
+  const [tweetsLoading, setTweetsLoading] = useState(false);
+  const [tweetPagination, setTweetPagination] = useState<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  } | null>(null);
+  const [tweetColors, setTweetColors] = useState<Record<string, { color: string }>>({});
+
+  // Fetch user tweets
+  const fetchTweets = async (page: number = 1) => {
+    if (!id) return;
+
+    try {
+      setTweetsLoading(true);
+      const response = await fetch(
+        `http://localhost:3001/api/users/${id}/tweets?page=${page}&limit=10`
+      );
+
+      if (!response.ok) {
+        console.error('Failed to fetch tweets');
+        return;
+      }
+
+      const data: TweetListResponse = await response.json();
+      setTweets(data.tweets);
+      setTweetPagination(data.pagination);
+      setTweetColors(data.emotionColors);
+    } catch (err) {
+      console.error('Error fetching tweets:', err);
+    } finally {
+      setTweetsLoading(false);
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    fetchTweets(page);
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -216,6 +452,9 @@ export default function UserDetail() {
         const userData = await response.json();
         setUser(userData);
         setError(null);
+
+        // Fetch tweets after user data is loaded
+        fetchTweets(1);
       } catch (err) {
         console.error('Error fetching user:', err);
         setError(err instanceof Error ? err.message : 'Failed to load user data');
@@ -260,7 +499,11 @@ export default function UserDetail() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Emotion Averages */}
-            <EmotionAverages aggregations={user.aggregations} />
+            <EmotionAverages
+              emotionAverages={user.emotionAverages}
+              emotionColors={user.emotionColors}
+              analysisCount={user.analysisCount}
+            />
 
             {/* Coming Soon Sections */}
             <div className="bg-card rounded-lg p-6 border border-border shadow-md">
@@ -279,14 +522,19 @@ export default function UserDetail() {
             <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
               <span className="text-primary-violet">💬</span>
               Recent Tweets
+              {tweetPagination && (
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({tweetPagination.total} {tweetPagination.total === 1 ? 'tweet' : 'tweets'})
+                </span>
+              )}
             </h2>
-            {user.tweetCount > 0 ? (
-              <p className="text-muted-foreground">Tweet list with sentiment scores coming soon.</p>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                No tweets have been analyzed yet for this user.
-              </p>
-            )}
+            <TweetList
+              tweets={tweets}
+              emotionColors={tweetColors}
+              isLoading={tweetsLoading}
+              pagination={tweetPagination}
+              onPageChange={handlePageChange}
+            />
           </div>
         </>
       )}
