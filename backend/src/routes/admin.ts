@@ -631,8 +631,45 @@ router.put('/settings', (req, res) => {
   if (backup) {
     const errors: string[] = [];
 
-    if (backup.enabled && !backup.bucketName && backup.bucketName !== undefined) {
-      errors.push('S3 bucket name is required when backups are enabled');
+    // Validate bucket name if backup is enabled
+    if (backup.enabled) {
+      if (!backup.bucketName || backup.bucketName.trim() === '') {
+        errors.push('S3 bucket name is required when backups are enabled');
+      } else {
+        const bucketName = backup.bucketName.trim();
+
+        // Length check: 3-63 characters
+        if (bucketName.length < 3) {
+          errors.push('Bucket name must be at least 3 characters');
+        } else if (bucketName.length > 63) {
+          errors.push('Bucket name must be at most 63 characters');
+        }
+
+        // Must start with a lowercase letter or number
+        if (!/^[a-z0-9]/.test(bucketName)) {
+          errors.push('Bucket name must start with a lowercase letter or number');
+        }
+
+        // Must end with a lowercase letter or number
+        if (!/[a-z0-9]$/.test(bucketName)) {
+          errors.push('Bucket name must end with a lowercase letter or number');
+        }
+
+        // Can only contain lowercase letters, numbers, hyphens, and periods
+        if (!/^[a-z0-9.-]+$/.test(bucketName)) {
+          errors.push('Bucket name can only contain lowercase letters, numbers, hyphens, and periods');
+        }
+
+        // Cannot contain consecutive periods
+        if (/\.\./.test(bucketName)) {
+          errors.push('Bucket name cannot contain consecutive periods');
+        }
+
+        // Cannot be formatted as an IP address (e.g., 192.168.1.1)
+        if (/^(\d{1,3}\.){3}\d{1,3}$/.test(bucketName)) {
+          errors.push('Bucket name cannot be formatted as an IP address');
+        }
+      }
     }
 
     if (backup.retentionDays !== undefined) {
