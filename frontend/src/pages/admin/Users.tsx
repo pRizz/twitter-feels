@@ -27,10 +27,40 @@ export default function AdminUsers() {
   const [newDisplayName, setNewDisplayName] = useState('');
   const [adding, setAdding] = useState(false);
   const [handleTouched, setHandleTouched] = useState(false);
+  const [handleError, setHandleError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   // Ref for synchronous rapid-click prevention (state updates are async in React)
   const deletingRef = useRef<number | null>(null);
+
+  // Validate Twitter handle format
+  // Valid: alphanumeric and underscores, 1-15 characters (excluding optional @ prefix)
+  const validateHandle = (handle: string): string | null => {
+    const trimmed = handle.trim();
+    if (!trimmed) {
+      return 'Twitter handle is required';
+    }
+
+    // Remove leading @ if present
+    const username = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed;
+
+    if (!username) {
+      return 'Twitter handle is required';
+    }
+
+    // Check length (1-15 characters)
+    if (username.length > 15) {
+      return 'Handle must be 15 characters or less';
+    }
+
+    // Check for valid characters (alphanumeric and underscore only)
+    const validPattern = /^[A-Za-z0-9_]+$/;
+    if (!validPattern.test(username)) {
+      return 'Handle can only contain letters, numbers, and underscores';
+    }
+
+    return null; // Valid
+  };
 
   const fetchUsers = async () => {
     try {
@@ -63,7 +93,14 @@ export default function AdminUsers() {
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newHandle.trim()) return;
+
+    // Validate handle format
+    const validationError = validateHandle(newHandle);
+    if (validationError) {
+      setHandleError(validationError);
+      setHandleTouched(true);
+      return;
+    }
 
     setAdding(true);
     try {
@@ -94,6 +131,7 @@ export default function AdminUsers() {
       setNewHandle('');
       setNewDisplayName('');
       setHandleTouched(false);
+      setHandleError(null);
       setShowAddForm(false);
       setError(null);
       await fetchUsers();
@@ -230,18 +268,29 @@ export default function AdminUsers() {
               <input
                 type="text"
                 value={newHandle}
-                onChange={(e) => setNewHandle(e.target.value)}
-                onBlur={() => setHandleTouched(true)}
+                onChange={(e) => {
+                  setNewHandle(e.target.value);
+                  // Clear error when user starts typing
+                  if (handleError) {
+                    setHandleError(null);
+                  }
+                }}
+                onBlur={() => {
+                  setHandleTouched(true);
+                  // Validate on blur
+                  const validationError = validateHandle(newHandle);
+                  setHandleError(validationError);
+                }}
                 placeholder="@elonmusk"
                 className={`w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                  handleTouched && !newHandle.trim()
+                  handleTouched && handleError
                     ? 'border-destructive'
                     : 'border-border'
                 }`}
                 disabled={adding}
               />
-              {handleTouched && !newHandle.trim() && (
-                <p className="mt-1 text-sm text-destructive">Twitter handle is required</p>
+              {handleTouched && handleError && (
+                <p className="mt-1 text-sm text-destructive">{handleError}</p>
               )}
             </div>
             <div className="flex-1 min-w-[200px]">
@@ -260,7 +309,7 @@ export default function AdminUsers() {
             <div className="flex gap-2">
               <button
                 type="submit"
-                disabled={adding || !newHandle.trim()}
+                disabled={adding || !newHandle.trim() || !!handleError}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {adding ? 'Adding...' : 'Add User'}
@@ -272,6 +321,7 @@ export default function AdminUsers() {
                   setNewHandle('');
                   setNewDisplayName('');
                   setHandleTouched(false);
+                  setHandleError(null);
                 }}
                 className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
               >
