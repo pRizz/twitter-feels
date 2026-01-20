@@ -239,3 +239,70 @@ pnpm --dir frontend run dev
 - All 6 gauges match the spec requirements with correct labels
 - Gauges display animated colored bars with numeric values
 - No console errors present
+[Testing] 2026-01-20 12:46:18 - Feature #27 regression test PASSED - Average Twitter Feel section displays correctly with 6 gauges, no console errors
+
+---
+
+## Session 6 - 2026-01-20
+
+### Feature #8: User detail route loads (COMPLETED)
+- **Status**: PASSING
+- **Description**: User detail page at /users/:id loads correctly
+
+### Implementation Details:
+1. **Backend API (public.ts):**
+   - Updated `/api/users/:id` endpoint to fetch user from database
+   - Returns user profile data, aggregations, and tweet count
+   - Proper 404 handling for non-existent users
+   - Updated `/api/users` endpoint to list all tracked users
+
+2. **Seed Data (seed.ts):**
+   - Created seed script with 5 sample Twitter influencers
+   - Elon Musk, Bill Gates, Barack Obama, Sam Altman, Naval
+   - Includes realistic follower counts and bios
+
+3. **Frontend (UserDetail.tsx):**
+   - Full profile header with avatar, name, username (links to Twitter)
+   - Bio display
+   - Follower/following counts with K/M formatting
+   - Tweets analyzed count
+   - Emotion Averages section (placeholder for when data available)
+   - Emotion Trends section (placeholder)
+   - Recent Tweets section (placeholder)
+   - Loading skeleton animation
+   - Error state with "User not found" message
+   - Breadcrumb navigation (Dashboard / User Name)
+
+### Verification Steps Completed:
+1. Navigate to /users/1 - ✅ Page loads correctly
+2. Verify page loads without errors - ✅ No console errors
+3. Verify user profile section renders - ✅ Shows:
+   - Avatar (Elon Musk's profile picture)
+   - Display name: "Elon Musk"
+   - Username: "@elonmusk" with link to Twitter
+   - Bio: "CEO of Tesla, SpaceX, and X"
+   - Followers: 170.0M
+   - Following: 500
+   - Tweets Analyzed: 0
+4. Verify URL contains correct user ID - ✅ URL: http://localhost:5173/users/1
+
+### Additional Testing:
+- Tested /users/2 (Bill Gates) - ✅ Loads correctly
+- Tested /users/999 (non-existent) - ✅ Shows "User not found" error with link to dashboard
+
+### Screenshots:
+- `.playwright-mcp/feature8-user-detail-page.png` - User detail page for Elon Musk
+- `.playwright-mcp/feature8-user-not-found.png` - Error state for non-existent user
+
+### Current Progress:
+- Features passing: 3/235 (~1.3%)
+- Feature #8 marked as passing
+
+### Commit:
+- `5403acb` - Implement user detail page with profile section - Feature #8
+
+### Notes:
+- Backend API returns real data from SQLite database
+- Profile avatar falls back to initials if image fails to load
+- Emotion data sections are placeholders until sentiment analysis is implemented
+- Page is responsive and styled with the futuristic dark theme
