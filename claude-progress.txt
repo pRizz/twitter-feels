@@ -1911,3 +1911,58 @@ Marked as passing since verification was already complete.
 - Default gauge value is 50 when no data matches the model filter
 - "Combined" option shows data from all models (no filter applied)
 - No mock data - all filtering from real sentiment_analyses table
+[Testing] 2026-01-20 13:44:01 - Feature #80 regression test PASSED - Dashboard shows real aggregated data:
+- Navigated to dashboard, selected 'All Time' filter
+- Queried API for aggregation values
+- Gauge values verified:
+  - Anger Gauge: 23 (matches API)
+  - Inspiration Gauge: 43 (matches API)
+  - Gratitude Gauge: 23 (matches API)
+  - Mood Gauge: 62 (matches API)
+  - Intensity Gauge: 31 (matches API)
+  - Playfulness Gauge: 30 (matches API)
+- Leaderboards also display correct values
+- Only console errors: external Twitter CDN 404s (unrelated)
+- Screenshot: .playwright-mcp/feature80-dashboard-real-data-verified.png
+
+
+---
+
+## Session - Feature #91 - 2026-01-20
+
+### Feature #91: API error shows user-friendly message (COMPLETED)
+- **Status**: PASSING
+- **Description**: Network/API errors display helpful messages
+
+### Verification Steps Completed:
+1. Disconnect network or mock API failure - ✅ Mocked fetch to simulate API failure
+2. Navigate to dashboard - ✅ Navigated to http://localhost:5173
+3. Verify error message is displayed - ✅ "Failed to load dashboard data" displayed in red
+4. Verify message is user-friendly (not stack trace) - ✅ "Unable to connect to the server. Please check your connection and try again."
+5. Verify retry option is available - ✅ "Retry" button visible and functional
+
+### Implementation Details:
+The error handling was already implemented in the Dashboard component:
+- Lines 348-386: Error banner with user-friendly message
+- Retry button that re-fetches data when clicked
+- Error state cleared on successful retry
+- Fallback data displayed when API fails
+
+### Screenshots:
+- `.playwright-mcp/feature91-api-error-message.png` - Error message with Retry button
+- `.playwright-mcp/feature91-retry-success.png` - Successful retry showing data
+
+### Console Errors:
+- Only external Twitter CDN 404s (profile images from Twitter - not our issue)
+- No JavaScript errors in our code
+
+### Current Progress:
+- Features passing: 32/235 (~13.6%)
+- Feature #91 marked as passing
+
+### Notes:
+- Feature was already fully implemented in Dashboard.tsx
+- UserDetail.tsx and TweetDetail.tsx also have similar error handling
+- Error handling catches network errors and displays friendly messages
+- Retry functionality works correctly
+
