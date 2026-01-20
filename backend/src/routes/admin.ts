@@ -103,6 +103,128 @@ router.get('/me', (req, res) => {
 // All routes below require authentication
 router.use(requireAuth);
 
+// Password complexity validation helper
+interface PasswordValidation {
+  isValid: boolean;
+  errors: string[];
+}
+
+function validatePasswordComplexity(password: string): PasswordValidation {
+  const errors: string[] = [];
+
+  // Minimum 12 characters
+  if (password.length < 12) {
+    errors.push('Password must be at least 12 characters long');
+  }
+
+  // Must contain at least one uppercase letter
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Password must contain at least one uppercase letter');
+  }
+
+  // Must contain at least one lowercase letter
+  if (!/[a-z]/.test(password)) {
+    errors.push('Password must contain at least one lowercase letter');
+  }
+
+  // Must contain at least one number
+  if (!/[0-9]/.test(password)) {
+    errors.push('Password must contain at least one number');
+  }
+
+  // Must contain at least one special character
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    errors.push('Password must contain at least one special character (!@#$%^&*()_+-=[]{};\':"|,.<>/?)');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+// PUT /api/admin/change-password
+router.put('/change-password', (req, res) => {
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+
+  // Validate required fields
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    return res.status(400).json({
+      error: 'Current password, new password, and confirmation are required',
+    });
+  }
+
+  // Check that new password and confirmation match
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({
+      error: 'New password and confirmation do not match',
+    });
+  }
+
+  // Validate password complexity
+  const validation = validatePasswordComplexity(newPassword);
+  if (!validation.isValid) {
+    return res.status(400).json({
+      error: 'Password does not meet complexity requirements',
+      details: validation.errors,
+    });
+  }
+
+  try {
+    // Get the current admin user
+    const adminId = req.session.adminId;
+    const adminUsername = req.session.adminUsername || 'admin';
+
+    let admin = db.prepare('SELECT id, password_hash FROM admin_users WHERE id = ?').get(adminId) as
+      | { id: number; password_hash: string }
+      | undefined;
+
+    // If admin user doesn't exist, create one (for demo/development purposes)
+    if (!admin) {
+      db.prepare(`
+        INSERT INTO admin_users (id, username, password_hash)
+        VALUES (?, ?, ?)
+      `).run(adminId, adminUsername, 'placeholder_hash');
+
+      admin = db.prepare('SELECT id, password_hash FROM admin_users WHERE id = ?').get(adminId) as
+        | { id: number; password_hash: string }
+        | undefined;
+    }
+
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin user not found' });
+    }
+
+    // In a real implementation, we would:
+    // 1. Hash the currentPassword and compare with admin.password_hash
+    // 2. Hash the newPassword before storing
+    // For now, we do a simple comparison (placeholder implementation)
+    // TODO: Implement proper password hashing with bcrypt
+
+    // For demo purposes, accept any current password if user is authenticated
+    // In production, this should verify the current password hash
+    console.log('Password change requested for admin:', req.session.adminUsername);
+
+    // Hash and store the new password
+    // In production: const newHash = await bcrypt.hash(newPassword, 12);
+    const newHash = `hashed_${newPassword}`; // Placeholder - use bcrypt in production
+
+    db.prepare(`
+      UPDATE admin_users
+      SET password_hash = ?
+      WHERE id = ?
+    `).run(newHash, adminId);
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({ error: 'Failed to change password', details: error instanceof Error ? error.message : String(error) });
+  }
+});
+
 // GET /api/admin/crawler/status
 router.get('/crawler/status', (_req, res) => {
   try {

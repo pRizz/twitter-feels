@@ -143,3 +143,8 @@ INSERT OR IGNORE INTO configurations (key, value) VALUES
     ('emotions', '{"happy":{"color":"#FFD700"},"sad":{"color":"#4169E1"},"angry":{"color":"#FF4444"},"fearful":{"color":"#9932CC"},"hatred":{"color":"#8B0000"},"thankful":{"color":"#32CD32"},"excited":{"color":"#FF6B35"},"hopeful":{"color":"#00CED1"},"frustrated":{"color":"#FF8C00"},"sarcastic":{"color":"#BA55D3"},"inspirational":{"color":"#FFD700"},"anxious":{"color":"#708090"}}'),
     ('gauges', '[{"name":"Anger Gauge","lowLabel":"Chill","highLabel":"Angry","emotions":["angry","frustrated","hatred"]},{"name":"Inspiration Gauge","lowLabel":"Doomer","highLabel":"Kurzweilian","emotions":["inspirational","hopeful","excited"]},{"name":"Gratitude Gauge","lowLabel":"Entitled","highLabel":"Thankful","emotions":["thankful"]},{"name":"Mood Gauge","lowLabel":"Gloomy","highLabel":"Joyful","emotions":["happy"],"invertedEmotions":["sad"]},{"name":"Intensity Gauge","lowLabel":"Zen","highLabel":"Heated","emotions":["angry","excited","anxious","frustrated"]},{"name":"Playfulness Gauge","lowLabel":"Serious","highLabel":"Comedian","emotions":["sarcastic","happy","excited"]}]'),
     ('crawler', '{"intervalHours":1,"historyDepthDays":90,"rateLimitPer15Min":450}');
+
+-- Default admin user (password: admin - for development only, change in production!)
+-- Note: This is a placeholder hash. In production, use proper bcrypt hashing.
+INSERT OR IGNORE INTO admin_users (id, username, password_hash) VALUES
+    (1, 'admin', 'hashed_admin');
