@@ -1090,3 +1090,77 @@ Marked as passing since verification was already complete.
 ### Current Progress:
 - Features passing: 19/235 (~8.1%)
 
+[Testing] 2026-01-20 13:07 - Feature #10 REGRESSION FOUND AND FIXED - Admin login route loads:
+- Initially found regression: AdminLayout.tsx had hardcoded isAuthenticated: true
+- Unauthenticated users could access /admin routes without login
+- FIX: Added GET /api/admin/me endpoint to check session status
+- FIX: Updated useAuth hook to call backend API and check real auth status
+- FIX: Added loading spinner while checking auth
+- FIX: Implemented proper logout with API call
+- Verified: Navigating to /admin without auth now redirects to /admin/login
+- All verification steps pass: login form displayed, username/password fields exist, login button present
+- Screenshot: .playwright-mcp/feature10-admin-login-redirect.png
+- Commit: 34c1744
+[Testing] 2026-01-20 13:09:52 - Feature #52 regression test PASSED - Admin crawler status panel displays:
+- Logged in as admin successfully
+- Crawler Status panel visible with all required elements
+- Running/Idle status indicator present (shows 'Idle' with clock icon)
+- Last Run timestamp visible: 'Just now' with specific time
+- Next Run time visible: 'in 6 hours' with specific time
+- Additional features working: Interval display, Tweet stats, Completion badge, Recent Runs table
+- No console errors detected
+- Screenshot: .playwright-mcp/.playwright-mcp/feature52-regression-crawler-status-panel.png
+
+[Testing] 2026-01-20 13:10:50 - Feature #74 regression test PASSED - Admin S3 backup settings display:
+- Logged in as admin successfully
+- Navigated to /admin/settings
+- S3 Backup Settings section visible with cloud icon
+- S3 Bucket Name field present
+- AWS Access Key ID and AWS Secret Access Key fields present
+- Backup Schedule dropdown shows 4 options (Every Hour, Daily, Weekly, Manual Only)
+- AWS Region dropdown with 10 region options
+- Retention Period field present
+- Enable/Disable toggle works correctly
+- Security Notice warning displayed
+- Help section present with IAM policy template
+- No console errors detected
+- Screenshots: .playwright-mcp/feature74-regression-settings-page.png, .playwright-mcp/feature74-regression-s3-enabled.png
+
+---
+
+## Session - Feature #46 - 2026-01-20
+
+### Feature #46: Tweet detail shows full content (COMPLETED)
+- **Status**: PASSING
+- **Description**: Tweet detail page displays complete tweet text
+
+### Verification Steps Completed:
+1. Navigate to tweet detail page - Navigated to /tweets/1 and /tweets/10
+2. Verify full tweet content is displayed - Both short and long tweets display complete text
+3. Verify content is not truncated - Long-form 600+ char content shows without truncation
+4. Verify text formatting is preserved - Line breaks, emojis, special chars all preserved
+
+### Implementation Details:
+- Tweet content displayed with whitespace-pre-wrap CSS in TweetDetail.tsx (line 320)
+- Added long-form test tweet with multi-line content for verification
+- Fixed TypeScript build errors in connection.ts, init.ts, public.ts
+
+### Test Data Created:
+- Tweet ID 10: Long test tweet by Barack Obama with multiple paragraphs, bullet points, numbered list, emojis, special characters, and URLs
+
+### Screenshots:
+- .playwright-mcp/feature46-tweet-detail-full-content.png - Initial tweet 1 verification
+- .playwright-mcp/feature46-long-tweet-content.png - Long tweet with multi-line formatting
+- .playwright-mcp/feature46-tweet1-full-content.png - Tweet 1 with emotion bars
+
+### Current Progress:
+- Features passing: 19/235 (approx 8.1%)
+- Feature #46 marked as passing
+
+### Commit:
+- 33f3400 - Verify Feature #46: Tweet detail shows full content
+
+### Notes:
+- No console errors detected
+- The whitespace-pre-wrap CSS property correctly preserves newlines and formatting
+- Both short tweets (single line) and long tweets (multi-paragraph) render correctly
