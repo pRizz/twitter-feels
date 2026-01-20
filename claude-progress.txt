@@ -5319,3 +5319,55 @@ Added "Clear Filters" functionality to the Dashboard page:
 ### Notes:
 - No code changes required - feature was already properly implemented
 - URL-based state management ensures filter persistence across navigation
+
+---
+
+## Session - Feature #144 - 2026-01-20
+
+### Feature #144: Search is case-insensitive (COMPLETED)
+- **Status**: PASSING
+- **Category**: L-SearchFilter
+- **Description**: Search works regardless of case
+
+### Verification Steps Completed:
+
+1. **Search for 'ELONMUSK'** - PASSED
+   - Navigated to http://localhost:5173
+   - Entered "ELONMUSK" (all uppercase) in search box
+   - Elon Musk user card displayed correctly
+
+2. **Verify matches elon musk** - PASSED
+   - "Elon Musk @elonmusk" user card visible
+   - Only one user shown (correct filtering)
+
+3. **Search for 'ElOnMuSk'** - PASSED
+   - Changed search to "ElOnMuSk" (mixed case)
+   - Same user card displayed correctly
+
+4. **Verify same results** - PASSED
+   - Both uppercase and mixed case return Elon Musk
+   - Also tested lowercase "elonmusk" - same result
+
+### Implementation Details:
+- Code uses `toLowerCase()` for both query and data fields
+- Location: `frontend/src/pages/Dashboard.tsx` lines 685-690
+- Compares: searchQuery.toLowerCase() vs displayName.toLowerCase(), username.toLowerCase()
+
+### Screenshots:
+- `.playwright-mcp/feature144-uppercase-search.png` - ELONMUSK search
+- `.playwright-mcp/feature144-mixedcase-search.png` - ElOnMuSk search
+- `.playwright-mcp/feature144-lowercase-search.png` - elonmusk search
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 84/235 (~35.7%)
+- Feature #144 marked as passing
+
+### Commit:
+- 2be03be - Verify Feature #144: Search is case-insensitive
+
+### Notes:
+- No code changes required - feature was already properly implemented
+- Search is case-insensitive across all user fields (displayName, username, handle)
