@@ -1,0 +1,43 @@
+[package]
+name = "twitter-feels-crawler"
+version = "0.1.0"
+edition = "2021"
+description = "Twitter/X sentiment analysis crawler for Twitter Feels"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.42", features = ["full"] }
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json"] }
+
+# JSON handling
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Environment variables
+dotenvy = "0.15"
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Date/time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Rate limiting
+governor = "0.7"
+
+# LLM inference (placeholder - will be replaced with actual inference crate)
+# candle-core = "0.8"
+# candle-transformers = "0.8"
+
+[dev-dependencies]
+mockall = "0.13"

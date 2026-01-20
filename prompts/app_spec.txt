@@ -1,0 +1,675 @@
+<project_specification>
+  <project_name>Twitter Feels</project_name>
+
+  <overview>
+    Twitter Feels is a public sentiment analysis dashboard that tracks and visualizes the emotional tone of top Twitter/X influencers. It combines a sleek React frontend with a Rust-based crawler that uses configurable LLMs (via local inference or Hugging Face) to analyze tweets and surface emotion scores through engaging visualizations like fun gauges, leaderboards, and time-series charts. The system is designed to be highly configurable, allowing emotions, gauges, labels, and colors to be tweaked without redeployment.
+  </overview>
+
+  <technology_stack>
+    <frontend>
+      <framework>React with TypeScript</framework>
+      <styling>shadcn/ui with Tailwind CSS</styling>
+      <theme>Dark mode default with light mode toggle, futuristic aesthetic with gentle glows and accent colors</theme>
+      <state_management>React Query for server state, Context for UI state</state_management>
+    </frontend>
+    <backend>
+      <runtime>Node.js with Express (API server for frontend)</runtime>
+      <crawler>Rust application with configurable scheduling</crawler>
+      <database>SQLite with abstracted storage layer for future extensibility</database>
+      <llm_inference>Local inference (default) with Hugging Face Hub integration for model management, extensible to remote inference providers</llm_inference>
+    </backend>
+    <communication>
+      <api>REST API with JSON responses</api>
+      <database_connection>Configurable local or remote database connection string</database_connection>
+    </communication>
+    <deployment>
+      <containerization>Docker and Docker Compose</containerization>
+      <persistence>Configurable volumes for SQLite database and configurations</persistence>
+      <backup>Optional S3 backup with configurable schedule</backup>
+    </deployment>
+  </technology_stack>
+
+  <prerequisites>
+    <environment_setup>
+      - Node.js 18+ for frontend and API server
+      - Rust toolchain (rustup) for crawler
+      - Docker and Docker Compose for deployment
+      - Sufficient RAM/VRAM for local LLM inference (model-dependent)
+      - Twitter/X API credentials
+      - Optional: AWS credentials for S3 backup
+      - Optional: Hugging Face API token for inference providers
+    </environment_setup>
+  </prerequisites>
+
+  <feature_count>235</feature_count>
+
+  <security_and_access_control>
+    <user_roles>
+      <role name="public_visitor">
+        <permissions>
+          - Can view all public dashboard pages
+          - Can view aggregate emotion scores and gauges
+          - Can view leaderboards
+          - Can view user detail pages and tweet breakdowns
+          - Can filter by time period and LLM model
+          - Cannot access admin dashboard
+          - Cannot modify any settings or data
+        </permissions>
+        <protected_routes>
+          - /admin/* (blocked)
+        </protected_routes>
+      </role>
+      <role name="admin">
+        <permissions>
+          - All public visitor permissions
+          - Can access admin dashboard
+          - Can manage tracked Twitter users
+          - Can configure crawler settings (interval, rate limits, history depth)
+          - Can manage LLM models (download, enable/disable, configure providers)
+          - Can trigger force re-analysis
+          - Can configure S3 backup settings
+          - Can modify theme/emotion color settings
+          - Can view error logs and API health metrics
+        </permissions>
+        <protected_routes>
+          - Full access to all routes
+        </protected_routes>
+      </role>
+    </user_roles>
+    <authentication>
+      <method>Session-based authentication for admin dashboard (crawler runs in trusted environment)</method>
+      <session_timeout>Configurable, default 24 hours</session_timeout>
+      <password_requirements>Minimum 12 characters with complexity requirements</password_requirements>
+    </authentication>
+    <rate_limiting>
+      <public_api>Rate limiting on public API endpoints to prevent abuse</public_api>
+      <twitter_api>Configurable rate limits for Twitter API calls in crawler</twitter_api>
+    </rate_limiting>
+    <sensitive_operations>
+      - Delete tracked user requires confirmation
+      - Force re-analyze all tweets requires confirmation
+      - S3 configuration changes require re-authentication
+    </sensitive_operations>
+  </security_and_access_control>
+
+  <emotions_system>
+    <description>
+      The system tracks multiple emotions per tweet, each with a score from 0-100.
+      Emotions can be added or removed over time; the system is resilient to these changes.
+      Renaming emotions is disallowed to prevent data inconsistency; clear errors guide resolution.
+    </description>
+    <default_emotions>
+      <emotion name="happy" default_color="#FFD700" />
+      <emotion name="sad" default_color="#4169E1" />
+      <emotion name="angry" default_color="#FF4444" />
+      <emotion name="fearful" default_color="#9932CC" />
+      <emotion name="hatred" default_color="#8B0000" />
+      <emotion name="thankful" default_color="#32CD32" />
+      <emotion name="excited" default_color="#FF6B35" />
+      <emotion name="hopeful" default_color="#00CED1" />
+      <emotion name="frustrated" default_color="#FF8C00" />
+      <emotion name="sarcastic" default_color="#BA55D3" />
+      <emotion name="inspirational" default_color="#FFD700" />
+      <emotion name="anxious" default_color="#708090" />
+    </default_emotions>
+    <configuration>
+      - All emotion colors are configurable without redeployment
+      - Emotions can be added; new emotions get default scores of null for existing tweets
+      - Emotions can be disabled (hidden from UI but data preserved)
+      - Attempting to rename an emotion triggers a clear error with guidance
+    </configuration>
+  </emotions_system>
+
+  <gauges_system>
+    <description>
+      Fun, engaging gauges that aggregate emotions into easy-to-understand metrics.
+      Each gauge maps to one or more emotions and displays on a spectrum with creative labels.
+      Gauges are fully configurable (names, labels, emotion mappings) without redeployment.
+    </description>
+    <default_gauges>
+      <gauge name="Anger Gauge">
+        <low_label>Chill</low_label>
+        <high_label>Angry</high_label>
+        <mapped_emotions>angry, frustrated, hatred</mapped_emotions>
+      </gauge>
+      <gauge name="Inspiration Gauge">
+        <low_label>Doomer</low_label>
+        <high_label>Kurzweilian</high_label>
+        <mapped_emotions>inspirational, hopeful, excited</mapped_emotions>
+      </gauge>
+      <gauge name="Gratitude Gauge">
+        <low_label>Entitled</low_label>
+        <high_label>Thankful</high_label>
+        <mapped_emotions>thankful</mapped_emotions>
+      </gauge>
+      <gauge name="Mood Gauge">
+        <low_label>Gloomy</low_label>
+        <high_label>Joyful</high_label>
+        <mapped_emotions>happy, sad (inverted)</mapped_emotions>
+      </gauge>
+      <gauge name="Intensity Gauge">
+        <low_label>Zen</low_label>
+        <high_label>Heated</high_label>
+        <mapped_emotions>angry, excited, anxious, frustrated</mapped_emotions>
+      </gauge>
+      <gauge name="Playfulness Gauge">
+        <low_label>Serious</low_label>
+        <high_label>Comedian</high_label>
+        <mapped_emotions>sarcastic, happy, excited</mapped_emotions>
+      </gauge>
+    </default_gauges>
+  </gauges_system>
+
+  <core_features>
+    <public_dashboard>
+      - Last updated timestamp prominently displayed
+      - "Average Twitter Feel" section showing aggregate gauges across all tracked users
+      - Individual gauges with creative labels and smooth animations
+      - Leaderboards for most/least of each emotion
+      - Grid/list of tracked influencers with summary emotion scores
+      - Time period selector (weekly, monthly, yearly, all-time)
+      - LLM model filter (filter by specific model or view combined scores)
+      - Dark/light mode toggle in header
+      - Responsive design for mobile, tablet, and desktop
+      - Rate limiting protection against abuse
+    </public_dashboard>
+
+    <user_detail_view>
+      - Twitter profile info (name, handle, avatar, bio)
+      - Aggregated emotion scores (average, median, most common, least common)
+      - Time-based trend charts showing emotion changes over time
+      - Time bucket selector (weekly, monthly, yearly)
+      - LLM model filter for sentiment views
+      - List of recent tweets with individual sentiment scores
+      - Click-through to tweet detail view
+      - Combined scores across all LLMs plus individual model breakdowns
+    </user_detail_view>
+
+    <tweet_detail_view>
+      - Full tweet content (stored locally)
+      - Tweet metadata (timestamp, engagement metrics if available)
+      - Color-coded emotion chart showing all emotion scores
+      - Which LLM model(s) generated the analysis
+      - Timestamp of when analysis was performed
+      - Model version tracking for transparency/paper trail
+      - Link back to original tweet on Twitter (if still available)
+    </tweet_detail_view>
+
+    <admin_dashboard>
+      - Protected by authentication
+      - Crawler status panel (running/idle, last run, next scheduled run)
+      - Singleton indicator (prevents duplicate crawler instances)
+      - User management (add/remove/edit tracked Twitter accounts)
+      - Pre-configured list of top influencers including Elon Musk
+      - Configurable number of tracked users (starting with 20)
+      - Crawl settings (interval in hours, rate limits, history depth in days)
+      - Default history depth: 90 days, configurable
+      - LLM settings panel with model management
+      - Force re-analyze button (individual tweets or bulk)
+      - S3 backup configuration (bucket, credentials, schedule)
+      - Theme settings (emotion colors, gauge configurations)
+      - Error reporting panel with Twitter API error logs
+      - Error rate charts over time (hourly/daily)
+      - Actionable guidance for common errors
+    </admin_dashboard>
+
+    <llm_model_management>
+      - Integration with Hugging Face Hub API for model discovery
+      - Browse available models with stats (downloads, likes, last updated)
+      - Filter by task type (sentiment analysis compatible)
+      - Show model requirements (VRAM, disk space estimates)
+      - Direct link to Hugging Face model card for details
+      - Download models with progress indicator and cancel option
+      - List installed models with enable/disable toggles
+      - Keep model data when disabled (just toggle active state)
+      - Easy model switching without restart
+      - Track which model version generated each analysis
+      - Starting recommendation: Latest Llama model from Meta
+    </llm_model_management>
+
+    <inference_providers>
+      - Local inference as default option
+      - Hugging Face Inference API integration (paid)
+      - Extensible interface for future providers (OpenAI, Anthropic, etc.)
+      - Per-model provider selection
+      - Enable/disable checkboxes for each configured provider
+      - Use multiple providers simultaneously if desired
+      - Clear documentation on cost/performance tradeoffs
+    </inference_providers>
+
+    <error_reporting>
+      - Twitter API error log with timestamps, error types, and details
+      - Error categorization (rate limits, auth issues, API changes, network)
+      - Error rate charts over time (hourly and daily views)
+      - Alerts/warnings when error rates spike
+      - Actionable guidance for each error type
+      - Clear resolution steps for common issues
+    </error_reporting>
+
+    <crawler_features>
+      - Rust-based for performance and reliability
+      - Configurable crawl interval (default: 1 hour)
+      - Singleton pattern (won't spawn new crawl if one is running)
+      - Smart scheduling (if crawl takes longer than interval, waits for completion)
+      - Configurable rate limits for Twitter API
+      - Configurable history depth (default: 90 days)
+      - Skip already-analyzed tweets (unless force re-analyze triggered)
+      - Store full tweet content and metadata locally
+      - Queue system for LLM analysis
+      - Multi-LLM support (analyze with multiple models)
+      - Graceful shutdown handling
+      - Resume capability after interruption
+    </crawler_features>
+
+    <aggregation_and_analytics>
+      - Pre-computed aggregation tables for fast queries
+      - Per-user emotion averages, medians, modes by time bucket
+      - Global "Average Twitter Feel" aggregations
+      - Leaderboard computations (most/least of each emotion)
+      - Time-series data for trend charts
+      - Combined scores across multiple LLM models
+      - Automatic rollup updates when new data arrives
+      - Index optimization for common query patterns
+    </aggregation_and_analytics>
+
+    <configuration_system>
+      - All user-facing labels configurable without redeployment
+      - Emotion colors, gauge names, axis labels all tweakable
+      - Configuration validation with clear error messages
+      - Detection and warning for potentially breaking changes (e.g., emotion rename attempts)
+      - Hot-reload capability for configuration changes
+      - Configuration versioning for audit trail
+      - Sensible defaults for all configurable values
+    </configuration_system>
+
+    <backup_and_persistence>
+      - Docker volumes for SQLite database and configurations
+      - Optional S3 backup with configurable schedule
+      - Backup progress indicator in admin dashboard
+      - Easy sync/restore from S3
+      - Configuration export/import functionality
+    </backup_and_persistence>
+  </core_features>
+
+  <database_schema>
+    <description>
+      SQLite database with abstracted storage layer for future extensibility.
+      Includes denormalized aggregation tables for fast dashboard queries.
+    </description>
+    <tables>
+      <twitter_users>
+        - id (primary key)
+        - twitter_id (unique, from Twitter API)
+        - username, display_name, bio, avatar_url
+        - follower_count, following_count
+        - is_active (for soft enable/disable)
+        - created_at, updated_at
+      </twitter_users>
+
+      <tweets>
+        - id (primary key)
+        - twitter_user_id (foreign key)
+        - tweet_id (unique, from Twitter API)
+        - content (full tweet text)
+        - tweet_timestamp
+        - engagement_metrics (likes, retweets, replies as JSON)
+        - is_retweet, is_reply
+        - created_at, updated_at
+      </tweets>
+
+      <sentiment_analyses>
+        - id (primary key)
+        - tweet_id (foreign key)
+        - llm_model_id (foreign key)
+        - emotion_scores (JSON object with all emotion scores)
+        - raw_llm_response (for debugging/transparency)
+        - analyzed_at
+        - analysis_duration_ms
+      </sentiment_analyses>
+
+      <llm_models>
+        - id (primary key)
+        - name, version, provider
+        - huggingface_model_id
+        - is_local (boolean)
+        - is_enabled (boolean)
+        - download_status (not_downloaded, downloading, ready, error)
+        - disk_size_bytes
+        - created_at, updated_at
+      </llm_models>
+
+      <user_aggregations>
+        - id (primary key)
+        - twitter_user_id (foreign key)
+        - llm_model_id (foreign key, nullable for combined)
+        - time_bucket (weekly, monthly, yearly, all_time)
+        - bucket_start_date
+        - emotion_averages (JSON)
+        - emotion_medians (JSON)
+        - emotion_modes (JSON)
+        - tweet_count
+        - computed_at
+      </user_aggregations>
+
+      <global_aggregations>
+        - id (primary key)
+        - llm_model_id (foreign key, nullable for combined)
+        - time_bucket
+        - bucket_start_date
+        - emotion_averages (JSON)
+        - gauge_values (JSON)
+        - computed_at
+      </global_aggregations>
+
+      <crawler_runs>
+        - id (primary key)
+        - started_at, completed_at
+        - status (running, completed, failed)
+        - tweets_fetched, tweets_analyzed
+        - errors_count
+        - error_details (JSON array)
+      </crawler_runs>
+
+      <api_errors>
+        - id (primary key)
+        - error_type (rate_limit, auth, network, api_change, other)
+        - error_message, error_code
+        - endpoint
+        - occurred_at
+        - resolved (boolean)
+      </api_errors>
+
+      <configurations>
+        - key (primary key)
+        - value (JSON)
+        - updated_at
+        - updated_by
+      </configurations>
+
+      <admin_users>
+        - id (primary key)
+        - username, password_hash
+        - last_login_at
+        - created_at
+      </admin_users>
+    </tables>
+
+    <indexes>
+      - tweets: twitter_user_id, tweet_timestamp
+      - sentiment_analyses: tweet_id, llm_model_id
+      - user_aggregations: twitter_user_id, time_bucket, bucket_start_date
+      - global_aggregations: time_bucket, bucket_start_date
+      - api_errors: error_type, occurred_at
+    </indexes>
+  </database_schema>
+
+  <api_endpoints_summary>
+    <public_api>
+      - GET /api/dashboard - Main dashboard data (gauges, leaderboards, last updated)
+      - GET /api/users - List tracked Twitter users with summary scores
+      - GET /api/users/:id - User detail with aggregations
+      - GET /api/users/:id/tweets - Paginated tweets for a user
+      - GET /api/tweets/:id - Tweet detail with sentiment breakdown
+      - GET /api/models - Available LLM models for filtering
+      - GET /api/aggregations - Time-series data for charts
+      - GET /api/leaderboards - Leaderboard data by emotion
+    </public_api>
+
+    <admin_api>
+      - POST /api/admin/login - Admin authentication
+      - POST /api/admin/logout - End admin session
+      - GET /api/admin/crawler/status - Crawler status and stats
+      - POST /api/admin/crawler/trigger - Manually trigger crawl
+      - GET /api/admin/users - Manage tracked users
+      - POST /api/admin/users - Add tracked user
+      - DELETE /api/admin/users/:id - Remove tracked user
+      - GET /api/admin/settings - All settings
+      - PUT /api/admin/settings - Update settings
+      - GET /api/admin/models - LLM model management
+      - POST /api/admin/models/download - Download a model from HF
+      - PUT /api/admin/models/:id - Enable/disable model
+      - POST /api/admin/reanalyze - Trigger re-analysis
+      - GET /api/admin/errors - API error logs
+      - GET /api/admin/errors/stats - Error rate statistics
+      - PUT /api/admin/theme - Update theme/colors
+      - GET /api/admin/backup/status - Backup status
+      - POST /api/admin/backup/trigger - Manual backup to S3
+    </admin_api>
+  </api_endpoints_summary>
+
+  <ui_layout>
+    <main_structure>
+      - Fixed header with logo, last updated timestamp, theme toggle
+      - Responsive navigation (sidebar on desktop, hamburger on mobile)
+      - Main content area with smooth transitions
+      - Footer with links and credits
+    </main_structure>
+
+    <public_pages>
+      - / (Dashboard): Gauges grid, "Average Twitter Feel", leaderboards, user grid
+      - /users/:id (User Detail): Profile header, aggregation cards, trend charts, tweet list
+      - /tweets/:id (Tweet Detail): Tweet card, emotion breakdown chart, model info
+    </public_pages>
+
+    <admin_pages>
+      - /admin (Dashboard): Crawler status, quick stats, recent errors
+      - /admin/users: Tracked user management table
+      - /admin/settings: Crawler, backup, general settings
+      - /admin/models: LLM model browser and management
+      - /admin/theme: Color and label configuration
+      - /admin/errors: Error logs and analytics
+    </admin_pages>
+  </ui_layout>
+
+  <design_system>
+    <color_palette>
+      <dark_mode>
+        - Background: Deep navy/charcoal (#0a0a0f to #1a1a2e)
+        - Surface: Slightly lighter (#16213e)
+        - Primary accent: Cyan/teal glow (#00d4ff)
+        - Secondary accent: Purple/violet (#7c3aed)
+        - Text: White/light gray (#ffffff, #e2e8f0)
+        - Success: Green (#22c55e)
+        - Warning: Amber (#f59e0b)
+        - Error: Red (#ef4444)
+      </dark_mode>
+      <light_mode>
+        - Background: Clean white/light gray (#ffffff, #f8fafc)
+        - Surface: White (#ffffff)
+        - Primary accent: Deep teal (#0891b2)
+        - Text: Dark gray (#1e293b)
+      </light_mode>
+      <emotion_colors>
+        - All configurable via admin dashboard
+        - Defaults as specified in emotions_system section
+      </emotion_colors>
+    </color_palette>
+
+    <typography>
+      - Font family: Inter or system fonts for performance
+      - Headings: Bold, clean, slightly futuristic feel
+      - Body: Regular weight, good readability
+      - Monospace: For technical/model info
+    </typography>
+
+    <visual_effects>
+      - Gentle glows on interactive elements
+      - Subtle gradients on gauges
+      - Smooth transitions and animations
+      - Card shadows with slight color tint
+      - Futuristic but not overwhelming
+    </visual_effects>
+  </design_system>
+
+  <implementation_steps>
+    <step number="1">
+      <title>Project Setup and Infrastructure</title>
+      <tasks>
+        - Initialize monorepo structure (frontend/, crawler/, shared/)
+        - Set up React + TypeScript + Vite for frontend
+        - Set up Rust project for crawler
+        - Configure Docker and Docker Compose
+        - Set up SQLite with migrations
+        - Implement storage abstraction layer
+        - Create shared configuration schema
+      </tasks>
+    </step>
+
+    <step number="2">
+      <title>Database and API Foundation</title>
+      <tasks>
+        - Implement all database tables and indexes
+        - Create Node.js/Express API server
+        - Implement public API endpoints
+        - Implement admin API endpoints with authentication
+        - Set up rate limiting middleware
+        - Create database seeding for initial data
+      </tasks>
+    </step>
+
+    <step number="3">
+      <title>Crawler Core</title>
+      <tasks>
+        - Implement Twitter API integration
+        - Build scheduler with singleton pattern
+        - Implement tweet fetching with rate limiting
+        - Create tweet storage logic
+        - Build configuration loading from database
+        - Implement error logging and reporting
+      </tasks>
+    </step>
+
+    <step number="4">
+      <title>LLM Integration</title>
+      <tasks>
+        - Implement Hugging Face Hub API integration
+        - Build model download and management system
+        - Create local inference runner
+        - Implement inference provider abstraction
+        - Build sentiment analysis pipeline
+        - Create emotion extraction prompts
+        - Implement multi-model analysis support
+      </tasks>
+    </step>
+
+    <step number="5">
+      <title>Public Frontend - Dashboard</title>
+      <tasks>
+        - Set up shadcn/ui and Tailwind
+        - Implement dark/light theme system
+        - Build header with last updated and theme toggle
+        - Create gauge components with animations
+        - Build leaderboard components
+        - Create user grid/list view
+        - Implement time period selector
+        - Implement LLM model filter
+      </tasks>
+    </step>
+
+    <step number="6">
+      <title>Public Frontend - Detail Views</title>
+      <tasks>
+        - Build user detail page with profile info
+        - Create aggregation cards
+        - Implement trend charts
+        - Build tweet list with pagination
+        - Create tweet detail page
+        - Build emotion breakdown charts
+        - Ensure responsive design throughout
+      </tasks>
+    </step>
+
+    <step number="7">
+      <title>Admin Dashboard</title>
+      <tasks>
+        - Implement admin authentication
+        - Build crawler status panel
+        - Create user management interface
+        - Build settings panels
+        - Implement LLM model browser and manager
+        - Create error logs viewer with charts
+        - Build theme/color configuration UI
+      </tasks>
+    </step>
+
+    <step number="8">
+      <title>Aggregation and Analytics</title>
+      <tasks>
+        - Implement aggregation computation jobs
+        - Build time-bucket rollups
+        - Create leaderboard calculations
+        - Implement combined multi-model scores
+        - Optimize queries with proper indexing
+      </tasks>
+    </step>
+
+    <step number="9">
+      <title>Configuration and Resilience</title>
+      <tasks>
+        - Implement hot-reload for configurations
+        - Build configuration validation
+        - Add clear error messages with guidance
+        - Implement emotion add/remove resilience
+        - Add gauge configuration management
+        - Create configuration export/import
+      </tasks>
+    </step>
+
+    <step number="10">
+      <title>Deployment and Documentation</title>
+      <tasks>
+        - Finalize Docker and Docker Compose setup
+        - Configure volumes for persistence
+        - Implement S3 backup functionality
+        - Write comprehensive deployment documentation
+        - Document all ports, environment variables, commands
+        - Create self-hosting guide
+        - Write API documentation
+      </tasks>
+    </step>
+  </implementation_steps>
+
+  <success_criteria>
+    <functionality>
+      - Crawler successfully fetches tweets from configured Twitter accounts
+      - LLM analyzes tweets and extracts emotion scores
+      - Public dashboard displays accurate, real-time aggregated data
+      - Admin can fully manage the system through the dashboard
+      - Multi-LLM support works with filtering and combined scores
+      - All time-based aggregations compute correctly
+    </functionality>
+
+    <user_experience>
+      - Public visitors can easily explore sentiment data
+      - Gauges are engaging and immediately understandable
+      - Navigation is intuitive on all device sizes
+      - Loading states provide clear feedback
+      - Errors are handled gracefully with helpful messages
+    </user_experience>
+
+    <technical_quality>
+      - Application deploys reliably via Docker
+      - Database can be easily backed up and restored
+      - Configuration changes don't require redeployment
+      - System is resilient to emotion/gauge changes
+      - Storage layer is abstracted for future changes
+      - Clear separation between crawler and frontend
+    </technical_quality>
+
+    <design_polish>
+      - Futuristic dark theme looks professional and engaging
+      - Animations are smooth and purposeful
+      - Mobile experience is fully functional
+      - Accessibility basics are covered
+      - Visual hierarchy guides users effectively
+    </design_polish>
+
+    <documentation>
+      - Self-hosting guide is complete and tested
+      - All configuration options are documented
+      - API endpoints are documented
+      - Common issues have troubleshooting guides
+      - Architecture decisions are explained
+    </documentation>
+  </success_criteria>
+</project_specification>

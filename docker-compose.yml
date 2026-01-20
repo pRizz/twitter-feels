@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://backend:3001
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - db-data:/app/data
+      - ./backend/.env:/app/.env:ro
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=/app/data/twitter_feels.db
+
+  crawler:
+    build:
+      context: ./crawler
+      dockerfile: ../docker/Dockerfile.crawler
+    volumes:
+      - db-data:/app/data
+      - ./crawler/.env:/app/.env:ro
+    depends_on:
+      - backend
+    environment:
+      - DATABASE_URL=/app/data/twitter_feels.db
+
+volumes:
+  db-data:
+    driver: local
