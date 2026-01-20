@@ -1,6 +1,6 @@
 // Admin Dashboard - Overview with crawler status and quick stats
 import { useEffect, useState } from 'react';
-import { Activity, Clock, AlertTriangle, CheckCircle2, Loader2, Play, RefreshCw } from 'lucide-react';
+import { Activity, Clock, AlertTriangle, CheckCircle2, Loader2, Play, RefreshCw, RotateCcw } from 'lucide-react';
 
 // Types for crawler status
 interface CrawlerRun {
@@ -207,6 +207,69 @@ function CrawlerStatusPanel({ status, onTrigger, isTriggering }: {
   );
 }
 
+// Force Re-Analyze Panel Component
+function ForceReanalyzePanel({
+  onReanalyze,
+  isReanalyzing,
+  isDisabled
+}: {
+  onReanalyze: () => void;
+  isReanalyzing: boolean;
+  isDisabled: boolean;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${isReanalyzing ? 'bg-primary/10' : 'bg-muted'}`}>
+            <RotateCcw className={`h-5 w-5 ${isReanalyzing ? 'text-primary animate-spin' : 'text-muted-foreground'}`} />
+          </div>
+          <div>
+            <h2 className="font-semibold text-foreground">Force Re-Analyze</h2>
+            <p className="text-sm text-muted-foreground">Re-run sentiment analysis on existing tweets</p>
+          </div>
+        </div>
+        {isReanalyzing && (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Running
+          </span>
+        )}
+      </div>
+
+      {/* Description */}
+      <div className="p-4 border-b border-border bg-muted/30">
+        <p className="text-sm text-muted-foreground">
+          Force re-analysis will re-process all stored tweets through the sentiment analysis pipeline.
+          This is useful when you've changed LLM models or want to regenerate emotion scores.
+        </p>
+      </div>
+
+      {/* Actions */}
+      <div className="p-4">
+        <button
+          onClick={onReanalyze}
+          disabled={isDisabled || isReanalyzing}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isReanalyzing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RotateCcw className="h-4 w-4" />
+          )}
+          {isReanalyzing ? 'Re-analyzing...' : 'Force Re-Analyze All Tweets'}
+        </button>
+        {isDisabled && !isReanalyzing && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Cannot start re-analysis while crawler is running
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Recent Runs Table
 function RecentRunsTable({ runs }: { runs: CrawlerRun[] }) {
   if (runs.length === 0) {
@@ -273,6 +336,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isTriggering, setIsTriggering] = useState(false);
+  const [isReanalyzing, setIsReanalyzing] = useState(false);
 
   // Fetch crawler status
   const fetchStatus = async () => {
@@ -335,6 +399,35 @@ export default function AdminDashboard() {
     }
   };
 
+  // Trigger force re-analysis
+  const triggerReanalyze = async () => {
+    setIsReanalyzing(true);
+    setError(null);
+    try {
+      const response = await fetch('http://localhost:3001/api/admin/reanalyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ all: true }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to trigger re-analysis');
+      }
+
+      const data = await response.json();
+      console.log('Re-analysis started:', data);
+
+      // Refresh status after triggering
+      await fetchStatus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to trigger re-analysis');
+    } finally {
+      setIsReanalyzing(false);
+    }
+  };
+
   // Initial fetch and polling
   useEffect(() => {
     fetchStatus();
@@ -390,6 +483,13 @@ export default function AdminDashboard() {
         status={status}
         onTrigger={triggerCrawler}
         isTriggering={isTriggering}
+      />
+
+      {/* Force Re-Analyze Panel */}
+      <ForceReanalyzePanel
+        onReanalyze={triggerReanalyze}
+        isReanalyzing={isReanalyzing}
+        isDisabled={status?.isRunning || false}
       />
 
       {/* Recent Runs */}

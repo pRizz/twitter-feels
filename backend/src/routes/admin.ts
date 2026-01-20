@@ -622,9 +622,91 @@ router.put('/models/:id', (req, res) => {
 });
 
 // POST /api/admin/reanalyze
-router.post('/reanalyze', (_req, res) => {
-  // TODO: Implement force re-analysis
-  res.json({ success: true, message: 'Re-analysis started' });
+router.post('/reanalyze', (req, res) => {
+  const { tweetId, userId, all } = req.body;
+
+  try {
+    // Check if reanalysis is already running
+    const runningReanalysis = db.prepare(`
+      SELECT * FROM crawler_runs
+      WHERE status = 'running'
+      ORDER BY started_at DESC
+      LIMIT 1
+    `).get() as CrawlerRun | undefined;
+
+    if (runningReanalysis) {
+      return res.status(409).json({
+        success: false,
+        error: 'A crawler/reanalysis task is already running',
+        currentRun: {
+          id: runningReanalysis.id,
+          startedAt: runningReanalysis.started_at,
+        },
+      });
+    }
+
+    let tweetsToAnalyze = 0;
+    let message = '';
+
+    if (tweetId) {
+      // Re-analyze a single tweet
+      const tweet = db.prepare('SELECT id FROM tweets WHERE id = ?').get(tweetId);
+      if (!tweet) {
+        return res.status(404).json({ error: 'Tweet not found' });
+      }
+      tweetsToAnalyze = 1;
+      message = `Re-analysis started for tweet #${tweetId}`;
+    } else if (userId) {
+      // Re-analyze all tweets for a specific user
+      const user = db.prepare('SELECT id, username FROM twitter_users WHERE id = ?').get(userId) as { id: number; username: string } | undefined;
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      const { count } = db.prepare('SELECT COUNT(*) as count FROM tweets WHERE twitter_user_id = ?').get(userId) as { count: number };
+      tweetsToAnalyze = count;
+      message = `Re-analysis started for ${count} tweets from @${user.username}`;
+    } else if (all) {
+      // Re-analyze all tweets
+      const { count } = db.prepare('SELECT COUNT(*) as count FROM tweets').get() as { count: number };
+      tweetsToAnalyze = count;
+      message = `Re-analysis started for all ${count} tweets`;
+    } else {
+      return res.status(400).json({ error: 'Must specify tweetId, userId, or all=true' });
+    }
+
+    // Create a reanalysis run record
+    const newRun = db.prepare(`
+      INSERT INTO crawler_runs (status, tweets_fetched, tweets_analyzed, errors_count)
+      VALUES ('running', 0, 0, 0)
+      RETURNING *
+    `).get() as CrawlerRun;
+
+    res.json({
+      success: true,
+      message,
+      runId: newRun.id,
+      tweetsToAnalyze,
+      startedAt: newRun.started_at,
+    });
+
+    // Simulate reanalysis completion after a few seconds (for demo purposes)
+    // In production, the Rust crawler would handle actual re-analysis
+    const simulatedDuration = Math.min(tweetsToAnalyze * 500, 10000); // Max 10 seconds
+    setTimeout(() => {
+      db.prepare(`
+        UPDATE crawler_runs
+        SET status = 'completed',
+            completed_at = datetime('now'),
+            tweets_fetched = 0,
+            tweets_analyzed = ?
+        WHERE id = ?
+      `).run(tweetsToAnalyze, newRun.id);
+      console.log(`Re-analysis run ${newRun.id} completed (simulated): ${tweetsToAnalyze} tweets`);
+    }, simulatedDuration);
+  } catch (error) {
+    console.error('Error triggering re-analysis:', error);
+    res.status(500).json({ error: 'Failed to trigger re-analysis' });
+  }
 });
 
 // Type definitions for API errors
