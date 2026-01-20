@@ -3205,3 +3205,49 @@ Sort functionality already implemented in backend:
 - All four filters (time period, model, sort by, sort order) sync with URL
 - Works with direct URL navigation (deep linking supported)
 - Feature also enables Feature #118 (URL with filters works)
+
+
+---
+
+## Session - Feature #112 - 2026-01-20
+
+### Feature #112: Browser back maintains state (COMPLETED)
+- **Status**: PASSING
+- **Description**: Using back button preserves previous state
+
+### Verification Steps Completed:
+1. Navigate to dashboard with filters - ✅ Applied "All Time" time filter and "Name" sort
+   - URL: http://localhost:5173/?period=all_time&sortBy=name
+   - Screenshot: .playwright-mcp/feature112-dashboard-with-filters.png
+2. Click on user detail - ✅ Clicked on Elon Musk user card
+   - Navigated to /users/1
+   - Screenshot: .playwright-mcp/feature112-user-detail-page.png
+3. Press browser back - ✅ Used browser back button
+   - URL restored to: http://localhost:5173/?period=all_time&sortBy=name
+4. Verify filters still applied - ✅ All filters preserved:
+   - "All Time" button visually active (cyan highlight)
+   - "Name" sort selected in dropdown
+   - Users in Z→A order: Sam Altman, Naval, Elon Musk, Bill Gates, Barack Obama
+   - Gauges show data (not 0 values like Weekly filter would show)
+   - Leaderboards have entries
+   - Screenshot: .playwright-mcp/feature112-after-back-navigation.png
+   - Screenshot: .playwright-mcp/feature112-after-back-users-list.png
+
+### Implementation Details:
+- Feature was already fully implemented via Feature #111 (URL state management)
+- Browser back works because filters are stored in URL query parameters
+- React Router preserves navigation history with full URL including query params
+- No additional code changes needed - verification only
+
+### Console Errors:
+- No JavaScript errors
+- Only external Twitter CDN 404s (profile images from Twitter - unrelated to feature)
+
+### Current Progress:
+- Features passing: 52/235 (~22.1%)
+- Feature #112 marked as passing
+
+### Notes:
+- This feature works as a direct consequence of Feature #111 implementation
+- URL-based state management ensures browser navigation preserves filters
+- Both back button and refresh work correctly with the same implementation
