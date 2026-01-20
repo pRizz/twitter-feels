@@ -948,3 +948,121 @@ From 3 sample sentiment analyses in database:
 - Gauges config stored under key 'gauges'
 - No console errors detected
 - Page styled consistently with other admin pages
+
+---
+
+## Session - 2026-01-20
+
+### Feature #54: Admin can add tracked Twitter user (COMPLETED)
+- **Status**: PASSING
+- **Description**: Admin can add a new Twitter account to track
+
+### Implementation Details:
+Feature was already implemented. This session verified the functionality end-to-end.
+
+1. **Frontend (admin/Users.tsx)**:
+   - Add User button opens add form
+   - Form has Twitter Handle (required) and Display Name (optional) fields
+   - Submit button disabled until handle entered
+   - Form closes on successful add
+   - Error message shown for duplicate users
+   - Stats update automatically
+
+2. **Backend (admin.ts)**:
+   - POST /api/admin/users endpoint
+   - Validates handle is provided
+   - Checks for duplicate users (returns 409 Conflict)
+   - Creates new user with mock Twitter ID
+   - Returns success with user details
+
+### Verification Steps Completed:
+1. Log in as admin - ✅
+2. Navigate to /admin/users - ✅
+3. Click 'Add User' button - ✅ Form appears
+4. Enter Twitter handle (@testuser_feature54) - ✅
+5. Enter display name (Test User Feature54) - ✅
+6. Submit the form - ✅
+7. Verify user appears in the list - ✅ New row with correct data
+8. Verify stats update (5→6 Total Tracked, 5→6 Active) - ✅
+9. Verify data persists after page refresh - ✅
+10. Verify duplicate user rejected with error - ✅ "User is already being tracked"
+
+### Additional Testing:
+- Delete confirmation dialog works
+- User successfully deleted after test
+- No JavaScript errors (only external Twitter CDN 404)
+
+### Screenshots:
+- `.playwright-mcp/feature54-user-added-success.png` - Stats showing 6 users after add
+- `.playwright-mcp/feature54-new-user-visible.png` - New user visible in table
+- `.playwright-mcp/feature54-duplicate-user-rejected.png` - Error message for duplicate
+
+### Current Progress:
+- Features passing: 17/235 (~7.2%)
+- Feature #54 marked as passing
+- This unblocks: Feature #55 (Admin can remove tracked Twitter user)
+
+### Notes:
+- Feature was already fully implemented by previous sessions
+- This session verified end-to-end functionality through browser automation
+- All verification steps passed
+- No code changes required
+[Testing] 2026-01-20 13:06:33 - Feature #2 regression test PASSED - API server responds to health check:
+- Direct curl to /api/health returns: {"status":"ok","timestamp":"..."}
+- Response status: 200 OK
+- Network requests show API calls succeeding: /api/dashboard (200 OK)
+- Frontend successfully loads and displays data from backend
+- Only error: External Twitter image 404 (not our bug)
+- Screenshot: .playwright-mcp/.playwright-mcp/feature2-api-health-regression-test.png
+
+---
+
+## Session 14 - 2026-01-20
+
+### Feature #78: Admin can trigger crawler manually (COMPLETED)
+- **Status**: PASSING
+- **Description**: Admin can start a crawl outside the schedule
+
+### Verification Steps Completed:
+1. Log in as admin - ✅ Successfully logged in via /admin/login
+2. Navigate to admin dashboard - ✅ Dashboard loads at /admin
+3. Locate "Run Now" button - ✅ Visible in Crawler Status panel with Play icon (cyan color)
+4. Click "Run Now" button - ✅ Crawler started successfully
+5. Verify crawler status changes to "running" - ✅ Status badge shows "Running" with spinning loader
+6. Verify "Run Now" button is disabled while running - ✅ Button is disabled (prevents duplicate triggers)
+7. Wait for crawler to complete (~5 seconds) - ✅ Status returns to "Idle"
+8. Verify new run appears in recent runs - ✅ New entry in Recent Runs table with "Completed" status
+
+### Implementation Details (Already Implemented):
+
+**Backend (admin.ts - lines 170-227):**
+- POST /api/admin/crawler/trigger endpoint
+- Checks if crawler is already running (returns 409 Conflict if so)
+- Creates new crawler_runs record with status='running'
+- Simulates completion after 5 seconds (for demo)
+- Updates record with completed status and random tweet counts
+
+**Frontend (admin/Dashboard.tsx):**
+- CrawlerStatusPanel component shows crawler state
+- "Run Now" button with Play icon
+- Button disabled when crawler is running or triggering
+- Status badge shows Running/Idle with appropriate icons
+- Recent Runs table shows history of crawler runs
+- Auto-refresh every 30 seconds
+
+### Screenshots:
+- `.playwright-mcp/feature78-admin-dashboard-crawler-status.png` - Initial idle state
+- `.playwright-mcp/feature78-crawler-running.png` - Crawler running state (button disabled, spinner)
+- `.playwright-mcp/feature78-crawler-completed.png` - After crawler completes
+
+### Current Progress:
+- Features passing: 18/235 (~7.7%)
+- Feature #78 marked as passing
+- This unblocks: Feature #79 (Singleton prevents duplicate crawlers), Feature #86 (New analysis appears after crawler runs)
+
+### Notes:
+- No code changes required - feature was already fully implemented
+- Crawler simulation runs for 5 seconds (in production, real Rust crawler would update the record)
+- Button correctly disables during crawl to prevent duplicate triggers
+- Status updates in real-time with polling
+- No console errors detected
