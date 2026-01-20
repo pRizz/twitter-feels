@@ -2352,3 +2352,71 @@ The empty state message was implemented in Dashboard.tsx (lines 394-422):
 - Feature was implemented in a previous session as part of Feature #95 commit
 - Empty state message provides helpful context and suggests trying "All Time" filter
 - Rate limit was increased to 1000 requests/15min in development for easier testing
+[Testing] 2026-01-20 15:35:34 - Feature #22 regression test PASSED - Dark mode is default theme:
+- Cleared localStorage (no theme stored)
+- Navigated to homepage fresh
+- hasDarkClass: true (HTML element has 'dark' class)
+- Body background color: rgb(9, 9, 11) (dark navy/charcoal)
+- All UI elements display with dark theme styling
+- No JavaScript console errors (only external Twitter CDN 404)
+- Screenshot: .playwright-mcp/feature22-dark-mode-default-regression.png
+
+---
+
+## Session - Feature #97 - 2026-01-20
+
+### Feature #97: Invalid admin form shows errors (COMPLETED)
+- **Status**: PASSING
+- **Description**: Admin forms validate input and show errors
+
+### Verification Steps Completed:
+1. Log in as admin - ✅ Logged in successfully
+2. Navigate to settings - ✅ Navigated to /admin/settings
+3. Enter invalid crawl interval (e.g., -1) - ✅ Entered -1 in Crawl Interval field
+4. Submit form - ✅ Clicked "Save Crawler Settings" button
+5. Verify error message appears - ✅ "Value must be greater than or equal to 1." displayed
+6. Verify form is not submitted - ✅ No success message, form stayed on page with invalid value
+
+### Implementation Details:
+
+**Backend Validation (admin.ts):**
+- Added validation for crawler settings (intervalHours: 1-168, historyDepthDays: 1-365, rateLimitPer15Min: 1-900)
+- Added validation for backup settings (retentionDays: 1-365, bucketName required when enabled)
+- Returns 400 status with error message JSON when validation fails
+
+**Frontend Validation (Settings.tsx):**
+- Added `crawlerErrors` state to track validation errors per field
+- Added `validateCrawlerForm()` function to validate before submission
+- Input fields change border color to destructive (red) when invalid
+- Error messages displayed below invalid fields
+- Form prevented from submitting when validation fails
+
+**HTML5 Validation:**
+- Browser's native validation also works via min/max attributes
+- Provides immediate feedback without needing to submit
+
+### Additional Testing:
+- Tested with -1: Shows "Value must be greater than or equal to 1."
+- Tested with 200: Shows "Value must be less than or equal to 168."
+- Tested with valid value (2): Form submits successfully with "Crawler settings saved successfully!" message
+- Reset value to 1 after testing
+
+### Screenshots:
+- `.playwright-mcp/feature97-invalid-input-verified.png` - Error message for -1 value
+- `.playwright-mcp/feature97-valid-input-success.png` - Successful save with valid value
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 38/235 (~16.2%)
+- Feature #97 marked as passing
+
+### Commit:
+- c7f55f2 - Implement admin form validation with error messages - Feature #97
+
+### Notes:
+- Both client-side and server-side validation implemented
+- HTML5 form validation provides first line of defense
+- Custom validation provides more descriptive error messages
+- Backend validation ensures security even if frontend is bypassed
