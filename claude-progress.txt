@@ -4976,3 +4976,76 @@ Added "Clear Filters" functionality to the Dashboard page:
 - The time filter on the tweet list is separate from the EmotionTrends chart time bucket
 - This allows users to independently filter tweets by time period
 - The implementation follows the same pattern as the Dashboard time filter
+[Testing] 2026-01-20 - Feature #95 regression test PASSED - Empty user tweets shows message:
+- Navigated to user detail page for Elon Musk (id: 28) who has 0 tweets
+- Verified 'No tweets have been analyzed yet for this user' message displayed
+- Emotion Averages shows: 'No sentiment analysis data available yet'
+- Emotion Trends shows: 'Not enough data to display trends'
+- Recent Tweets heading shows '(0 tweets)' count
+- UI intact with all sections properly displayed
+- No JavaScript console errors
+- Screenshot: feature95-empty-tweets-message.png
+[Testing] Session complete - verified feature #95 (Empty user tweets shows message) - still passing
+[Testing] 2026-01-20 - Feature #107 regression test PASSED - Filter and sort work together:
+- Navigated to dashboard
+- Applied Weekly time filter - gauge values: Anger 22, Inspiration 30, Gratitude 32, Mood 69, Intensity 27, Playfulness 42
+- Changed sort to 'Name' - URL updated to ?sortBy=name, data remained Weekly
+- Changed filter to 'All Time' - data changed (Anger 19, Inspiration 37, etc.), sort preserved
+- Changed back to 'Weekly' - data reverted to Weekly values
+- Changed sort to 'Emotion Score' - data remained Weekly, URL: ?sortBy=score
+- All combinations of filter + sort work correctly together
+- No console errors
+- Screenshots: feature107-initial-dashboard.png, feature107-weekly-sort-name.png, feature107-weekly-sort-emotion-score.png
+[Testing] Session complete - verified feature #107 (Filter and sort work together) - still passing
+
+
+---
+
+## Session - Feature #139 - 2026-01-20
+
+### Feature #139: Search special characters handled (COMPLETED)
+- **Status**: PASSING
+- **Category**: L-SearchFilter
+- **Description**: Special characters in search do not crash
+
+### Verification Steps Completed:
+
+1. **Enter special chars \!@#$% in search** - PASSED
+   - Navigated to http://localhost:5173
+   - Typed "\!@#$%" in the search box
+   - Application handled input gracefully
+
+2. **Verify no errors** - PASSED
+   - No JavaScript console errors
+   - No crash or unresponsive UI
+   - Page remains functional
+
+3. **Verify sensible results (none or filtered)** - PASSED
+   - Message displayed: No users found matching "\!@#$%". Try a different search term.
+   - Clear Filters button appeared correctly
+   - Clicking Clear Filters restored all users
+
+### Additional Edge Cases Tested:
+- Regex special characters (.*+?^${}()|[]\): Handled gracefully
+- Emojis and Unicode: Handled gracefully
+- All cases showed appropriate "No users found" message without errors
+
+### Screenshots:
+- feature139-special-chars-search.png - Special chars in search
+- feature139-special-chars-no-users-message.png - No users message displayed
+- feature139-regex-special-chars.png - Regex characters handled
+- feature139-unicode-emojis-search.png - Unicode/emoji characters handled
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 80/235 (~34.0%)
+- Feature #139 marked as passing
+
+### Notes:
+- No code changes required - feature was already properly implemented
+- Search filtering uses simple string matching (includes/toLowerCase)
+- Special characters are not interpreted as regex, just plain text matching
+- This ensures no regex injection vulnerabilities in search
+

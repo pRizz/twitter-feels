@@ -661,6 +661,7 @@ export default function Dashboard() {
                   placeholder="Search users..."
                   value={userSearchQuery}
                   onChange={(e) => setUserSearchQuery(e.target.value)}
+                  maxLength={200}
                   className="w-full sm:w-64 px-4 py-2 pl-10 bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-cyan/50 focus:border-primary-cyan"
                   aria-label="Search users by name or handle"
                 />
@@ -705,10 +706,14 @@ export default function Dashboard() {
               }
 
               if (filteredUsers.length === 0) {
+                // Truncate very long search queries in the display message
+                const displayQuery = userSearchQuery.length > 50
+                  ? userSearchQuery.substring(0, 50) + '...'
+                  : userSearchQuery;
                 return (
                   <div className="bg-card rounded-lg p-8 border border-border text-center">
-                    <p className="text-muted-foreground">
-                      No users found matching "{userSearchQuery}". Try a different search term.
+                    <p className="text-muted-foreground break-words">
+                      No users found matching "{displayQuery}". Try a different search term.
                     </p>
                   </div>
                 );
