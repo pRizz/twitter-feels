@@ -98,6 +98,27 @@ export default function AdminSettings() {
     rateLimitPer15Min?: string;
   }>({});
 
+  // Validation error state for backup form
+  const [backupErrors, setBackupErrors] = useState<{
+    bucketName?: string;
+    retentionDays?: string;
+  }>({});
+
+  // Password change form state
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [passwordErrors, setPasswordErrors] = useState<{
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
   // Track initial values for dirty state detection
   const [initialCrawlerForm, setInitialCrawlerForm] = useState({
     intervalHours: 1,
@@ -222,6 +243,191 @@ export default function AdminSettings() {
     return isValid;
   };
 
+  // Validate S3 bucket name according to AWS naming rules
+  const validateBucketName = (name: string): string | undefined => {
+    if (!name || name.trim() === '') {
+      return 'Bucket name is required';
+    }
+
+    const trimmedName = name.trim();
+
+    // Length check: 3-63 characters
+    if (trimmedName.length < 3) {
+      return 'Bucket name must be at least 3 characters';
+    }
+    if (trimmedName.length > 63) {
+      return 'Bucket name must be at most 63 characters';
+    }
+
+    // Must start with a lowercase letter or number
+    if (!/^[a-z0-9]/.test(trimmedName)) {
+      return 'Bucket name must start with a lowercase letter or number';
+    }
+
+    // Must end with a lowercase letter or number
+    if (!/[a-z0-9]$/.test(trimmedName)) {
+      return 'Bucket name must end with a lowercase letter or number';
+    }
+
+    // Can only contain lowercase letters, numbers, hyphens, and periods
+    if (!/^[a-z0-9.-]+$/.test(trimmedName)) {
+      return 'Bucket name can only contain lowercase letters, numbers, hyphens, and periods';
+    }
+
+    // Cannot contain consecutive periods
+    if (/\.\./.test(trimmedName)) {
+      return 'Bucket name cannot contain consecutive periods';
+    }
+
+    // Cannot be formatted as an IP address (e.g., 192.168.1.1)
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(trimmedName)) {
+      return 'Bucket name cannot be formatted as an IP address';
+    }
+
+    return undefined; // Valid
+  };
+
+  // Validate backup form and return errors
+  const validateBackupForm = (): boolean => {
+    const errors: typeof backupErrors = {};
+    let isValid = true;
+
+    // Only validate if backup is enabled
+    if (backupForm.enabled) {
+      // Validate bucket name
+      const bucketError = validateBucketName(backupForm.bucketName);
+      if (bucketError) {
+        errors.bucketName = bucketError;
+        isValid = false;
+      }
+
+      // Validate retention days
+      if (backupForm.retentionDays < 1 || backupForm.retentionDays > 365) {
+        errors.retentionDays = 'Must be between 1 and 365 days';
+        isValid = false;
+      }
+    }
+
+    setBackupErrors(errors);
+    return isValid;
+  };
+
+  // Validate password complexity
+  const validatePasswordComplexity = (password: string): string[] => {
+    const errors: string[] = [];
+
+    // Minimum 12 characters
+    if (password.length < 12) {
+      errors.push('Must be at least 12 characters');
+    }
+
+    // Must contain at least one uppercase letter
+    if (!/[A-Z]/.test(password)) {
+      errors.push('Must contain an uppercase letter');
+    }
+
+    // Must contain at least one lowercase letter
+    if (!/[a-z]/.test(password)) {
+      errors.push('Must contain a lowercase letter');
+    }
+
+    // Must contain at least one number
+    if (!/[0-9]/.test(password)) {
+      errors.push('Must contain a number');
+    }
+
+    // Must contain at least one special character
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      errors.push('Must contain a special character');
+    }
+
+    return errors;
+  };
+
+  // Validate password form and return errors
+  const validatePasswordForm = (): boolean => {
+    const errors: typeof passwordErrors = {};
+    let isValid = true;
+
+    // Validate current password (required)
+    if (!passwordForm.currentPassword) {
+      errors.currentPassword = 'Current password is required';
+      isValid = false;
+    }
+
+    // Validate new password complexity
+    if (!passwordForm.newPassword) {
+      errors.newPassword = 'New password is required';
+      isValid = false;
+    } else {
+      const complexityErrors = validatePasswordComplexity(passwordForm.newPassword);
+      if (complexityErrors.length > 0) {
+        errors.newPassword = complexityErrors.join(', ');
+        isValid = false;
+      }
+    }
+
+    // Validate password confirmation
+    if (!passwordForm.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your new password';
+      isValid = false;
+    } else if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+      isValid = false;
+    }
+
+    setPasswordErrors(errors);
+    return isValid;
+  };
+
+  // Handle password change submission
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    // Validate form before submitting
+    if (!validatePasswordForm()) {
+      return; // Form is invalid, don't submit
+    }
+
+    setPasswordSaving(true);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/admin/change-password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(passwordForm),
+      });
+
+      if (response.status === 401) {
+        navigate('/admin/login');
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to change password');
+      }
+
+      // Success - reset form and show message
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setPasswordErrors({});
+      setPasswordSuccess('Password changed successfully!');
+      setTimeout(() => setPasswordSuccess(null), 5000);
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'Failed to change password');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   const handleSaveCrawler = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -265,9 +471,15 @@ export default function AdminSettings() {
 
   const handleSaveBackup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
     setError(null);
     setSuccessMessage(null);
+
+    // Validate form before submitting
+    if (!validateBackupForm()) {
+      return; // Form is invalid, don't submit
+    }
+
+    setSaving(true);
 
     try {
       const payload = {
@@ -321,6 +533,7 @@ export default function AdminSettings() {
   // Reset backup settings to defaults
   const handleResetBackup = () => {
     setBackupForm({ ...DEFAULT_BACKUP_SETTINGS });
+    setBackupErrors({});
     setError(null);
     setSuccessMessage(null);
   };
@@ -543,14 +756,25 @@ export default function AdminSettings() {
               <input
                 type="text"
                 value={backupForm.bucketName}
-                onChange={(e) => setBackupForm({ ...backupForm, bucketName: e.target.value })}
+                onChange={(e) => {
+                  setBackupForm({ ...backupForm, bucketName: e.target.value });
+                  setBackupErrors({ ...backupErrors, bucketName: undefined });
+                }}
                 placeholder="my-twitter-feels-backups"
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className={`w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  backupErrors.bucketName ? 'border-destructive' : 'border-border'
+                }`}
                 disabled={!backupForm.enabled}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                The name of your S3 bucket (must already exist)
-              </p>
+              {backupErrors.bucketName ? (
+                <p className="text-xs text-destructive mt-1">
+                  {backupErrors.bucketName}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">
+                  The name of your S3 bucket (must already exist)
+                </p>
+              )}
             </div>
 
             {/* Region */}
@@ -685,6 +909,126 @@ export default function AdminSettings() {
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Backup Settings'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Change Password Section */}
+      <div className="bg-card border border-border rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+            <span className="text-xl">🔐</span>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Change Password</h2>
+            <p className="text-sm text-muted-foreground">
+              Update your admin account password
+            </p>
+          </div>
+        </div>
+
+        {/* Password Success Message */}
+        {passwordSuccess && (
+          <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-500">
+            {passwordSuccess}
+          </div>
+        )}
+
+        {/* Password Error Message */}
+        {passwordError && (
+          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
+            {passwordError}
+            <button
+              onClick={() => setPasswordError(null)}
+              className="ml-4 text-sm underline hover:no-underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Current Password <span className="text-destructive">*</span>
+            </label>
+            <input
+              type="password"
+              value={passwordForm.currentPassword}
+              onChange={(e) => {
+                setPasswordForm({ ...passwordForm, currentPassword: e.target.value });
+                setPasswordErrors({ ...passwordErrors, currentPassword: undefined });
+              }}
+              placeholder="Enter your current password"
+              className={`w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                passwordErrors.currentPassword ? 'border-destructive' : 'border-border'
+              }`}
+            />
+            {passwordErrors.currentPassword && (
+              <p className="text-xs text-destructive mt-1">
+                {passwordErrors.currentPassword}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              New Password <span className="text-destructive">*</span>
+            </label>
+            <input
+              type="password"
+              value={passwordForm.newPassword}
+              onChange={(e) => {
+                setPasswordForm({ ...passwordForm, newPassword: e.target.value });
+                setPasswordErrors({ ...passwordErrors, newPassword: undefined });
+              }}
+              placeholder="Enter your new password"
+              className={`w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                passwordErrors.newPassword ? 'border-destructive' : 'border-border'
+              }`}
+            />
+            {passwordErrors.newPassword ? (
+              <p className="text-xs text-destructive mt-1">
+                {passwordErrors.newPassword}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">
+                Minimum 12 characters with uppercase, lowercase, number, and special character
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Confirm New Password <span className="text-destructive">*</span>
+            </label>
+            <input
+              type="password"
+              value={passwordForm.confirmPassword}
+              onChange={(e) => {
+                setPasswordForm({ ...passwordForm, confirmPassword: e.target.value });
+                setPasswordErrors({ ...passwordErrors, confirmPassword: undefined });
+              }}
+              placeholder="Confirm your new password"
+              className={`w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                passwordErrors.confirmPassword ? 'border-destructive' : 'border-border'
+              }`}
+            />
+            {passwordErrors.confirmPassword && (
+              <p className="text-xs text-destructive mt-1">
+                {passwordErrors.confirmPassword}
+              </p>
+            )}
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={passwordSaving}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {passwordSaving ? 'Changing Password...' : 'Change Password'}
             </button>
           </div>
         </form>
