@@ -3560,3 +3560,142 @@ This handles:
 - No JavaScript console errors
 - Screenshot: feature61-regression-models-page.png
 [Testing] Session complete - verified feature #61 (Admin can browse Hugging Face models) - still passing
+
+---
+
+## Session - Feature #118 - 2026-01-20
+
+### Feature #118: URL with filters works (COMPLETED)
+- **Status**: PASSING
+- **Description**: Dashboard URL with query params applies filters
+
+### Verification Steps Completed:
+1. Navigate to dashboard with filters - ✅ Tested multiple URL combinations
+2. Copy URL with query params - ✅ URLs work as expected
+3. Open new tab and paste URL - ✅ Direct navigation works
+4. Verify filters are applied - ✅ All filters apply correctly on load
+
+### URLs Tested:
+1. `?period=all_time&model=5&sortBy=name&sortOrder=asc`
+   - "All Time" button highlighted
+   - Model dropdown shows "Emotion English DistilRoBERTa (base)"
+   - Sort dropdown shows "Name"
+   - Sort order ascending (A-Z users)
+   
+2. `?period=monthly&sortBy=score&sortOrder=desc`
+   - "Monthly" button highlighted
+   - Sort dropdown shows "Emotion Score"
+   - Sort order descending
+
+3. `?period=invalid_period&sortBy=invalid_sort&sortOrder=invalid_order`
+   - Graceful fallback to defaults
+   - No JavaScript errors
+
+### Implementation Details:
+- Feature was already implemented in Feature #111 via URL state management
+- Dashboard.tsx uses useSearchParams from react-router-dom
+- URL parameters: period, model, sortBy, sortOrder
+- Invalid values fall back to defaults (weekly, combined, followers, desc)
+
+### Screenshots:
+- `.playwright-mcp/feature118-url-with-filters-applied.png` - All filters applied via URL
+- `.playwright-mcp/feature118-users-sorted-az.png` - Users sorted A-Z
+- `.playwright-mcp/feature118-monthly-score-desc.png` - Monthly + score sort
+- `.playwright-mcp/feature118-invalid-params-fallback.png` - Invalid params fallback
+- `.playwright-mcp/feature118-all-time-with-data.png` - All Time with real data
+
+### Console Errors:
+- No JavaScript errors
+- Only external Twitter CDN 404s (profile images - unrelated to feature)
+
+### Current Progress:
+- Features passing: 58/235 (~24.7%)
+- Feature #118 marked as passing
+
+### Commit:
+- 3e71e05 - Verify Feature #118: URL with filters works
+
+### Notes:
+- Deep linking fully functional with all filter parameters
+- URL state persists across page refresh (Feature #111)
+- Browser back button preserves filter state (Feature #112)
+- Feature enables sharing dashboard views with specific filters
+[Testing] 2026-01-20 - Feature #80 regression test PASSED - Dashboard shows real aggregated data:
+- Queried /api/dashboard endpoint for expected values
+- Navigated to dashboard and selected 'All Time' filter
+- Verified all 6 gauges match API values: Anger(23), Inspiration(43), Gratitude(23), Mood(62), Intensity(31), Playfulness(30)
+- Verified stats: 5 Tracked Users, 27 Tweets Analyzed, 6 Sentiment Analyses
+- Verified all 6 leaderboards (happy, sad, angry, fearful, hatred, thankful) match API data
+- Verified user top emotions: elonmusk(excited:44), BillGates(inspirational:62)
+- Only console errors: External Twitter CDN 404s (unrelated to feature)
+- Screenshot: feature80-regression-dashboard-data.png
+[Testing] Session complete - verified feature #80 (Dashboard shows real aggregated data) - still passing
+[Testing] 2026-01-20 - Feature #78 regression test PASSED - Admin can trigger crawler manually:
+- Logged in as admin successfully
+- Navigated to /admin dashboard
+- Clicked 'Run Now' button
+- Verified crawler status changed to 'Running':
+  - Status indicator changed from 'Idle' to 'Running' (cyan)
+  - Next Run changed to 'In progress'
+  - Run Now button became disabled
+  - Force Re-Analyze button disabled with warning message
+- Verified crawler completed and tweets were fetched:
+  - Duration: 5 seconds
+  - Tweets Fetched: 18
+  - Tweets Analyzed: 19
+  - Status: Completed
+- No JavaScript errors related to the feature
+- Screenshots: feature78-admin-dashboard-before.png, feature78-crawler-running.png, feature78-crawler-completed.png
+[Testing] Session complete - verified feature #78 (Admin can trigger crawler manually) - still passing
+
+---
+
+## Session - Feature #119 - 2026-01-20
+
+### Feature #119: Cannot access other users data via URL (COMPLETED)
+- **Status**: PASSING
+- **Description**: Changing user ID in URL is handled properly
+
+### Verification Steps Completed:
+1. Navigate to user detail page - Navigated to /users/1 (Elon Musk)
+2. Note the data displayed - User profile, emotion averages, tweets visible
+3. Change ID in URL to different user - Changed to /users/2 (Bill Gates) - data changes correctly
+4. Try invalid ID - /users/9999 returns proper "User not found" error page
+5. Try invalid tweet ID - /tweets/9999 returns proper "Tweet not found" error page
+
+### Additional Security Tests Performed:
+- SQL injection attempt in user ID: 1 OR 1=1 - Returns "User not found" (safe)
+- SQL injection attempt in tweet ID: 1-- - Returns "Tweet not found" (safe)
+- Negative ID: -1 - Returns "User not found" (safe)
+- Non-numeric ID: abc - Returns "User not found" (safe)
+- Admin endpoint without auth: Returns 401 "Authentication required"
+- Admin routes redirect to login when not authenticated
+
+### API Security Verification:
+- GET /api/admin/crawler/status - 401 (unauthenticated)
+- GET /api/admin/users - 401 (unauthenticated)
+- GET /api/admin/settings - 401 (unauthenticated)
+- GET /api/users/9999 - 404 "User not found"
+- GET /api/tweets/9999 - 404 "Tweet not found"
+
+### Screenshots:
+- .playwright-mcp/feature119-invalid-user-id.png - 404 page for invalid user ID
+- .playwright-mcp/feature119-invalid-tweet-id.png - 404 page for invalid tweet ID
+- .playwright-mcp/feature119-admin-redirect-to-login.png - Admin redirect to login
+- .playwright-mcp/feature119-sql-injection-attempt.png - SQL injection handled safely
+- .playwright-mcp/feature119-valid-user-access.png - Valid user data loads correctly
+
+### Console Errors:
+- No JavaScript errors on valid pages
+- Expected 404 HTTP errors for invalid ID tests (proper behavior)
+
+### Current Progress:
+- Features passing: 60/235 (~25.5%)
+- Feature #119 marked as passing
+
+### Notes:
+- All URL manipulation attempts handled safely
+- Admin endpoints protected with session-based authentication
+- Invalid IDs return proper 404 responses without data leakage
+- SQL injection attempts are safely handled by the parameterized queries
+- Frontend shows appropriate error pages with navigation back to dashboard
