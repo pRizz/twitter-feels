@@ -6166,3 +6166,71 @@ Added "Clear Filters" functionality to the Dashboard page:
 
 ### Commit:
 - a26c6d8 - Implement Feature #155: Client and server validation match
+[Testing] 2026-01-20 - Feature #145 regression test PASSED - Required fields show error when empty:
+- Navigated to /admin/users Add User form
+- Twitter Handle field is required (marked with *)
+- Left field empty and blurred to trigger validation
+- Error message displayed: 'Twitter handle is required' (red text)
+- Add User button correctly disabled when required field empty
+- Form submission blocked (button disabled attribute confirmed)
+- User count unchanged (2 users) - form was not submitted
+- No JavaScript console errors
+- Screenshots: feature145-add-user-form-empty.png, feature145-error-shown.png
+[Testing] Session complete - verified feature #145 (Required fields show error when empty) - still passing
+
+---
+
+## Session - Feature #156 - 2026-01-20
+
+### Feature #156: Success message on user add (COMPLETED)
+- **Status**: PASSING
+- **Category**: N-Feedback
+- **Description**: Adding user shows success feedback
+
+### Implementation Changes:
+- Added `successMessage` state to track success feedback
+- On successful user add:
+  - Extracts username from input (strips @ prefix if present)
+  - Sets success message: "Successfully added @{username} to tracked users!"
+  - Auto-dismisses after 5 seconds via setTimeout
+- Added Success Message UI component:
+  - Green background with green border (bg-green-500/10, border-green-500/20)
+  - Green text color (text-green-500)
+  - Checkmark icon prefix (✓)
+  - Dismiss button to manually close
+
+### Verification Steps Completed:
+
+1. **Add new Twitter user** ✅
+   - Logged in as admin
+   - Navigated to /admin/users
+   - Clicked "+ Add User" button
+   - Entered "finaltest156" as Twitter handle
+   - Clicked "Add User" button
+
+2. **Verify success toast/message appears** ✅
+   - Green success message appeared immediately after user was added
+   - Message text: "✓ Successfully added @finaltest156 to tracked users!"
+   - Dismiss button was visible
+
+3. **Verify message is descriptive** ✅
+   - Message includes the username that was added (@finaltest156)
+   - Describes the action clearly ("Successfully added...to tracked users!")
+   - Green color indicates success (vs red for errors)
+   - Checkmark icon reinforces success
+
+### Screenshots:
+- `.playwright-mcp/feature156-success-message-shown.png` - Success message displayed
+- `.playwright-mcp/feature156-success-message-visible.png` - Page after auto-dismiss
+- `.playwright-mcp/feature156-success-toast-visible.png` - User added, message auto-dismissed
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 96/235 (~40.9%)
+- Feature #156 marked as passing
+
+### Commit:
+- 47311b7 - Implement Feature #156: Success message on user add
+
