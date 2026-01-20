@@ -57,6 +57,8 @@ router.get('/dashboard', (req, res) => {
   try {
     const timeBucket = (req.query.timeBucket as string) || 'all_time';
     const modelId = req.query.modelId as string;
+    const sortBy = (req.query.sortBy as string) || 'followers'; // followers, name, score
+    const sortOrder = (req.query.sortOrder as string) || 'desc'; // asc, desc
     const timeCutoff = getTimeBucketCutoff(timeBucket);
 
     // Get stats from database
@@ -216,6 +218,25 @@ router.get('/dashboard', (req, res) => {
       };
     });
 
+    // Sort users based on sortBy and sortOrder parameters
+    const sortedUsers = [...usersWithEmotions].sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'name':
+          comparison = a.displayName.localeCompare(b.displayName);
+          break;
+        case 'score':
+          comparison = a.topEmotionScore - b.topEmotionScore;
+          break;
+        case 'followers':
+        default:
+          // Users are already sorted by followers from the SQL query
+          // Return 0 to preserve original order
+          return 0;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
     // Build leaderboards from user emotion data with time and model filtering
     const emotions = Object.keys(emotionColors);
     const leaderboards = emotions.slice(0, 6).map(emotion => {
@@ -277,7 +298,7 @@ router.get('/dashboard', (req, res) => {
       lastUpdated,
       gauges,
       leaderboards,
-      users: usersWithEmotions,
+      users: sortedUsers,
       stats: {
         totalUsers: userCount.count,
         totalTweets: tweetCount.count,
@@ -287,6 +308,8 @@ router.get('/dashboard', (req, res) => {
       timeBucket, // Return the time bucket used for filtering
       timeCutoff, // Return the cutoff date for verification
       filteredAnalysisCount, // How many analyses matched the time filter
+      sortBy, // Return the sort field used
+      sortOrder, // Return the sort direction used
     });
   } catch (error) {
     console.error('Error fetching dashboard data:', error);

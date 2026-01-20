@@ -266,9 +266,54 @@ interface LLMModel {
   provider: string;
 }
 
+// Sort selector component
+function SortSelector({
+  sortBy,
+  sortOrder,
+  onSortByChange,
+  onSortOrderChange,
+}: {
+  sortBy: string;
+  sortOrder: string;
+  onSortByChange: (value: string) => void;
+  onSortOrderChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-muted-foreground">Sort:</span>
+      <select
+        value={sortBy}
+        onChange={(e) => onSortByChange(e.target.value)}
+        className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary-cyan/50"
+      >
+        <option value="followers">Followers</option>
+        <option value="name">Name</option>
+        <option value="score">Emotion Score</option>
+      </select>
+      <button
+        onClick={() => onSortOrderChange(sortOrder === 'asc' ? 'desc' : 'asc')}
+        className="p-1.5 bg-card border border-border rounded-lg hover:bg-muted transition-colors"
+        title={sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'}
+      >
+        {sortOrder === 'asc' ? (
+          <svg className="w-4 h-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+          </svg>
+        ) : (
+          <svg className="w-4 h-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [timePeriod, setTimePeriod] = useState('weekly');
   const [modelFilter, setModelFilter] = useState('combined');
+  const [sortBy, setSortBy] = useState('followers');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -295,7 +340,7 @@ export default function Dashboard() {
       try {
         setIsLoading(true);
         const response = await fetch(
-          `http://localhost:3001/api/dashboard?timeBucket=${timePeriod}&modelId=${modelFilter}`
+          `http://localhost:3001/api/dashboard?timeBucket=${timePeriod}&modelId=${modelFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}`
         );
         if (!response.ok) {
           throw new Error('Failed to fetch dashboard data');
@@ -326,7 +371,7 @@ export default function Dashboard() {
     };
 
     fetchDashboardData();
-  }, [timePeriod, modelFilter]);
+  }, [timePeriod, modelFilter, sortBy, sortOrder]);
 
   const gauges = data?.gauges?.length ? data.gauges : DEFAULT_GAUGES;
   const leaderboards = data?.leaderboards || [];
@@ -343,6 +388,12 @@ export default function Dashboard() {
             value={modelFilter}
             onChange={setModelFilter}
             models={models}
+          />
+          <SortSelector
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSortByChange={setSortBy}
+            onSortOrderChange={setSortOrder}
           />
         </div>
       </div>
@@ -361,7 +412,7 @@ export default function Dashboard() {
               onClick={() => {
                 setError(null);
                 setIsLoading(true);
-                fetch(`http://localhost:3001/api/dashboard?timeBucket=${timePeriod}&modelId=${modelFilter}`)
+                fetch(`http://localhost:3001/api/dashboard?timeBucket=${timePeriod}&modelId=${modelFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}`)
                   .then(res => {
                     if (!res.ok) throw new Error('Failed to fetch');
                     return res.json();
