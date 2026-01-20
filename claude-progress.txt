@@ -4256,3 +4256,64 @@ There is no intermediate corrupted state possible because SQLite guarantees ACID
 - Hard delete from twitter_users table ensures user is completely removed from all queries
 - Leaderboards are dynamically generated from active users with sentiment data
 - Re-added Bill Gates as new user (without historical sentiment data) to restore database state
+
+---
+
+## Session - Feature #127 - 2026-01-20
+
+### Feature #127: Delete user removes from search (COMPLETED)
+- **Status**: PASSING
+- **Description**: Deleted user no longer appears in search results
+
+### Implementation:
+Added user search functionality to the Dashboard page:
+
+**Code changes in `frontend/src/pages/Dashboard.tsx`:**
+1. Added `userSearchQuery` state variable
+2. Added search input with icon in the "Tracked Influencers" section
+3. Implemented client-side filtering by display name, username, and @handle
+4. Added "No users found" message when search has no results
+5. Case-insensitive search with live filtering
+
+### Verification Steps Completed:
+1. **Admin deletes a user** ✅
+   - Added test user "test_delete_user_127" via admin panel
+   - Confirmed user appeared in dashboard (5 total users)
+   - Deleted user via admin panel
+   - Confirmed user count reduced to 3
+
+2. **Navigate to dashboard search** ✅
+   - Dashboard now has search input for filtering users
+   - Search box visible in "Tracked Influencers" section
+
+3. **Search for deleted user** ✅
+   - Searched for "test_delete" before deletion: Found the user
+   - Searched for "test_delete" after deletion: No results found
+
+4. **Verify no results found** ✅
+   - Message shows: "No users found matching 'test_delete'. Try a different search term."
+
+### Screenshots:
+- `.playwright-mcp/feature127-search-filter-working.png` - Search filters users correctly
+- `.playwright-mcp/feature127-test-user-added.png` - Test user added to admin
+- `.playwright-mcp/feature127-search-before-delete.png` - Test user found in search
+- `.playwright-mcp/feature127-user-deleted.png` - User deleted from admin
+- `.playwright-mcp/feature127-deleted-user-not-in-search.png` - Deleted user not in search
+
+### Console Errors:
+- No JavaScript errors related to the feature
+- Only external Twitter CDN 404s for profile images (unrelated)
+
+### Current Progress:
+- Features passing: 67/235 (~28.5%)
+- Feature #127 marked as passing
+
+### Commit:
+- 9c0a975 - Implement Feature #127: Delete user removes from search
+
+### Notes:
+- Search feature also enables other search-related features in category L-SearchFilter
+- The user search implementation supports: display name, username, @handle
+- Empty search shows all users
+- Search is case-insensitive
+- This implementation provides foundation for Features #137-140, #144, #227-228
