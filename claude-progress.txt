@@ -5588,3 +5588,73 @@ Added "Clear Filters" functionality to the Dashboard page:
 ### Notes:
 - No code changes required - validation was already properly implemented
 - Both HTML5 and JavaScript validation work together for robust protection
+
+
+---
+
+## Session - Feature #148 - 2026-01-20
+
+### Feature #148: Twitter handle format validated (COMPLETED)
+- **Status**: PASSING
+- **Category**: M-FormValidation
+- **Description**: Adding user validates handle format
+
+### Implementation Changes:
+- Added `validateHandle` function to check Twitter handle format
+- Validates: alphanumeric characters and underscores only
+- Validates: maximum 15 characters (excluding @ prefix)
+- Handles optional @ prefix (strips it for validation)
+- Added `handleError` state for format-specific error messages
+- Show appropriate error messages:
+  - "Twitter handle is required" - when empty
+  - "Handle must be 15 characters or less" - when too long
+  - "Handle can only contain letters, numbers, and underscores" - for invalid characters
+- Disable "Add User" button when format is invalid
+- Clear error when user starts typing
+- Validate on blur and on submit
+
+### Verification Steps Completed:
+
+1. **Navigate to add user form** ✅
+   - Logged in as admin
+   - Navigated to /admin/users
+   - Clicked "+ Add User" button
+
+2. **Enter invalid handle format** ✅
+   - Entered "bad!handle" (contains special character !)
+   - Error shown: "Handle can only contain letters, numbers, and underscores"
+   - Also tested "thisisaverylonghandle" (21 chars)
+   - Error shown: "Handle must be 15 characters or less"
+
+3. **Submit form** ✅
+   - "Add User" button disabled when format is invalid
+   - Cannot submit form with invalid handle
+
+4. **Verify format error displayed** ✅
+   - Error message displayed in red text below input
+   - Input border turns red (destructive color)
+   - Clear visual feedback to user
+
+5. **Enter valid handle, verify success** ✅
+   - Entered "@validhandle123" (valid format, 15 chars)
+   - Error cleared, button enabled
+   - Clicked "Add User" - user added successfully
+   - User "validhandle123" appeared in table
+   - Stats updated: 3 Total Tracked, 3 Active
+   - Cleaned up test user by deleting
+
+### Screenshots:
+- `.playwright-mcp/feature148-invalid-format-error.png` - Special character error
+- `.playwright-mcp/feature148-handle-too-long.png` - Length error
+- `.playwright-mcp/feature148-valid-handle.png` - Valid handle, no error
+- `.playwright-mcp/feature148-user-added-successfully.png` - User added
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 88/235 (~37.4%)
+- Feature #148 marked as passing
+
+### Commit:
+- 0897d12 - Implement Feature #148: Twitter handle format validated
