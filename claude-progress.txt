@@ -6083,3 +6083,86 @@ Added "Clear Filters" functionality to the Dashboard page:
 - All forms properly trim whitespace before validation
 - Whitespace-only input is treated as empty/invalid
 
+[Testing] 2026-01-20 - Feature #3 regression test PASSED - Database connection works:
+- Database file exists: backend/data/twitter_feels.db (110KB + WAL/SHM files)
+- Users table: 2 tracked users (Sam Altman, Elon Musk)
+- Tweets table: 15 tweets stored
+- Sentiment analyses table: 15 analyses
+- Crawler runs table: 5 historical runs displayed
+- LLM Models table: 7 installed models
+- API health check: OK
+- Dashboard loads with real data from database
+- No JavaScript console errors affecting database operations
+- Screenshots: feature3-dashboard-database-connected.png, feature3-tracked-users-table.png, feature3-llm-models-table.png
+[Testing] Session complete - verified feature #3 (Database connection works) - still passing
+[Testing] 2026-01-20 - Feature #129 regression test PASSED - Delete user updates statistics:
+- Before: 2 Tracked Users, 15 Tweets Analyzed, 15 Sentiment Analyses (Sam Altman + Elon Musk)
+- Deleted Elon Musk via admin panel (had 0 tweets/analyses)
+- After: 1 Tracked User, 15 Tweets Analyzed, 15 Sentiment Analyses (only Sam Altman)
+- Statistics correctly updated: user count decreased, tweet/analysis counts unchanged (correct since deleted user had no data)
+- Elon Musk removed from Tracked Influencers list
+- Leaderboards unchanged (Sam Altman still only user with data)
+- Gauge values unchanged (correct since Elon had no emotion data)
+- No JavaScript console errors
+- Screenshots: feature129-initial-stats.png, feature129-all-time-before-delete.png, feature129-users-before-delete.png, feature129-users-after-delete.png, feature129-dashboard-after-delete.png
+[Testing] Session complete - verified feature #129 (Delete user updates statistics) - still passing
+
+---
+
+## Session - Feature #155 - 2026-01-20
+
+### Feature #155: Client and server validation match (COMPLETED)
+- **Status**: PASSING
+- **Category**: M-FormValidation
+- **Description**: Backend validates same rules as frontend
+
+### Implementation Changes:
+
+**Backend (backend/src/routes/admin.ts):**
+1. Added `validateTwitterHandle()` function that validates:
+   - Handle is required (not empty)
+   - Max 15 characters (excluding optional @ prefix)
+   - Only alphanumeric and underscore characters allowed
+   - Returns clean username for database operations
+
+2. Enhanced S3 bucket name validation in PUT /settings:
+   - 3-63 characters length
+   - Must start with lowercase letter or number
+   - Must end with lowercase letter or number
+   - Only lowercase letters, numbers, hyphens, periods allowed
+   - No consecutive periods
+   - Cannot be formatted as IP address
+
+### Verification Steps Completed (via browser dev tools):
+
+1. Bypass client validation - Used browser evaluate to call API directly
+2. Submit invalid data directly to API - All validation cases tested
+3. Verify server rejects with same rules - All validations match frontend
+
+### API Validation Results (bypassing client validation):
+
+- Handle too long (21 chars): 400 - "Handle must be 15 characters or less"
+- Handle with @ in middle: 400 - "Handle can only contain letters, numbers, and underscores"
+- Crawler interval 999: 400 - "Crawl interval must be between 1 and 168 hours"
+- Crawler interval 169: 400 - "Crawl interval must be between 1 and 168 hours"
+- Crawler interval 168: 200 - Success (at boundary)
+- S3 bucket UPPERCASE: 400 - "Bucket name must start/end with lowercase..."
+- S3 bucket "ab" (too short): 400 - "Bucket name must be at least 3 characters"
+- S3 bucket IP format: 400 - "Bucket name cannot be formatted as an IP address"
+- S3 bucket consecutive periods: 400 - "Bucket name cannot contain consecutive periods"
+- Weak password "weak": 400 - Password complexity requirements
+- Strong password: 200 - Success
+
+### Screenshots:
+- .playwright-mcp/feature155-api-validation-test.png - Admin dashboard during testing
+- .playwright-mcp/feature155-validation-complete.png - Final state after tests
+
+### Console Errors:
+- Only expected 400 errors from validation tests (not JavaScript errors)
+
+### Current Progress:
+- Features passing: 95/235 (40.4%)
+- Feature #155 marked as passing
+
+### Commit:
+- a26c6d8 - Implement Feature #155: Client and server validation match
