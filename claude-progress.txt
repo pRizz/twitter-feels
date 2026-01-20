@@ -3427,3 +3427,80 @@ This handles:
 - Empty states handled gracefully when user has no tweets/analyses
 - Breadcrumb navigation shows correct user name
 - All user profile information (bio, followers, following) displays correctly
+[Testing] 2026-01-20 16:14:55 - Feature #7 regression test PASSED - Dashboard route loads:
+- Navigated to http://localhost:5173/
+- Page title: 'Twitter Feels' ✓
+- Dashboard content renders: ✓
+  - Header with branding and theme toggle
+  - Filter controls (Time, Model, Sort dropdowns)
+  - 6 emotion gauges (Anger, Inspiration, Gratitude, Mood, Intensity, Playfulness)
+  - 6 emotion leaderboards (happy, sad, angry, fearful, hatred, thankful)
+  - 5 tracked influencers with profile cards
+  - Stats: 5 Tracked Users, 27 Tweets Analyzed, 6 Sentiment Analyses
+  - Footer with Admin link
+- No navigation errors ✓
+- Only console error: External Twitter CDN 404 (unrelated to feature)
+- Screenshot: feature7-regression-dashboard.png
+[Testing] Session complete - verified feature #7 (Dashboard route loads) - still passing
+
+---
+
+## Session - Feature #115 - 2026-01-20
+
+### Feature #115: Unsaved admin form shows warning (COMPLETED)
+- **Status**: PASSING
+- **Description**: Navigating away from dirty form warns user
+
+### Implementation Details:
+
+**New files created:**
+1. `frontend/src/hooks/useUnsavedChangesWarning.ts` - Custom hook for unsaved changes detection
+   - Intercepts clicks on anchor tags globally
+   - Uses beforeunload event for browser refresh/close warning
+   - Maintains pendingHref state for confirming/canceling navigation
+
+2. `frontend/src/components/ui/ConfirmDialog.tsx` - Radix UI based confirmation dialog
+   - Warning and danger variants
+   - AlertTriangle icon for visual emphasis
+   - Accessible with proper ARIA attributes
+
+**Settings.tsx changes:**
+- Added `initialCrawlerForm` and `initialBackupForm` state to track original values
+- Added `isCrawlerDirty` and `isBackupDirty` memoized computations
+- Integrated `useUnsavedChangesWarning` hook with `isFormDirty` state
+- Added `ConfirmDialog` component to show warning when navigating away
+- Reset initial values after successful save to clear dirty state
+
+### Verification Steps Completed:
+1. Log in as admin - Logged in successfully
+2. Navigate to settings - Navigated to /admin/settings
+3. Make changes to a field - Changed Crawl Interval from 1 to 5
+4. Attempt to navigate away - Clicked Dashboard link
+5. Verify warning dialog appears - Dialog with "Unsaved Changes" title appeared
+
+### Additional Testing:
+- "Stay on Page" button: Canceled navigation, stayed on settings, value preserved
+- "Leave Page" button: Proceeded with navigation to /admin/users
+- Clean form navigation: No warning when navigating without changes
+- Browser beforeunload: Native browser dialog shown on Leave Page click
+
+### Screenshots:
+- `.playwright-mcp/feature115-unsaved-changes-warning.png` - Warning dialog shown
+- `.playwright-mcp/feature115-after-leave-page.png` - Navigation to Tracked Users after Leave Page
+- `.playwright-mcp/feature115-no-warning-clean-form.png` - No warning when form is clean
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 55/235 (~23.4%)
+- Feature #115 marked as passing
+
+### Commit:
+- 4e59c6d - Implement Feature #115: Unsaved admin form shows warning
+
+### Notes:
+- Used global click event interception because BrowserRouter doesn't support useBlocker
+- Warning works for all internal navigation (links within the app)
+- beforeunload handles browser refresh and close
+- Both crawler and backup form changes are tracked for dirty state
