@@ -4110,3 +4110,86 @@ After fix with useRef:
 - Both Settings forms and the Add User form have proper disabled state handling
 - Button text changes to indicate processing state ("Saving...", "Adding...")
 - All forms use React state to manage the processing flag
+[Testing] 2026-01-20 - Feature #53 regression test PASSED - Admin user management table displays:
+- Logged in as admin successfully
+- Navigated to /admin/users
+- User management table renders correctly with 4 tracked users
+- Columns verified: User (name + bio), Handle, Status, Followers, Tweets, Added, Actions
+- Action buttons verified: 'Disable' and 'Delete' buttons present for each row
+- All status badges display correctly (Active with green styling)
+- Summary stats display: 4 Total Tracked, 4 Active, 27 Total Tweets
+- No JavaScript errors related to the feature (only external Twitter CDN 404s)
+- Screenshot: feature53-users-table.png
+[Testing] Session complete - verified feature #53 (Admin user management table displays) - still passing
+
+---
+
+## Session - Feature #126 - 2026-01-20
+
+### Feature #126: Refresh during save handled (COMPLETED)
+- **Status**: PASSING
+- **Description**: Refreshing during save doesn't corrupt data
+
+### Verification Steps Completed:
+1. Start saving admin settings - Changed Crawl Interval value and clicked Save
+2. Refresh page during save - Pressed F5 immediately after clicking Save
+3. Verify data is not corrupted - Page reloaded without errors, form displayed correctly
+4. Verify either old or new values persist - New values persisted correctly after refresh
+
+### Test Cases Verified:
+
+**Test 1: Change 3 to 7, save and refresh**
+- Changed Crawl Interval from 3 to 7
+- Clicked "Save Crawler Settings"
+- Immediately pressed F5
+- Result: Value persisted as 7
+
+**Test 2: Change 7 to 12, save and refresh**
+- Changed Crawl Interval from 7 to 12
+- Clicked "Save Crawler Settings"
+- Immediately pressed F5
+- Result: Value persisted as 12
+
+**Test 3: Backend restart verification**
+- Backend server restarted during testing
+- After re-login, settings page showed value 12
+- Admin dashboard showed "Interval: Every 12 hours"
+- Data persisted in SQLite database across server restarts
+
+**Test 4: Restore original value**
+- Changed Crawl Interval from 12 to 2
+- Saved successfully
+- Result: Value saved correctly
+
+### Technical Details:
+
+**Why this works (atomic operations):**
+The backend uses SQLite atomic INSERT...ON CONFLICT DO UPDATE statement.
+This is a single atomic database operation that either:
+- Completes fully (new value persists)
+- Does not run at all (old value persists)
+
+There is no intermediate corrupted state possible because SQLite guarantees ACID compliance.
+
+### Screenshots:
+- .playwright-mcp/feature126-settings-before-change.png - Initial settings page
+- .playwright-mcp/feature126-value-persisted-after-refresh.png - Value=7 persisted
+- .playwright-mcp/feature126-refresh-during-save-value-persisted.png - Value=12 persisted
+- .playwright-mcp/feature126-final-verification.png - Final state (value=2)
+
+### Console Errors:
+- No JavaScript errors related to the feature
+- 401 errors from session restart (unrelated - backend was restarted)
+
+### Current Progress:
+- Features passing: 66/235 (~28.1%)
+- Feature #126 marked as passing
+
+### Commit:
+- 596fc52 - Verify Feature #126: Refresh during save handled
+
+### Notes:
+- No code changes required - feature was already properly implemented
+- SQLite atomic operations ensure data consistency
+- Settings page correctly displays database values after any refresh
+- Both Crawler Settings and S3 Backup Settings use the same atomic save pattern
