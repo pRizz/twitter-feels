@@ -5754,3 +5754,72 @@ Added "Clear Filters" functionality to the Dashboard page:
 ### Commit:
 - a098418 - Implement Feature #149: S3 bucket name validated
 
+[Testing] 2026-01-20 - Feature #22 regression test PASSED - Dark mode is default theme:
+- Cleared localStorage and reloaded page
+- Verified HTML element has 'dark' class applied
+- Verified background color is dark navy/charcoal: rgb(9, 9, 11)
+- Verified text color is light: rgb(248, 250, 252)
+- Verified localStorage theme is null (default, not stored)
+- No JavaScript console errors
+- Screenshot: feature22-dark-mode-default.png
+[Testing] Session complete - verified feature #22 (Dark mode is default theme) - still passing
+
+---
+
+## Session - Feature #150 - 2026-01-20
+
+### Feature #150: Password complexity enforced (COMPLETED)
+- **Status**: PASSING
+- **Category**: M-FormValidation
+- **Description**: Admin password must meet requirements
+
+### Implementation Changes:
+
+**Backend (backend/src/routes/admin.ts):**
+- Added validatePasswordComplexity() function with validation for:
+  - Minimum 12 characters
+  - At least one uppercase letter
+  - At least one lowercase letter
+  - At least one number
+  - At least one special character
+- Added PUT /api/admin/change-password endpoint
+- Returns 400 with detailed errors when complexity requirements not met
+- Auto-creates admin user if not exists (for demo purposes)
+
+**Frontend (frontend/src/pages/admin/Settings.tsx):**
+- Added Change Password section with:
+  - Current Password field (required)
+  - New Password field with complexity requirements
+  - Confirm New Password field
+- Client-side validation matching backend requirements
+- Error messages displayed inline below New Password field
+- Red border on invalid fields
+- Success message on successful password change
+- Form clears after successful password change
+
+**Database (backend/src/db/schema.sql):**
+- Added default admin user seed data
+
+### Verification Steps Completed:
+1. Navigate to change password - Settings page has Change Password section
+2. Enter weak password - Entered "weak" (4 chars)
+3. Submit form - Clicked Change Password button
+4. Verify complexity error - Displayed: Must be at least 12 characters, Must contain an uppercase letter, Must contain a number, Must contain a special character
+5. Enter strong password - Entered "StrongPass123!" - Password changed successfully!
+
+### Screenshots:
+- feature150-settings-page-with-password.png - Settings page with Change Password section
+- feature150-change-password-section.png - Close-up of Change Password section
+- feature150-weak-password-error.png - Error for weak password
+- feature150-weak-password-validation.png - Validation errors displayed
+- feature150-password-changed-success.png - Success after strong password
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 90/235 (38.3%)
+- Feature #150 marked as passing
+
+### Commit:
+- a8681e3 - Implement Feature #150: Password complexity enforced
