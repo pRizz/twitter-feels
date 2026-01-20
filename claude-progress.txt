@@ -5394,3 +5394,66 @@ Added "Clear Filters" functionality to the Dashboard page:
 - No JavaScript console errors
 - Screenshots: feature143-filters-applied.png, feature143-filters-persisted-regression.png
 [Testing] Session complete - verified feature #143 (Filter persists after viewing detail) - still passing
+
+
+---
+
+## Session - Feature #145 - 2026-01-20
+
+### Feature #145: Required fields show error when empty (COMPLETED)
+- **Status**: PASSING
+- **Category**: M-FormValidation
+- **Description**: Empty required fields block submission
+
+### Implementation Changes:
+- Added `handleTouched` state to track when user has interacted with the Twitter Handle field
+- Display "Twitter handle is required" error message in red text when field is empty after blur
+- Added red/destructive border styling to input when validation fails
+- Reset validation state when form is cancelled or user is successfully added
+- Button was already disabled when required field is empty (existing behavior preserved)
+
+### Verification Steps Completed:
+1. **Navigate to add user form** ✅
+   - Logged in as admin
+   - Navigated to /admin/users
+   - Clicked "+ Add User" button
+
+2. **Leave required field empty** ✅
+   - Twitter Handle field is empty by default
+   - Clicked on field then clicked away (blur event)
+
+3. **Submit form** ✅
+   - "Add User" button is disabled when field is empty
+   - Cannot submit form without required field
+
+4. **Verify error shown** ✅
+   - Error message "Twitter handle is required" displayed in red
+   - Input border changes to red/destructive color
+   - Clear visual feedback to user
+
+5. **Verify form not submitted** ✅
+   - Total Tracked count remains 2
+   - No new user added
+   - Button disabled prevents accidental submission
+
+### Additional Testing:
+- Verified error clears when valid text is entered
+- Verified "Add User" button becomes enabled with valid input
+- Verified Cancel button resets validation state
+
+### Screenshots:
+- `.playwright-mcp/feature145-add-user-form-initial.png` - Initial form state
+- `.playwright-mcp/feature145-empty-field-no-error.png` - Empty field before interaction
+- `.playwright-mcp/feature145-error-shown.png` - Error message displayed after blur
+- `.playwright-mcp/feature145-valid-input-no-error.png` - No error with valid input
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 86/235 (~36.6%)
+- Feature #145 marked as passing
+
+### Commit:
+- a941132 - Implement Feature #145: Required fields show error when empty
+
