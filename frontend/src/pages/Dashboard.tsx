@@ -433,12 +433,13 @@ export default function Dashboard() {
   }, [setSearchParams]);
 
   // Check if any filters are active (non-default values)
+  // Use trim() for search query to treat whitespace-only as empty (not an active filter)
   const hasActiveFilters =
     timePeriod !== 'weekly' ||
     modelFilter !== 'combined' ||
     sortBy !== 'followers' ||
     sortOrder !== 'desc' ||
-    userSearchQuery !== '';
+    userSearchQuery.trim() !== '';
 
   // Fetch available models once on mount
   useEffect(() => {
