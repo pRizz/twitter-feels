@@ -2113,3 +2113,49 @@ The error handling was already implemented in the Dashboard component:
 - No code changes required - this session verified existing functionality
 - Error handling is user-friendly with "Return to Dashboard" link
 - All navigation links work correctly from error state
+
+---
+
+## Session - Feature #93 - 2026-01-20
+
+### Feature #93: 404 for non-existent tweet shows not found (COMPLETED)
+- **Status**: PASSING
+- **Description**: Invalid tweet ID shows proper not found page
+
+### Verification Steps Completed:
+1. Navigate to /tweets/99999 - ✅ Navigated to non-existent tweet
+2. Verify not found message displayed - ✅ "Error" heading and "Tweet not found" message shown
+3. Verify no console errors - ✅ No JavaScript errors (only expected 404 from API)
+4. Verify back navigation works - ✅ "Back to Dashboard" link navigates correctly
+
+### Additional Testing:
+- Tested negative ID (/tweets/-1) - Shows "Tweet not found"
+- Tested non-numeric ID (/tweets/abc) - Shows "Tweet not found"
+- Tested existing tweet (/tweets/1) - Loads correctly with all data
+- API returns 404 status with `{"error":"Tweet not found"}` for invalid IDs
+
+### Implementation Details:
+The feature was already fully implemented:
+- **Backend (public.ts)**: GET /api/tweets/:id returns 404 with JSON error when tweet not found
+- **Frontend (TweetDetail.tsx)**:
+  - Catches 404 response and sets error state
+  - Displays user-friendly "Error" heading with "Tweet not found" message
+  - Provides "Back to Dashboard" navigation link
+  - Handles both error state and null tweet state
+
+### Screenshots:
+- `.playwright-mcp/feature93-tweet-not-found.png` - Error page for non-existent tweet
+- `.playwright-mcp/feature93-existing-tweet.png` - Existing tweet loads correctly
+
+### Console Errors:
+- No JavaScript errors
+- Only expected 404 HTTP responses from API
+
+### Current Progress:
+- Features passing: 35/235 (~14.9%)
+- Feature #93 marked as passing
+
+### Notes:
+- Feature was already fully implemented by previous sessions
+- This session verified all error handling works correctly
+- No code changes required
