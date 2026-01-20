@@ -45,6 +45,8 @@ interface DashboardData {
     totalTweets: number;
     totalAnalyses: number;
   };
+  filteredAnalysisCount?: number;
+  timeBucket?: string;
 }
 
 // Gauge component
@@ -389,6 +391,31 @@ export default function Dashboard() {
       {isLoading && (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-cyan"></div>
+        </div>
+      )}
+
+      {/* Empty state message when no data matches current filters */}
+      {!isLoading && !error && data && data.filteredAnalysisCount === 0 && (
+        <div className="mb-6 p-4 bg-primary-cyan/10 border border-primary-cyan/30 rounded-lg">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-primary-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-primary-cyan font-medium">No sentiment data for selected filters</span>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {data.stats.totalAnalyses > 0 ? (
+              <>
+                There are {data.stats.totalAnalyses} analyses in the database, but none match the current time period
+                {modelFilter !== 'combined' && ' or model filter'}. Try selecting "All Time" or a different model to see data.
+              </>
+            ) : (
+              <>
+                No tweets have been analyzed yet. The crawler needs to fetch tweets and run sentiment analysis.
+                Visit the <a href="/admin/login" className="text-primary-cyan hover:underline">admin dashboard</a> to check crawler status.
+              </>
+            )}
+          </p>
         </div>
       )}
 

@@ -2159,3 +2159,87 @@ The feature was already fully implemented:
 - Feature was already fully implemented by previous sessions
 - This session verified all error handling works correctly
 - No code changes required
+[Testing] 2026-01-20 15:26:48 - Feature #57 regression test PASSED - Admin crawler settings panel displays:
+- Logged in as admin successfully
+- Navigated to /admin/settings
+- Crawler Settings section visible with spider emoji header
+- Crawl Interval (hours) setting: value=1, range 1-168 hours
+- History Depth (days) setting: value=90, range 1-365 days  
+- Rate Limit (per 15 min) setting: value=450
+- Save Crawler Settings button present
+- No console errors
+- Screenshot: .playwright-mcp/.playwright-mcp/feature57-crawler-settings-regression.png
+[Testing] 2026-01-20 15:27:07 - Feature #6 regression test PASSED - Header navigation displays correctly:
+- Header banner visible with brand link 'Twitter Feels'
+- Brand link navigates to homepage (/)
+- Last updated timestamp displayed
+- Theme toggle button present and functional (dark/light modes work)
+- No JavaScript console errors
+- Screenshots: .playwright-mcp/feature6-header-navigation-regression.png, .playwright-mcp/feature6-header-light-mode.png
+[Testing] 2026-01-20 15:27:35 - Feature #91 regression test PASSED - API error shows user-friendly message:
+- Mocked fetch to simulate API failure
+- Triggered error by clicking time filter
+- Error banner displayed: 'Failed to load dashboard data'
+- User-friendly message: 'Unable to connect to the server. Please check your connection and try again.'
+- Retry button visible and functional
+- Clicking Retry successfully reloaded data
+- No JavaScript errors in our code (only external Twitter CDN 404)
+- Screenshots: feature91-api-error-message-regression.png, feature91-retry-success-regression.png
+
+[Testing] 2026-01-20 15:29:45 - Feature #78 regression test PASSED - Admin can trigger crawler manually:
+- Logged in as admin successfully
+- Navigated to admin dashboard at /admin
+- Clicked 'Run Now' button
+- Crawler status changed from 'Idle' to 'Running'
+- Crawler completed in 5 seconds
+- 26 tweets fetched, 41 tweets analyzed
+- Status returned to 'Idle' with 'Completed' badge
+- No console errors
+- Screenshot: .playwright-mcp/.playwright-mcp/feature78-crawler-manual-trigger-regression.png
+
+---
+
+## Session - Feature #95 - 2026-01-20
+
+### Feature #95: Empty user tweets shows message (COMPLETED)
+- **Status**: PASSING
+- **Description**: User with no tweets shows appropriate state
+
+### Verification Steps Completed:
+1. Create user with no tweets - ✅ Users 4 (Sam Altman) and 5 (Naval) exist with 0 tweets
+2. Navigate to user detail - ✅ Navigated to /users/4 and /users/5
+3. Verify 'no tweets' message displayed - ✅ "No tweets have been analyzed yet for this user." displayed
+4. Verify UI is intact - ✅ All UI elements render correctly, navigation works
+
+### Implementation Details:
+The feature was already fully implemented in UserDetail.tsx:
+- **TweetList component (lines 334-339)**: Returns empty state message when tweets.length === 0
+- **EmotionAverages component (lines 193-205)**: Shows "No sentiment analysis data available yet" when no data
+- **EmotionTrends component (lines 511-523)**: Shows "Not enough data to display trends" when no data points
+
+### Additional Verifications:
+- Profile information displays correctly (name, handle, bio, follower counts)
+- "0 Tweets Analyzed" count shown in profile stats
+- All sections have appropriate empty state messages
+- Navigation (Dashboard link, header links) all work correctly
+
+### API Verification:
+- `/api/users/4/tweets` returns `{"userId":"4","tweets":[],"pagination":{"page":1,"limit":20,"total":0,"totalPages":0},...}`
+- `/api/users/5/tweets` returns same empty structure
+
+### Screenshots:
+- `.playwright-mcp/feature95-empty-tweets-user.png` - Sam Altman user detail with no tweets
+- `.playwright-mcp/feature95-empty-tweets-naval.png` - Naval user detail with no tweets
+
+### Console Errors:
+- No JavaScript errors
+- Only external Twitter CDN 404s (profile images - unrelated)
+
+### Current Progress:
+- Features passing: 37/235 (~15.7%)
+- Feature #95 marked as passing
+
+### Notes:
+- Feature was already fully implemented by previous sessions
+- This session verified empty state handling for users with no tweets
+- No code changes required - all empty states work correctly
