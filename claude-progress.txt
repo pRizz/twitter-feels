@@ -6301,3 +6301,74 @@ Added "Clear Filters" functionality to the Dashboard page:
   2. S3 Backup Settings
   3. Change Password
 
+[Testing] 2026-01-20 - Feature #83 regression test PASSED - Tweet list shows real tweets:
+- Queried API for user 4 (Sam Altman) tweets - 15 tweets in database
+- Navigated to /users/4 user detail page
+- Verified Page 1 shows tweets #1-10 with correct:
+  - Content text matching database exactly
+  - Emotion labels and scores (excited 79, happy 87, etc.)
+  - Engagement metrics (likes, retweets, replies)
+  - Dates matching database timestamps
+- Verified Page 2 shows tweets #11-15 with all data matching
+- All 15 tweets displayed match database records exactly
+- No JavaScript console errors
+- Screenshots: feature83-user-profile-top.png, feature83-tweet-list-page1.png, feature83-tweet-list-page2.png
+[Testing] Session complete - verified feature #83 (Tweet list shows real tweets) - still passing
+
+
+---
+
+## Session - Feature #159 - 2026-01-20
+
+### Feature #159: Loading indicator during operations (COMPLETED)
+- **Status**: PASSING
+- **Category**: N-Feedback
+- **Description**: Long operations show progress
+
+### Verification Steps Completed:
+
+1. **Trigger crawler run** ✅
+   - Logged in as admin
+   - Navigated to /admin dashboard
+   - Clicked "Run Now" button
+
+2. **Verify loading/progress indicator** ✅
+   - "Running" badge appeared with spinning loader icon (top right of Crawler Status panel)
+   - "Running" badge appeared in last run details area
+   - Next Run field changed to "In progress"
+   - Run Now button became disabled
+   - Force Re-Analyze button became disabled with message "Cannot start re-analysis while crawler is running"
+   - New row in Recent Runs table showing "In progress" and "Running" status
+
+3. **Verify indicator clears on completion** ✅
+   - Status changed from "Running" back to "Idle" with clock icon
+   - Last run shows "Completed" badge with checkmark icon
+   - Run Now button re-enabled
+   - Force Re-Analyze button re-enabled
+   - Recent Runs table row updated with duration and final stats
+
+### Additional Testing:
+- Also tested "Force Re-Analyze All Tweets" button
+- Same loading indicator behavior observed
+- Shows spinning icons during operation, clears on completion
+
+### Screenshots:
+- `.playwright-mcp/feature159-initial-state.png` - Dashboard with Idle status before trigger
+- `.playwright-mcp/feature159-loading-indicator-running.png` - Running status with spinning indicators
+- `.playwright-mcp/feature159-indicator-cleared-completed.png` - Completed status after crawler finished
+- `.playwright-mcp/feature159-reanalyze-loading.png` - Force Re-Analyze with Running status
+- `.playwright-mcp/feature159-reanalyze-completed.png` - Force Re-Analyze completed
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 99/235 (~42.1%)
+- Feature #159 marked as passing
+
+### Notes:
+- No code changes required - loading indicators were already properly implemented
+- StatusBadge component shows spinning Loader2 icon when status is "running"
+- Buttons correctly disable during operations
+- Status auto-refreshes when crawler is running (10 second polling)
+
