@@ -3504,3 +3504,59 @@ This handles:
 - Warning works for all internal navigation (links within the app)
 - beforeunload handles browser refresh and close
 - Both crawler and backup form changes are tracked for dirty state
+
+---
+
+## Session - Feature #117 - 2026-01-20
+
+### Feature #117: Direct URL to tweet page works (COMPLETED)
+- **Status**: PASSING
+- **Description**: Deep linking to tweet detail works
+
+### Verification Steps Completed:
+1. Navigate directly to /tweets/1 - ✅ Tweet loads correctly with full content, emotions, analysis
+2. Open new browser tab - ✅ Tested with multiple tabs
+3. Navigate to /tweets/2 - ✅ Different tweet content loads correctly
+4. Navigate to /tweets/26 - ✅ Tweet without analysis shows appropriate empty state
+5. Navigate to /tweets/9999 - ✅ Invalid ID shows proper 404 error page
+
+### Test Cases Verified:
+- **Tweet #1 (Elon Musk)**: Full sentiment data with 12 emotions, 2 LLM analyses
+- **Tweet #2 (Elon Musk)**: Different content "Some people never learn..." with different emotion scores
+- **Tweet #26 (Elon Musk)**: No analysis yet - shows "No emotion analysis available" message
+- **Tweet #9999 (Invalid)**: 404 error page with "Back to Dashboard" link
+
+### Screenshots:
+- `.playwright-mcp/feature117-tweet1-direct-url.png` - Tweet 1 via direct URL
+- `.playwright-mcp/feature117-tweet2-direct-url.png` - Tweet 2 via direct URL
+- `.playwright-mcp/feature117-tweet26-no-analysis.png` - Tweet without analysis
+- `.playwright-mcp/feature117-tweet-not-found.png` - 404 error for invalid tweet
+
+### Console Errors:
+- No JavaScript errors (only expected 404 HTTP errors for invalid tweet ID test)
+
+### Current Progress:
+- Features passing: 58/235 (~24.7%)
+- Feature #117 marked as passing
+
+### Commit:
+- 48388e3 - Verify Feature #117: Direct URL to tweet page works
+
+### Notes:
+- Deep linking fully functional for all tweet IDs
+- Invalid tweet IDs handled gracefully with error page
+- Tweet detail page handles tweets with and without sentiment analysis
+- User info, engagement metrics, and emotion breakdown all display correctly
+[Testing] 2026-01-20 - Feature #61 regression test PASSED - Admin can browse Hugging Face models:
+- Logged in as admin successfully
+- Navigated to /admin/models
+- Available Models section displays with description 'Browse and download models from Hugging Face for sentiment analysis'
+- Model cards loaded:
+  - Llama 3.2 3B Instruct: 1.3M downloads, 4.2K likes, ~6.4 GB, text-generation
+  - BERTweet Sentiment Analysis: 380.0K downloads, 750 likes, ~540 MB, text-classification
+- Each model card shows: version, type badge, description, downloads, likes, size, update date
+- 'View on Hugging Face' links present
+- 'Download' buttons present
+- No JavaScript console errors
+- Screenshot: feature61-regression-models-page.png
+[Testing] Session complete - verified feature #61 (Admin can browse Hugging Face models) - still passing
