@@ -346,6 +346,7 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [models, setModels] = useState<LLMModel[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
 
   // Update URL params when filter values change
   const updateSearchParams = useCallback(
@@ -614,27 +615,79 @@ export default function Dashboard() {
 
           {/* Tracked Influencers Grid */}
           <section style={{ animationDelay: '0.2s' }}>
-            <h2 className="text-2xl font-semibold mb-6 text-foreground flex items-center gap-2">
-              <span className="text-primary-cyan">👥</span>
-              Tracked Influencers
-            </h2>
-            {users.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {users.map((user) => (
-                  <UserCard key={user.id} user={user} />
-                ))}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
+                <span className="text-primary-cyan">👥</span>
+                Tracked Influencers
+              </h2>
+              {/* User search input */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="w-full sm:w-64 px-4 py-2 pl-10 bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-cyan/50 focus:border-primary-cyan"
+                  aria-label="Search users by name or handle"
+                />
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
               </div>
-            ) : (
-              <div className="bg-card rounded-lg p-8 border border-border text-center">
-                <p className="text-muted-foreground">
-                  No Twitter users are being tracked yet. Visit the{' '}
-                  <Link to="/admin/login" className="text-primary-cyan hover:underline">
-                    admin dashboard
-                  </Link>{' '}
-                  to add users.
-                </p>
-              </div>
-            )}
+            </div>
+            {(() => {
+              // Filter users based on search query (case-insensitive)
+              const searchLower = userSearchQuery.toLowerCase().trim();
+              const filteredUsers = users.filter((user) => {
+                if (!searchLower) return true;
+                const displayNameMatch = user.displayName?.toLowerCase().includes(searchLower);
+                const usernameMatch = user.username?.toLowerCase().includes(searchLower);
+                const handleMatch = `@${user.username}`.toLowerCase().includes(searchLower);
+                return displayNameMatch || usernameMatch || handleMatch;
+              });
+
+              if (users.length === 0) {
+                return (
+                  <div className="bg-card rounded-lg p-8 border border-border text-center">
+                    <p className="text-muted-foreground">
+                      No Twitter users are being tracked yet. Visit the{' '}
+                      <Link to="/admin/login" className="text-primary-cyan hover:underline">
+                        admin dashboard
+                      </Link>{' '}
+                      to add users.
+                    </p>
+                  </div>
+                );
+              }
+
+              if (filteredUsers.length === 0) {
+                return (
+                  <div className="bg-card rounded-lg p-8 border border-border text-center">
+                    <p className="text-muted-foreground">
+                      No users found matching "{userSearchQuery}". Try a different search term.
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredUsers.map((user) => (
+                    <UserCard key={user.id} user={user} />
+                  ))}
+                </div>
+              );
+            })()}
           </section>
 
           {/* Stats footer */}
