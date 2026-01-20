@@ -71,6 +71,13 @@ export default function AdminSettings() {
     rateLimitPer15Min: 450,
   });
 
+  // Validation error state for crawler form
+  const [crawlerErrors, setCrawlerErrors] = useState<{
+    intervalHours?: string;
+    historyDepthDays?: string;
+    rateLimitPer15Min?: string;
+  }>({});
+
   const fetchSettings = async () => {
     try {
       const response = await fetch('http://localhost:3001/api/admin/settings', {
@@ -118,11 +125,44 @@ export default function AdminSettings() {
     fetchSettings();
   }, [navigate]);
 
+  // Validate crawler form and return errors
+  const validateCrawlerForm = (): boolean => {
+    const errors: typeof crawlerErrors = {};
+    let isValid = true;
+
+    // Validate interval hours
+    if (crawlerForm.intervalHours < 1 || crawlerForm.intervalHours > 168) {
+      errors.intervalHours = 'Must be between 1 and 168 hours';
+      isValid = false;
+    }
+
+    // Validate history depth
+    if (crawlerForm.historyDepthDays < 1 || crawlerForm.historyDepthDays > 365) {
+      errors.historyDepthDays = 'Must be between 1 and 365 days';
+      isValid = false;
+    }
+
+    // Validate rate limit
+    if (crawlerForm.rateLimitPer15Min < 1 || crawlerForm.rateLimitPer15Min > 900) {
+      errors.rateLimitPer15Min = 'Must be between 1 and 900';
+      isValid = false;
+    }
+
+    setCrawlerErrors(errors);
+    return isValid;
+  };
+
   const handleSaveCrawler = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
     setError(null);
     setSuccessMessage(null);
+
+    // Validate form before submitting
+    if (!validateCrawlerForm()) {
+      return; // Form is invalid, don't submit
+    }
+
+    setSaving(true);
 
     try {
       const response = await fetch('http://localhost:3001/api/admin/settings', {
@@ -138,7 +178,8 @@ export default function AdminSettings() {
       }
 
       if (!response.ok) {
-        throw new Error('Failed to save crawler settings');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to save crawler settings');
       }
 
       setSuccessMessage('Crawler settings saved successfully!');
@@ -260,14 +301,23 @@ export default function AdminSettings() {
                 min="1"
                 max="168"
                 value={crawlerForm.intervalHours}
-                onChange={(e) =>
-                  setCrawlerForm({ ...crawlerForm, intervalHours: parseInt(e.target.value) || 1 })
-                }
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(e) => {
+                  setCrawlerForm({ ...crawlerForm, intervalHours: parseInt(e.target.value) || 0 });
+                  setCrawlerErrors({ ...crawlerErrors, intervalHours: undefined });
+                }}
+                className={`w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  crawlerErrors.intervalHours ? 'border-destructive' : 'border-border'
+                }`}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                How often to fetch new tweets (1-168 hours)
-              </p>
+              {crawlerErrors.intervalHours ? (
+                <p className="text-xs text-destructive mt-1">
+                  {crawlerErrors.intervalHours}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">
+                  How often to fetch new tweets (1-168 hours)
+                </p>
+              )}
             </div>
 
             <div>
@@ -279,14 +329,23 @@ export default function AdminSettings() {
                 min="1"
                 max="365"
                 value={crawlerForm.historyDepthDays}
-                onChange={(e) =>
-                  setCrawlerForm({ ...crawlerForm, historyDepthDays: parseInt(e.target.value) || 90 })
-                }
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(e) => {
+                  setCrawlerForm({ ...crawlerForm, historyDepthDays: parseInt(e.target.value) || 0 });
+                  setCrawlerErrors({ ...crawlerErrors, historyDepthDays: undefined });
+                }}
+                className={`w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  crawlerErrors.historyDepthDays ? 'border-destructive' : 'border-border'
+                }`}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                How far back to fetch tweets (1-365 days)
-              </p>
+              {crawlerErrors.historyDepthDays ? (
+                <p className="text-xs text-destructive mt-1">
+                  {crawlerErrors.historyDepthDays}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">
+                  How far back to fetch tweets (1-365 days)
+                </p>
+              )}
             </div>
 
             <div>
@@ -298,14 +357,23 @@ export default function AdminSettings() {
                 min="1"
                 max="900"
                 value={crawlerForm.rateLimitPer15Min}
-                onChange={(e) =>
-                  setCrawlerForm({ ...crawlerForm, rateLimitPer15Min: parseInt(e.target.value) || 450 })
-                }
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(e) => {
+                  setCrawlerForm({ ...crawlerForm, rateLimitPer15Min: parseInt(e.target.value) || 0 });
+                  setCrawlerErrors({ ...crawlerErrors, rateLimitPer15Min: undefined });
+                }}
+                className={`w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  crawlerErrors.rateLimitPer15Min ? 'border-destructive' : 'border-border'
+                }`}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Twitter API requests allowed per 15 minutes
-              </p>
+              {crawlerErrors.rateLimitPer15Min ? (
+                <p className="text-xs text-destructive mt-1">
+                  {crawlerErrors.rateLimitPer15Min}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Twitter API requests allowed per 15 minutes
+                </p>
+              )}
             </div>
           </div>
 

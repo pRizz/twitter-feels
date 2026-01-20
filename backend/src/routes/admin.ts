@@ -440,6 +440,56 @@ router.get('/settings', (_req, res) => {
 router.put('/settings', (req, res) => {
   const { crawler, backup } = req.body;
 
+  // Validate crawler settings if provided
+  if (crawler) {
+    const errors: string[] = [];
+
+    if (crawler.intervalHours !== undefined) {
+      const interval = Number(crawler.intervalHours);
+      if (isNaN(interval) || interval < 1 || interval > 168) {
+        errors.push('Crawl interval must be between 1 and 168 hours');
+      }
+    }
+
+    if (crawler.historyDepthDays !== undefined) {
+      const depth = Number(crawler.historyDepthDays);
+      if (isNaN(depth) || depth < 1 || depth > 365) {
+        errors.push('History depth must be between 1 and 365 days');
+      }
+    }
+
+    if (crawler.rateLimitPer15Min !== undefined) {
+      const limit = Number(crawler.rateLimitPer15Min);
+      if (isNaN(limit) || limit < 1 || limit > 900) {
+        errors.push('Rate limit must be between 1 and 900 requests per 15 minutes');
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({ error: errors.join('. ') });
+    }
+  }
+
+  // Validate backup settings if provided
+  if (backup) {
+    const errors: string[] = [];
+
+    if (backup.enabled && !backup.bucketName && backup.bucketName !== undefined) {
+      errors.push('S3 bucket name is required when backups are enabled');
+    }
+
+    if (backup.retentionDays !== undefined) {
+      const retention = Number(backup.retentionDays);
+      if (isNaN(retention) || retention < 1 || retention > 365) {
+        errors.push('Retention period must be between 1 and 365 days');
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({ error: errors.join('. ') });
+    }
+  }
+
   try {
     // Update crawler settings if provided
     if (crawler) {
