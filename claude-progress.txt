@@ -2504,3 +2504,70 @@ The empty state message was implemented in Dashboard.tsx (lines 394-422):
 - All numeric values are proper JavaScript numbers
 - Arrays are properly formatted with expected entry structures
 - No mock data - all data from real database
+[Testing] 2026-01-20 15:39:28 - Feature #57 regression test PASSED - Admin crawler settings panel displays:
+- Logged in as admin successfully
+- Navigated to /admin/settings
+- Crawler Settings section visible with spider emoji header
+- Crawl Interval (hours): visible, value=1, range 1-168 hours
+- History Depth (days): visible, value=90, range 1-365 days
+- Rate Limit (per 15 min): visible, value=450
+- Save Crawler Settings button present
+- No JavaScript console errors
+- Screenshot: .playwright-mcp/feature57-crawler-settings-regression.png
+
+---
+
+## Session - Feature #102 - 2026-01-20
+
+### Feature #102: Dropdown options come from database (COMPLETED)
+- **Status**: PASSING
+- **Description**: LLM model dropdown is populated from real data
+
+### Verification Steps Completed:
+1. Query database for enabled LLM models - ✅ API returned 5 enabled models
+2. Navigate to dashboard - ✅ Navigated to http://localhost:5173
+3. Click model filter dropdown - ✅ Clicked and expanded dropdown
+4. Verify dropdown options match database records - ✅ All models match exactly
+
+### API Response Verified:
+```json
+{
+  "models": [
+    {"id": "5", "name": "Emotion English DistilRoBERTa (base)", "provider": "huggingface"},
+    {"id": "1", "name": "Llama-3-Sentiment (3.1)", "provider": "local"},
+    {"id": "2", "name": "Llama-3-Sentiment (3.1)", "provider": "local"},
+    {"id": "3", "name": "Llama-3-Sentiment (3.1)", "provider": "local"},
+    {"id": "4", "name": "Twitter RoBERTa Sentiment (latest)", "provider": "huggingface"}
+  ]
+}
+```
+
+### Dropdown Options Verified:
+- Combined (default, always present)
+- Emotion English DistilRoBERTa (base)
+- Llama-3-Sentiment (3.1) x3
+- Twitter RoBERTa Sentiment (latest)
+
+### Implementation Details:
+- Frontend fetches models from GET /api/models on component mount (Dashboard.tsx line 281)
+- Backend queries llm_models table filtering for is_enabled=1 AND download_status="ready" (public.ts lines 657-685)
+- Models are formatted with id and name for the dropdown
+- Model selection triggers dashboard data re-fetch with modelId parameter
+
+### Screenshots:
+- `.playwright-mcp/feature102-model-dropdown-options.png` - Dropdown with all model options
+- `.playwright-mcp/feature102-model-selected.png` - "Emotion English DistilRoBERTa (base)" selected
+
+### Console Errors:
+- No JavaScript errors
+- Only external Twitter CDN 404s (profile images from Twitter - unrelated to feature)
+
+### Current Progress:
+- Features passing: 42/235 (~17.9%)
+- Feature #102 marked as passing
+
+### Notes:
+- Feature was already fully implemented in previous sessions
+- This session verified the API data flows correctly to the UI dropdown
+- No code changes required - verification only
+
