@@ -3699,3 +3699,77 @@ This handles:
 - Invalid IDs return proper 404 responses without data leakage
 - SQL injection attempts are safely handled by the parameterized queries
 - Frontend shows appropriate error pages with navigation back to dashboard
+
+---
+
+## Session - Feature #120 - 2026-01-20
+
+### Feature #120: Malformed URL parameters handled (COMPLETED)
+- **Status**: PASSING
+- **Description**: Invalid query params don't crash the app
+
+### Verification Steps Completed:
+1. Navigate to dashboard with invalid params - Tested multiple malformed URLs
+2. Verify app loads without crash - All pages loaded successfully
+3. Verify sensible defaults applied - Invalid values fell back to defaults
+
+### Test Cases Verified:
+
+1. **Invalid parameter values** ✅
+   - URL: `?period=INVALID_VALUE&model=<script>alert(1)</script>&sortBy=999999&sortOrder=undefined`
+   - Result: All invalid values defaulted to sensible defaults (weekly, combined, followers, desc)
+
+2. **Empty string parameters** ✅
+   - URL: `?period=&model=&sortBy=&sortOrder=`
+   - Result: Empty values defaulted gracefully
+
+3. **SQL injection / path traversal attempts** ✅
+   - URL: `?period=%00null%00&model='OR'1'='1&sortBy=../../../etc/passwd&sortOrder=DROP TABLE users;--`
+   - Result: Malicious payloads handled safely, defaulted to valid values
+
+4. **Unicode / emoji characters** ✅
+   - URL: `?period=日本語&model=émojis🎉&sortBy=中文&sortOrder=العربية`
+   - Result: Unicode handled gracefully, defaulted to valid values
+
+5. **Duplicate parameters** ✅
+   - URL: `?period=weekly&period=monthly&period=yearly`
+   - Result: First valid value used (weekly)
+
+6. **Invalid user ID in URL path** ✅
+   - URL: `/users/abc`
+   - Result: Shows "User not found" with link to dashboard
+
+7. **Invalid tweet ID in URL path** ✅
+   - URL: `/tweets/-1`
+   - Result: Shows "Tweet not found" with link to dashboard
+
+8. **Valid parameters still work** ✅
+   - URL: `?period=all_time`
+   - Result: Dashboard displays with real data, correct filter selected
+
+### Technical Implementation:
+- Dashboard.tsx lines 312-339 validate URL parameters against allowed values
+- VALID_TIME_PERIODS, VALID_SORT_BY, VALID_SORT_ORDER arrays define allowed values
+- Invalid values fall back to defaults: weekly, followers, desc
+- Model filter accepts any value (validated on server side)
+- React Router's useSearchParams handles URL encoding/decoding safely
+
+### Screenshots:
+- `.playwright-mcp/feature120-malformed-params-test1.png` - XSS and invalid params handled
+- `.playwright-mcp/feature120-user-invalid-id.png` - Invalid user ID error page
+- `.playwright-mcp/feature120-unicode-params.png` - Unicode params handled
+- `.playwright-mcp/feature120-valid-params-working.png` - Valid params work correctly
+
+### Console Errors:
+- No JavaScript errors related to the feature
+- Only external Twitter CDN 404s (profile images - unrelated)
+
+### Current Progress:
+- Features passing: 60/235 (~25.5%)
+- Feature #120 marked as passing
+
+### Notes:
+- No code changes required - feature was already implemented correctly
+- URL parameter validation in Dashboard.tsx handles malformed inputs
+- User and Tweet detail pages show proper 404 error pages for invalid IDs
+- XSS attempts are safely escaped by React and browser URL encoding
