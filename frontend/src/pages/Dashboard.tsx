@@ -339,8 +339,12 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
+        // Check URL for delay param (used for testing loading states)
+        const urlParams = new URLSearchParams(window.location.search);
+        const testDelay = urlParams.get('testDelay') || '';
+        const delayParam = testDelay ? `&delay=${testDelay}` : '';
         const response = await fetch(
-          `http://localhost:3001/api/dashboard?timeBucket=${timePeriod}&modelId=${modelFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}`
+          `http://localhost:3001/api/dashboard?timeBucket=${timePeriod}&modelId=${modelFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}${delayParam}`
         );
         if (!response.ok) {
           throw new Error('Failed to fetch dashboard data');
@@ -440,8 +444,9 @@ export default function Dashboard() {
 
       {/* Loading state */}
       {isLoading && (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12" role="status" aria-label="Loading dashboard data">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-cyan"></div>
+          <span className="sr-only">Loading...</span>
         </div>
       )}
 
@@ -470,83 +475,88 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Average Twitter Feel Section - Gauges */}
-      <section className="mb-10 animate-slide-up">
-        <h2 className="text-2xl font-semibold mb-6 text-foreground flex items-center gap-2">
-          <span className="text-primary-cyan">⚡</span>
-          Average Twitter Feel
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {gauges.map((gauge) => (
-            <Gauge key={gauge.name} {...gauge} />
-          ))}
-        </div>
-      </section>
-
-      {/* Leaderboards Section */}
-      <section className="mb-10" style={{ animationDelay: '0.1s' }}>
-        <h2 className="text-2xl font-semibold mb-6 text-foreground flex items-center gap-2">
-          <span className="text-primary-violet">🏆</span>
-          Emotion Leaderboards
-        </h2>
-        {leaderboards.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {leaderboards.map((board) => (
-              <Leaderboard key={board.emotion} data={board} />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-card rounded-lg p-8 border border-border text-center">
-            <p className="text-muted-foreground">
-              No leaderboard data available yet. Start tracking Twitter users to see rankings!
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* Tracked Influencers Grid */}
-      <section style={{ animationDelay: '0.2s' }}>
-        <h2 className="text-2xl font-semibold mb-6 text-foreground flex items-center gap-2">
-          <span className="text-primary-cyan">👥</span>
-          Tracked Influencers
-        </h2>
-        {users.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {users.map((user) => (
-              <UserCard key={user.id} user={user} />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-card rounded-lg p-8 border border-border text-center">
-            <p className="text-muted-foreground">
-              No Twitter users are being tracked yet. Visit the{' '}
-              <Link to="/admin/login" className="text-primary-cyan hover:underline">
-                admin dashboard
-              </Link>{' '}
-              to add users.
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* Stats footer */}
-      {data && (
-        <section className="mt-10 pt-6 border-t border-border">
-          <div className="flex flex-wrap justify-center gap-8 text-center">
-            <div>
-              <p className="text-2xl font-bold text-primary-cyan">{data.stats.totalUsers}</p>
-              <p className="text-sm text-muted-foreground">Tracked Users</p>
+      {/* Content sections - hidden during loading */}
+      {!isLoading && (
+        <>
+          {/* Average Twitter Feel Section - Gauges */}
+          <section className="mb-10 animate-slide-up">
+            <h2 className="text-2xl font-semibold mb-6 text-foreground flex items-center gap-2">
+              <span className="text-primary-cyan">⚡</span>
+              Average Twitter Feel
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {gauges.map((gauge) => (
+                <Gauge key={gauge.name} {...gauge} />
+              ))}
             </div>
-            <div>
-              <p className="text-2xl font-bold text-primary-violet">{data.stats.totalTweets}</p>
-              <p className="text-sm text-muted-foreground">Tweets Analyzed</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-success">{data.stats.totalAnalyses}</p>
-              <p className="text-sm text-muted-foreground">Sentiment Analyses</p>
-            </div>
-          </div>
-        </section>
+          </section>
+
+          {/* Leaderboards Section */}
+          <section className="mb-10" style={{ animationDelay: '0.1s' }}>
+            <h2 className="text-2xl font-semibold mb-6 text-foreground flex items-center gap-2">
+              <span className="text-primary-violet">🏆</span>
+              Emotion Leaderboards
+            </h2>
+            {leaderboards.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {leaderboards.map((board) => (
+                  <Leaderboard key={board.emotion} data={board} />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-card rounded-lg p-8 border border-border text-center">
+                <p className="text-muted-foreground">
+                  No leaderboard data available yet. Start tracking Twitter users to see rankings!
+                </p>
+              </div>
+            )}
+          </section>
+
+          {/* Tracked Influencers Grid */}
+          <section style={{ animationDelay: '0.2s' }}>
+            <h2 className="text-2xl font-semibold mb-6 text-foreground flex items-center gap-2">
+              <span className="text-primary-cyan">👥</span>
+              Tracked Influencers
+            </h2>
+            {users.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {users.map((user) => (
+                  <UserCard key={user.id} user={user} />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-card rounded-lg p-8 border border-border text-center">
+                <p className="text-muted-foreground">
+                  No Twitter users are being tracked yet. Visit the{' '}
+                  <Link to="/admin/login" className="text-primary-cyan hover:underline">
+                    admin dashboard
+                  </Link>{' '}
+                  to add users.
+                </p>
+              </div>
+            )}
+          </section>
+
+          {/* Stats footer */}
+          {data && (
+            <section className="mt-10 pt-6 border-t border-border">
+              <div className="flex flex-wrap justify-center gap-8 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-primary-cyan">{data.stats.totalUsers}</p>
+                  <p className="text-sm text-muted-foreground">Tracked Users</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-primary-violet">{data.stats.totalTweets}</p>
+                  <p className="text-sm text-muted-foreground">Tweets Analyzed</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-success">{data.stats.totalAnalyses}</p>
+                  <p className="text-sm text-muted-foreground">Sentiment Analyses</p>
+                </div>
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   );

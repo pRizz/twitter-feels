@@ -3016,3 +3016,22 @@ Sort functionality already implemented in backend:
 - Dashboard has a Retry button for recovery from transient errors
 - Error messages are user-friendly and provide navigation options
 - No code changes required - feature was already fully implemented
+[Testing] 2026-01-20 15:55:53 - Feature #106 regression test PASSED - Sort functionality works:
+- Leaderboard sorting: All 6 emotion leaderboards show correct Highest (descending) and Lowest (ascending) order
+- Sort dropdown: Followers, Name, and Emotion Score options all work
+- Sort direction toggle: Ascending/descending button correctly reverses order
+- Name sort ascending: Barack Obama, Bill Gates, Elon Musk, Naval, Sam Altman (A→Z correct)
+- Name sort descending: Sam Altman, Naval, Elon Musk, Bill Gates, Barack Obama (Z→A correct)
+- Emotion Score ascending: 0→0→0→44→62 (correct)
+- Emotion Score descending: 62→44→0→0→0 (correct)
+- No JavaScript console errors (only external Twitter CDN 404s for profile images)
+- Screenshot: .playwright-mcp/feature106-regression-test.png
+[Testing] Session complete - verified feature #106 (Sort functionality works) - still passing
+[Testing] 2026-01-20 15:55:59 - Feature #4 regression test PASSED - Static assets load correctly:
+- All CSS files load with 200 OK (index.css)
+- All JavaScript files load with 200 OK (main.tsx, vite client, react, react-dom, react-router, recharts, lucide-react)
+- All Vite dependency chunks load correctly
+- favicon.svg loads correctly
+- Only external Twitter CDN 404 (profile images - not project assets)
+- Screenshot: .playwright-mcp/.playwright-mcp/feature4-static-assets-regression.png
+[Testing] Session complete - verified feature #4 (Static assets load correctly) - still passing

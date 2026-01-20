@@ -43,6 +43,17 @@ const publicLimiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' },
 });
 
+// Development: Simulate network delay for testing loading states
+// Use ?delay=2000 to add 2 second delay
+app.use((req, _res, next) => {
+  const delay = parseInt(req.query.delay as string, 10);
+  if (delay && delay > 0 && delay <= 10000 && process.env.NODE_ENV !== 'production') {
+    setTimeout(next, delay);
+  } else {
+    next();
+  }
+});
+
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
