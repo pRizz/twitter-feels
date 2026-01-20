@@ -1832,3 +1832,82 @@ Marked as passing since verification was already complete.
 - Time filtering now properly filters all dashboard data (gauges, users, leaderboards)
 - Default gauge value is 50 when no data matches the time filter
 - No mock data - real-time filtering based on tweet_timestamp
+[Testing] 2026-01-20 13:40 - Feature #62 regression test PASSED - Admin can download LLM model:
+- Logged in as admin successfully
+- Navigated to /admin/models - LLM Models page loaded
+- Installed Models section showed 4 existing models (3 Llama-3-Sentiment, 1 Twitter RoBERTa)
+- Available Models section showed 4 downloadable models
+- Clicked 'Download' on Emotion English DistilRoBERTa model
+- Model immediately moved to Installed Models section with 'Downloading' status
+- Progress indicator (Downloading badge) visible
+- After ~3 seconds, status changed to 'Ready'
+- Model now shows 'Enabled' button (auto-enabled after download)
+- Model no longer appears in Available Models (correctly removed)
+- No console errors detected
+- Screenshots: feature62-llm-models-page.png, feature62-download-in-progress.png, feature62-download-complete.png
+
+---
+
+## Session - Feature #85 - 2026-01-20
+
+### Feature #85: Model filter shows model-specific data (COMPLETED)
+- **Status**: PASSING
+- **Description**: Selecting specific LLM shows that model's analysis
+
+### Implementation Details:
+
+1. **Backend (public.ts) - GET /api/models endpoint**:
+   - Returns enabled LLM models with ready download status
+   - Formats model name with version: "Model Name (version)"
+   - Returns id, name, provider for dropdown population
+
+2. **Backend (public.ts) - Dashboard model filtering**:
+   - Added modelId filtering to user top emotion calculations
+   - Added modelId filtering to leaderboard calculations
+   - Gauges, users, and leaderboards all filter by selected model
+
+3. **Frontend (Dashboard.tsx)**:
+   - Added models state and fetchModels effect on mount
+   - Populates ModelFilter dropdown with models from API
+   - Passes modelId to dashboard API requests
+
+### Verification Steps Completed:
+1. Navigate to dashboard - ✅ Dashboard loads with model dropdown showing all available models
+2. Select specific LLM model filter - ✅ Selected "Llama-3-Sentiment (3.1)" and "Emotion English DistilRoBERTa (base)"
+3. Query database for that model's aggregations - ✅ Verified via database queries:
+   - Model 1: 6 analyses, emotion averages calculated
+   - Model 5: 0 analyses, no data
+4. Compare displayed values - ✅
+   - Model 1: Gauges 23, 43, 23, 62, 31, 30 - matches calculated values
+   - Model 5: Gauges all 50 (default when no data)
+5. Verify only that model's data is shown - ✅
+   - Model 1: Leaderboards populated with Elon Musk and Bill Gates
+   - Model 5: Leaderboards show "No data yet"
+   - Model 1: Users show top emotions (excited: 44, inspirational: 62)
+   - Model 5: Users show "none: 0"
+
+### Database Verification:
+- Model 1 (Llama-3-Sentiment): 6 analyses with emotion scores
+- Model 5 (Emotion English DistilRoBERTa): 0 analyses
+- Calculated Anger Gauge for Model 1: 23 (matches UI display)
+
+### Screenshots:
+- `.playwright-mcp/feature85-dashboard-all-time-combined.png` - Dashboard with Combined models
+- `.playwright-mcp/feature85-model-filter-llama3.png` - Dashboard filtered to Llama-3-Sentiment
+- `.playwright-mcp/feature85-model-filter-no-data.png` - Dashboard filtered to model with no data
+
+### Console Errors:
+- Only external Twitter CDN 404 (unrelated to feature)
+
+### Current Progress:
+- Features passing: 31/235 (~13.2%)
+- Feature #85 marked as passing
+
+### Commit:
+- 63dc36d - Implement model filter for dashboard data - Feature #85
+
+### Notes:
+- Model filter correctly filters all dashboard data (gauges, users, leaderboards)
+- Default gauge value is 50 when no data matches the model filter
+- "Combined" option shows data from all models (no filter applied)
+- No mock data - all filtering from real sentiment_analyses table
