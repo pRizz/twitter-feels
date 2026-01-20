@@ -30,11 +30,34 @@ function calculateGaugeValue(
   return count > 0 ? Math.round(sum / count) : 50; // Default to 50 if no data
 }
 
+// Helper function to get date cutoff for time bucket
+function getTimeBucketCutoff(timeBucket: string): string | null {
+  const now = new Date();
+  switch (timeBucket) {
+    case 'weekly':
+      // Last 7 days
+      now.setDate(now.getDate() - 7);
+      return now.toISOString();
+    case 'monthly':
+      // Last 30 days
+      now.setDate(now.getDate() - 30);
+      return now.toISOString();
+    case 'yearly':
+      // Last 365 days
+      now.setDate(now.getDate() - 365);
+      return now.toISOString();
+    case 'all_time':
+    default:
+      return null; // No filter
+  }
+}
+
 // GET /api/dashboard - Main dashboard data
 router.get('/dashboard', (req, res) => {
   try {
-    void req.query.timeBucket; // TODO: implement time bucket filtering
+    const timeBucket = (req.query.timeBucket as string) || 'all_time';
     const modelId = req.query.modelId as string;
+    const timeCutoff = getTimeBucketCutoff(timeBucket);
 
     // Get stats from database
     const userCount = db.prepare('SELECT COUNT(*) as count FROM twitter_users WHERE is_active = 1').get() as { count: number };
@@ -48,19 +71,31 @@ router.get('/dashboard', (req, res) => {
     const gaugeConfigs = gaugeConfigRow ? JSON.parse(gaugeConfigRow.value) : [];
     const emotionColors = emotionConfigRow ? JSON.parse(emotionConfigRow.value) : {};
 
-    // Calculate emotion averages from all sentiment analyses
+    // Calculate emotion averages from sentiment analyses with time filtering
     // If modelId is specified, filter by model; otherwise use all models
-    let emotionQuery = `
+    const queryConditions: string[] = [];
+    const queryParams: unknown[] = [];
+
+    // Add time bucket filter
+    if (timeCutoff) {
+      queryConditions.push('t.tweet_timestamp >= ?');
+      queryParams.push(timeCutoff);
+    }
+
+    // Add model filter
+    if (modelId && modelId !== 'combined') {
+      queryConditions.push('sa.llm_model_id = ?');
+      queryParams.push(modelId);
+    }
+
+    const whereClause = queryConditions.length > 0 ? ' WHERE ' + queryConditions.join(' AND ') : '';
+
+    const emotionQuery = `
       SELECT emotion_scores
       FROM sentiment_analyses sa
       JOIN tweets t ON sa.tweet_id = t.id
+      ${whereClause}
     `;
-    const queryParams: unknown[] = [];
-
-    if (modelId && modelId !== 'combined') {
-      emotionQuery += ' WHERE sa.llm_model_id = ?';
-      queryParams.push(modelId);
-    }
 
     const analyses = db.prepare(emotionQuery).all(...queryParams) as Array<{ emotion_scores: string }>;
 
@@ -122,14 +157,22 @@ router.get('/dashboard', (req, res) => {
       bio: string | null;
     }>;
 
-    // Calculate top emotion for each user
+    // Calculate top emotion for each user with time filtering
     const usersWithEmotions = users.map(user => {
+      // Build user-specific query with time filter
+      const userQueryParams: unknown[] = [user.id];
+      let userTimeFilter = '';
+      if (timeCutoff) {
+        userTimeFilter = ' AND t.tweet_timestamp >= ?';
+        userQueryParams.push(timeCutoff);
+      }
+
       const userAnalyses = db.prepare(`
         SELECT sa.emotion_scores
         FROM sentiment_analyses sa
         JOIN tweets t ON sa.tweet_id = t.id
-        WHERE t.twitter_user_id = ?
-      `).all(user.id) as Array<{ emotion_scores: string }>;
+        WHERE t.twitter_user_id = ?${userTimeFilter}
+      `).all(...userQueryParams) as Array<{ emotion_scores: string }>;
 
       let topEmotion = 'none';
       let topEmotionScore = 0;
@@ -169,20 +212,27 @@ router.get('/dashboard', (req, res) => {
       };
     });
 
-    // Build leaderboards from user emotion data
+    // Build leaderboards from user emotion data with time filtering
     const emotions = Object.keys(emotionColors);
     const leaderboards = emotions.slice(0, 6).map(emotion => {
       // Get users sorted by this emotion (highest)
       const usersWithEmotion = usersWithEmotions
         .filter(u => u.topEmotion !== 'none')
         .map(u => {
-          // Calculate this user's average for this specific emotion
+          // Calculate this user's average for this specific emotion with time filter
+          const leaderboardQueryParams: unknown[] = [Number(u.id)];
+          let leaderboardTimeFilter = '';
+          if (timeCutoff) {
+            leaderboardTimeFilter = ' AND t.tweet_timestamp >= ?';
+            leaderboardQueryParams.push(timeCutoff);
+          }
+
           const userAnalyses = db.prepare(`
             SELECT sa.emotion_scores
             FROM sentiment_analyses sa
             JOIN tweets t ON sa.tweet_id = t.id
-            WHERE t.twitter_user_id = ?
-          `).all(Number(u.id)) as Array<{ emotion_scores: string }>;
+            WHERE t.twitter_user_id = ?${leaderboardTimeFilter}
+          `).all(...leaderboardQueryParams) as Array<{ emotion_scores: string }>;
 
           let emotionSum = 0;
           let emotionCount = 0;
@@ -212,6 +262,9 @@ router.get('/dashboard', (req, res) => {
       };
     });
 
+    // Count analyses in the filtered time period
+    const filteredAnalysisCount = analyses.length;
+
     res.json({
       lastUpdated,
       gauges,
@@ -223,6 +276,9 @@ router.get('/dashboard', (req, res) => {
         totalAnalyses: analysisCount.count,
       },
       emotionAverages, // Include raw emotion averages for debugging/verification
+      timeBucket, // Return the time bucket used for filtering
+      timeCutoff, // Return the cutoff date for verification
+      filteredAnalysisCount, // How many analyses matched the time filter
     });
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
