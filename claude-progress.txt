@@ -43,3 +43,55 @@ pnpm --dir frontend run dev
 - Frontend runs on http://localhost:5173
 - Dark mode is the default theme
 - Theme toggle persists to localStorage
+[Testing] 2026-01-20 12:39:11 - Feature #1 regression test PASSED - App loads without errors, theme toggle works, no console errors
+
+---
+
+## Session 2 - 2026-01-20
+
+### Feature #60: Admin LLM Models page displays (COMPLETED)
+- **Status**: PASSING
+- **Description**: Shows installed models and available models
+
+### Implementation Details:
+1. Created backend database connection utility (`backend/src/db/connection.ts`)
+2. Updated `/api/admin/models` endpoint to:
+   - Return installed models from the database
+   - Return simulated available models from Hugging Face
+   - Filter out already installed models from available list
+3. Implemented full `Models.tsx` frontend page with:
+   - "Installed Models" section showing installed LLM models
+   - "Available Models" browser section with 5 sample models
+   - Model cards displaying: name, version, status badge, downloads, likes, size, update date
+   - Download buttons for available models
+   - Enable/disable toggles for installed models
+   - Links to Hugging Face model pages
+4. Fixed `Login.tsx` to actually call the backend API for authentication
+5. Updated CORS configuration to allow both ports 5173 and 5174
+
+### Verification Steps Completed:
+1. Started backend server on port 3001
+2. Started frontend server on port 5174
+3. Logged in as admin via browser automation
+4. Navigated to /admin/models
+5. Verified installed models section displays correctly
+6. Verified available models browser section shows 5 models
+7. Verified model cards show name, version, and status
+8. Checked for console errors - none found
+
+### Screenshots:
+- `.playwright-mcp/admin-login-page.png` - Admin login page
+- `.playwright-mcp/admin-models-page.png` - LLM Models page with installed and available sections
+
+### Current Progress:
+- Features passing: 2/235 (~0.8%)
+- Feature #60 marked as passing
+
+### Commit:
+- `1a607a4` - Implement Admin LLM Models page with installed and available models sections
+
+### Notes:
+- The admin authentication now properly calls the backend API
+- Session cookies are properly set with credentials: 'include'
+- Available models list shows realistic data (simulated Hugging Face models)
+- Model cards are fully responsive and styled with the futuristic dark theme
