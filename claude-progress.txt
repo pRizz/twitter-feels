@@ -3773,3 +3773,15 @@ This handles:
 - URL parameter validation in Dashboard.tsx handles malformed inputs
 - User and Tweet detail pages show proper 404 error pages for invalid IDs
 - XSS attempts are safely escaped by React and browser URL encoding
+
+[Testing] 2026-01-20 - Feature #57 regression test PASSED - Admin crawler settings panel displays:
+- Logged in as admin successfully
+- Navigated to /admin/settings
+- Crawler Settings section visible with spider emoji icon
+- Crawl Interval (hours) setting visible: value=1, range 1-168 hours
+- History Depth (days) setting visible: value=90, range 1-365 days
+- Rate Limit (per 15 min) setting visible: value=450
+- Save Crawler Settings button present
+- Only console error: External Twitter CDN 404 (unrelated to feature)
+- Screenshot: .playwright-mcp/feature57-crawler-settings-panel.png
+[Testing] Session complete - verified feature #57 (Admin crawler settings panel displays) - still passing
