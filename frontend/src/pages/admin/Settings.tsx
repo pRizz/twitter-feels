@@ -1,6 +1,8 @@
 // Admin Settings - Crawler and S3 backup configuration
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 
 interface CrawlerSettings {
   intervalHours: number;
@@ -78,6 +80,52 @@ export default function AdminSettings() {
     rateLimitPer15Min?: string;
   }>({});
 
+  // Track initial values for dirty state detection
+  const [initialCrawlerForm, setInitialCrawlerForm] = useState({
+    intervalHours: 1,
+    historyDepthDays: 90,
+    rateLimitPer15Min: 450,
+  });
+
+  const [initialBackupForm, setInitialBackupForm] = useState({
+    enabled: false,
+    bucketName: '',
+    region: 'us-east-1',
+    accessKeyId: '',
+    secretAccessKey: '',
+    schedule: 'daily',
+    retentionDays: 30,
+  });
+
+  // Calculate if forms have been modified (dirty state)
+  const isCrawlerDirty = useMemo(() => {
+    return (
+      crawlerForm.intervalHours !== initialCrawlerForm.intervalHours ||
+      crawlerForm.historyDepthDays !== initialCrawlerForm.historyDepthDays ||
+      crawlerForm.rateLimitPer15Min !== initialCrawlerForm.rateLimitPer15Min
+    );
+  }, [crawlerForm, initialCrawlerForm]);
+
+  const isBackupDirty = useMemo(() => {
+    return (
+      backupForm.enabled !== initialBackupForm.enabled ||
+      backupForm.bucketName !== initialBackupForm.bucketName ||
+      backupForm.region !== initialBackupForm.region ||
+      backupForm.accessKeyId !== initialBackupForm.accessKeyId ||
+      backupForm.secretAccessKey !== initialBackupForm.secretAccessKey ||
+      backupForm.schedule !== initialBackupForm.schedule ||
+      backupForm.retentionDays !== initialBackupForm.retentionDays
+    );
+  }, [backupForm, initialBackupForm]);
+
+  const isFormDirty = isCrawlerDirty || isBackupDirty;
+
+  // Hook for unsaved changes warning
+  const { showWarning, confirmNavigation, cancelNavigation } = useUnsavedChangesWarning({
+    isDirty: isFormDirty,
+    message: 'You have unsaved changes to your settings. Are you sure you want to leave?',
+  });
+
   const fetchSettings = async () => {
     try {
       const response = await fetch('http://localhost:3001/api/admin/settings', {
@@ -96,14 +144,16 @@ export default function AdminSettings() {
       const data: Settings = await response.json();
       setSettings(data);
 
-      // Initialize form state
-      setCrawlerForm({
+      // Initialize form state and track initial values for dirty detection
+      const crawlerValues = {
         intervalHours: data.crawler.intervalHours,
         historyDepthDays: data.crawler.historyDepthDays,
         rateLimitPer15Min: data.crawler.rateLimitPer15Min,
-      });
+      };
+      setCrawlerForm(crawlerValues);
+      setInitialCrawlerForm(crawlerValues);
 
-      setBackupForm({
+      const backupValues = {
         enabled: data.backup.enabled,
         bucketName: data.backup.bucketName,
         region: data.backup.region,
@@ -111,7 +161,9 @@ export default function AdminSettings() {
         secretAccessKey: '', // Never pre-fill secret
         schedule: data.backup.schedule,
         retentionDays: data.backup.retentionDays,
-      });
+      };
+      setBackupForm(backupValues);
+      setInitialBackupForm(backupValues);
 
       setError(null);
     } catch (err) {
@@ -182,6 +234,8 @@ export default function AdminSettings() {
         throw new Error(data.error || 'Failed to save crawler settings');
       }
 
+      // Reset initial values to current values (form is now "clean")
+      setInitialCrawlerForm({ ...crawlerForm });
       setSuccessMessage('Crawler settings saved successfully!');
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
@@ -248,6 +302,21 @@ export default function AdminSettings() {
 
   return (
     <div className="space-y-8">
+      {/* Unsaved Changes Warning Dialog */}
+      <ConfirmDialog
+        open={showWarning}
+        onOpenChange={(open) => {
+          if (!open) cancelNavigation();
+        }}
+        title="Unsaved Changes"
+        description="You have unsaved changes to your settings. If you leave this page, your changes will be lost."
+        confirmLabel="Leave Page"
+        cancelLabel="Stay on Page"
+        onConfirm={confirmNavigation}
+        onCancel={cancelNavigation}
+        variant="warning"
+      />
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Settings</h1>
