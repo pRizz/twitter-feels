@@ -5457,3 +5457,81 @@ Added "Clear Filters" functionality to the Dashboard page:
 ### Commit:
 - a941132 - Implement Feature #145: Required fields show error when empty
 
+
+
+---
+
+## Session - Feature #146 - 2026-01-20
+
+### Feature #146: Invalid crawl interval rejected (COMPLETED)
+- **Status**: PASSING
+- **Category**: M-FormValidation
+- **Description**: Non-positive interval values rejected
+
+### Verification Steps Completed:
+
+1. **Navigate to crawler settings** ✅
+   - Logged into admin panel at /admin
+   - Navigated to Settings page at /admin/settings
+   - Crawler Settings section visible with Crawl Interval field
+
+2. **Enter 0 or negative interval** ✅
+   - Entered "0" in Crawl Interval (hours) field
+   - Also tested "-5" (negative value)
+
+3. **Submit form** ✅
+   - Clicked "Save Crawler Settings" button
+   - Form submission attempted
+
+4. **Verify error message** ✅
+   - Error message displayed: "Value must be greater than or equal to 1."
+   - Orange warning icon shown next to the error
+   - Error appears below the Crawl Interval field
+   - Same error shown for both 0 and -5
+
+5. **Verify not saved** ✅
+   - Reopened browser and logged back in
+   - Navigated to Settings page
+   - Crawl Interval value still shows "2" (original value)
+   - Admin Dashboard shows "Every 2 hours" - confirms not saved
+
+### Screenshots:
+- `.playwright-mcp/feature146-initial-settings.png` - Initial settings page
+- `.playwright-mcp/feature146-zero-entered.png` - Error shown for value 0
+- `.playwright-mcp/feature146-negative-value.png` - Error shown for value -5
+- `.playwright-mcp/feature146-value-not-saved.png` - After reload, value still 2
+
+### Console Errors:
+- No JavaScript errors (401 errors are expected before login)
+
+### Current Progress:
+- Features passing: 86/235 (~36.6%)
+- Feature #146 marked as passing
+
+### Commit:
+- 4dd9310 - Verify Feature #146: Invalid crawl interval rejected
+
+### Notes:
+- No code changes required - validation was already properly implemented
+- HTML5 form validation with min="1" attribute on the spinbutton
+- Frontend validation prevents form submission with invalid values
+- Backend likely also validates (defense in depth)
+
+[Testing] 2026-01-20 - Feature #9 regression test PASSED - Tweet detail route loads:
+- Navigated to /tweets/37 (valid tweet ID)
+- Page loaded without errors at http://localhost:5173/tweets/37
+- Tweet content section renders correctly:
+  * User info: Sam Altman @sama with profile picture
+  * Tweet text: 'Test tweet #1 for pagination feature testing...'
+  * Date: Jan 17, 2026, 5:02 PM
+  * Engagement: 1,000 likes, 100 retweets, 50 comments
+  * View on Twitter link present
+- Emotion Breakdown section visible:
+  * 12 emotions displayed with progress bars
+  * Values: Excited (79), Happy (48), Angry (26), Hopeful (26), Frustrated (26), Sad (23), Thankful (21), Hatred (19), Sarcastic (8), Inspirational (8), Anxious (8), Fearful (3)
+- Analysis by Model section visible:
+  * Shows Llama-3-Sentiment v3.1 analysis
+  * Processing time: 607ms
+- No JavaScript console errors
+- Screenshot: .playwright-mcp/feature9-tweet-detail-regression.png
+[Testing] Session complete - verified feature #9 (Tweet detail route loads) - still passing
