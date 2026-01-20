@@ -4712,3 +4712,127 @@ After deletion:
 - Reset only changes form values, requires Save to persist to database
 - Buttons are styled with muted background to differentiate from primary Save action
 
+
+---
+
+## Session - Feature #135 - 2026-01-20
+
+### Feature #135: Clear filters resets all filters (COMPLETED)
+- **Status**: PASSING
+- **Description**: Clear filters button resets to default view
+
+### Implementation:
+Added "Clear Filters" functionality to the Dashboard page:
+
+**Code changes in `frontend/src/pages/Dashboard.tsx`:**
+1. Added `clearAllFilters` callback function that resets all filters to defaults:
+   - Time Period: "weekly"
+   - Model Filter: "combined"
+   - Sort By: "followers"
+   - Sort Order: "desc"
+   - User Search: "" (empty)
+   - URL parameters: cleared
+2. Added `hasActiveFilters` computed property to detect when any filter is non-default
+3. Added "Clear Filters" button that only appears when `hasActiveFilters` is true
+4. Button includes X icon and subtle styling
+
+### Verification Steps Completed:
+
+1. **Apply multiple filters on dashboard** ✅
+   - Changed Time Period from "Weekly" to "All Time"
+   - Changed Sort By from "Followers" to "Name"
+   - Changed Sort Order from "descending" to "ascending"
+   - Typed "elon" in search box
+   - URL showed: `?period=all_time&sortBy=name&sortOrder=asc`
+   - Only Elon Musk was visible in filtered results
+
+2. **Click clear filters** ✅
+   - Clicked "Clear Filters" button
+   - Button correctly appeared when filters were active
+
+3. **Verify all filters reset to default** ✅
+   - Time Period: "Weekly" (default) - highlighted button changed
+   - Model: "Combined" (default)
+   - Sort By: "Followers" (default) - dropdown reset
+   - Sort Order: "descending" (default) - icon changed back
+   - User Search: empty - search box cleared
+   - URL: `http://localhost:5173/` - all parameters removed
+   - Both users (Elon Musk and Sam Altman) visible again
+   - Clear Filters button hidden (no active filters)
+
+### Screenshots:
+- `.playwright-mcp/feature135-default-state.png` - Initial state with defaults
+- `.playwright-mcp/feature135-one-filter-applied.png` - Clear Filters button appeared
+- `.playwright-mcp/feature135-filters-before-clear.png` - All filters applied
+- `.playwright-mcp/feature135-multiple-filters-applied.png` - Search filtering users
+- `.playwright-mcp/feature135-after-clear-filters.png` - After clicking Clear Filters
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 75/235 (~31.9%)
+- Feature #135 marked as passing
+
+### Commit:
+- aa8fc4f - Implement Feature #135: Clear filters resets all filters
+
+### Notes:
+- Clear Filters button only visible when at least one filter is non-default
+- This provides UX improvement - users can easily return to initial view
+- All filter states (state variables AND URL parameters) are properly reset
+[Testing] 2026-01-20 - Feature #128 regression test PASSED - Delete user removes from leaderboard:
+- Pre-delete state: Elon Musk in all 6 leaderboards (happy:42, sad:15, angry:34, fearful:9, hatred:15, thankful:24)
+- Deleted Elon Musk via admin panel (confirmed deletion)
+- Post-delete state: All 6 leaderboards show 'No data yet'
+- Stats updated: 1 Tracked User, 0 Tweets, 0 Analyses
+- Only Sam Altman remained in Tracked Influencers
+- Re-added Elon Musk to restore database state
+- No JavaScript console errors
+- Screenshots: feature128-leaderboard-before-delete.png, feature128-leaderboard-with-elon.png, feature128-admin-users-before-delete.png, feature128-leaderboard-after-delete.png, feature128-leaderboard-no-data.png
+[Testing] Session complete - verified feature #128 (Delete user removes from leaderboard) - still passing
+
+---
+
+## Session - Feature #137 - 2026-01-20
+
+### Feature #137: Empty search shows all results (COMPLETED)
+- **Status**: PASSING
+- **Description**: Empty search query shows full list
+
+### Verification Steps Completed:
+1. **Navigate to user list** ✅
+   - Loaded dashboard at http://localhost:5173
+   - "Tracked Influencers" section shows 2 users
+   - Both Sam Altman and Elon Musk visible
+
+2. **Type search term to filter** ✅
+   - Typed "elon" in search box
+   - Only Elon Musk displayed (Sam Altman filtered out)
+   - "Clear Filters" button appeared
+
+3. **Clear search box** ✅
+   - Filled search box with empty string
+   - Search box now shows placeholder "Search users..."
+
+4. **Verify all users displayed** ✅
+   - Both users visible again: Sam Altman and Elon Musk
+   - Stats confirm "2 Tracked Users"
+   - "Clear Filters" button hidden (no active filters)
+
+### Screenshots:
+- `.playwright-mcp/feature137-initial-all-users.png` - Initial state with all users
+- `.playwright-mcp/feature137-search-elon-filtered.png` - Filtered to show only Elon
+- `.playwright-mcp/feature137-empty-search-all-users.png` - After clearing search, all users shown
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 77/235 (~32.8%)
+- Feature #137 marked as passing
+
+### Notes:
+- No code changes required - feature was already properly implemented
+- Search filter works correctly with empty string showing all results
+- This is expected behavior for search functionality
