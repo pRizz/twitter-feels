@@ -4464,3 +4464,72 @@ After deletion:
 - No JavaScript console errors
 - Screenshots: feature111-before-refresh.png, feature111-after-refresh.png, feature111-all-filters-preserved.png
 [Testing] Session complete - verified feature #111 (Page refresh preserves filter state) - still passing
+[Testing] 2026-01-20 - Feature #62 regression test PASSED - Admin can download LLM model:
+- Logged in as admin successfully
+- Navigated to /admin/models page
+- Clicked Download on 'BERTweet Sentiment Analysis' model
+- Progress indicator appeared (status: 'Downloading')
+- Download completed successfully (~515 MB from HuggingFace)
+- Model now shows 'Ready' status in Installed Models section
+- Model auto-enabled after download
+- No JavaScript console errors
+- Screenshots: feature62-downloading-state.png, feature62-download-complete.png
+[Testing] Session complete - verified feature #62 (Admin can download LLM model) - still passing
+
+---
+
+## Session - Feature #131 - 2026-01-20
+
+### Feature #131: Disabling model preserves data (COMPLETED)
+- **Status**: PASSING
+- **Description**: Disabling LLM model keeps historical analyses
+
+### Verification Steps Completed:
+1. **Verified model has sentiment analyses** ✅
+   - Model ID 1 (Llama-3-Sentiment v3.1) had 4 analyses before test
+   - Database query confirmed: `Model 1: 4 analyses, Enabled: 1`
+
+2. **Disabled an LLM model via admin interface** ✅
+   - Navigated to /admin/models
+   - Clicked "Enabled" button for Model ID 1
+   - Button changed to "Disabled"
+   - Screenshot: feature131-model-disabled.png
+
+3. **Verified analyses by disabled model still exist** ✅
+   - Ran database query after disabling
+   - Result: `Model 1: 4 analyses, Enabled: 0`
+   - All 4 analyses preserved!
+
+4. **Verified model hidden from new analysis (public filter)** ✅
+   - Checked /api/models endpoint - Model ID 1 NOT in response
+   - Checked dashboard model dropdown - Only 6 models shown (not 7)
+   - Model ID 1 excluded from model filter options
+   - Screenshot: feature131-model-hidden-from-filter.png
+
+5. **Re-enabled model and verified data intact** ✅
+   - Clicked "Disabled" button to re-enable
+   - Database shows: `Model 1: 4 analyses, Enabled: 1`
+   - All analyses preserved through enable/disable cycle
+
+### Technical Details:
+- Backend PUT /api/admin/models/:id toggles `is_enabled` flag only
+- No DELETE statements touch sentiment_analyses table
+- Public /api/models endpoint filters: `WHERE is_enabled = 1 AND download_status = 'ready'`
+- Disabling only hides model from UI/API, data remains in database
+
+### Screenshots:
+- `.playwright-mcp/feature131-models-before-disable.png` - All models enabled
+- `.playwright-mcp/feature131-model-disabled.png` - Model showing "Disabled"
+- `.playwright-mcp/feature131-model-hidden-from-filter.png` - Model not in dropdown
+
+### Console Errors:
+- No JavaScript errors related to the feature
+
+### Current Progress:
+- Features passing: 71/235 (~30.2%)
+- Feature #131 marked as passing
+
+### Notes:
+- No code changes required - feature was already properly implemented
+- The enable/disable is a soft toggle that preserves all historical data
+- This is important for maintaining audit trail and allowing model comparisons
