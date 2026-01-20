@@ -5823,3 +5823,60 @@ Added "Clear Filters" functionality to the Dashboard page:
 
 ### Commit:
 - a8681e3 - Implement Feature #150: Password complexity enforced
+
+
+---
+
+## Session - Feature #151 - 2026-01-20
+
+### Feature #151: Duplicate user handle rejected (COMPLETED)
+- **Status**: PASSING
+- **Category**: M-FormValidation
+- **Description**: Cannot add same Twitter handle twice
+
+### Verification Steps Completed:
+
+1. **Add a Twitter user** ✅
+   - Logged in as admin
+   - Navigated to /admin/users
+   - Clicked '+ Add User' button
+   - Entered 'testuser151' in Twitter Handle field
+   - Clicked 'Add User' - user added successfully
+   - Total Tracked count increased from 2 to 3
+
+2. **Try to add same handle again** ✅
+   - Clicked '+ Add User' again
+   - Entered 'testuser151' (same handle)
+   - Clicked 'Add User' button
+
+3. **Verify duplicate error displayed** ✅
+   - Error message displayed: 'User is already being tracked'
+   - Error appears in red/destructive styled banner
+   - 'Dismiss' button to close the error
+   - Server returned 409 Conflict status
+
+4. **Verify only one entry exists** ✅
+   - Total Tracked count remained at 3 (not 4)
+   - Only one row for testuser151 in the table
+   - Duplicate entry was blocked
+
+### Implementation Details:
+- Backend (admin.ts lines 414-418): Checks if username already exists in database, returns 409 if found
+- Frontend (Users.tsx lines 122-125): Catches 409 response, displays 'User is already being tracked' error
+
+### Screenshots:
+- `.playwright-mcp/feature151-duplicate-user-error.png` - Error message shown after duplicate attempt
+- `.playwright-mcp/feature151-cleanup-complete.png` - Clean state after test user deleted
+
+### Console Errors:
+- Only expected 409 Conflict error from duplicate attempt (not a JavaScript error)
+
+### Current Progress:
+- Features passing: 91/235 (~38.7%)
+- Feature #151 marked as passing
+
+### Notes:
+- No code changes required - feature was already properly implemented
+- Backend validates uniqueness by username field
+- Frontend displays clear error message to user
+
