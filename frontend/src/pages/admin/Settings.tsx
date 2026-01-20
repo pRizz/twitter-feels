@@ -1,13 +1,545 @@
-// Admin Settings - Crawler and backup configuration
-// TODO: Implement settings functionality
+// Admin Settings - Crawler and S3 backup configuration
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+interface CrawlerSettings {
+  intervalHours: number;
+  historyDepthDays: number;
+  rateLimitPer15Min: number;
+}
+
+interface BackupSettings {
+  enabled: boolean;
+  bucketName: string;
+  region: string;
+  accessKeyId: string;
+  secretAccessKeySet: boolean;
+  schedule: string;
+  retentionDays: number;
+}
+
+interface Settings {
+  crawler: CrawlerSettings;
+  backup: BackupSettings;
+}
+
+// AWS Regions for S3
+const AWS_REGIONS = [
+  { value: 'us-east-1', label: 'US East (N. Virginia)' },
+  { value: 'us-east-2', label: 'US East (Ohio)' },
+  { value: 'us-west-1', label: 'US West (N. California)' },
+  { value: 'us-west-2', label: 'US West (Oregon)' },
+  { value: 'eu-west-1', label: 'EU (Ireland)' },
+  { value: 'eu-west-2', label: 'EU (London)' },
+  { value: 'eu-central-1', label: 'EU (Frankfurt)' },
+  { value: 'ap-northeast-1', label: 'Asia Pacific (Tokyo)' },
+  { value: 'ap-southeast-1', label: 'Asia Pacific (Singapore)' },
+  { value: 'ap-southeast-2', label: 'Asia Pacific (Sydney)' },
+];
+
+// Backup schedule options
+const SCHEDULE_OPTIONS = [
+  { value: 'hourly', label: 'Every Hour' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'manual', label: 'Manual Only' },
+];
 
 export default function AdminSettings() {
+  const navigate = useNavigate();
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Form state for S3 backup
+  const [backupForm, setBackupForm] = useState({
+    enabled: false,
+    bucketName: '',
+    region: 'us-east-1',
+    accessKeyId: '',
+    secretAccessKey: '',
+    schedule: 'daily',
+    retentionDays: 30,
+  });
+
+  // Form state for crawler
+  const [crawlerForm, setCrawlerForm] = useState({
+    intervalHours: 1,
+    historyDepthDays: 90,
+    rateLimitPer15Min: 450,
+  });
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/admin/settings', {
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        navigate('/admin/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch settings');
+      }
+
+      const data: Settings = await response.json();
+      setSettings(data);
+
+      // Initialize form state
+      setCrawlerForm({
+        intervalHours: data.crawler.intervalHours,
+        historyDepthDays: data.crawler.historyDepthDays,
+        rateLimitPer15Min: data.crawler.rateLimitPer15Min,
+      });
+
+      setBackupForm({
+        enabled: data.backup.enabled,
+        bucketName: data.backup.bucketName,
+        region: data.backup.region,
+        accessKeyId: data.backup.accessKeyId,
+        secretAccessKey: '', // Never pre-fill secret
+        schedule: data.backup.schedule,
+        retentionDays: data.backup.retentionDays,
+      });
+
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, [navigate]);
+
+  const handleSaveCrawler = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ crawler: crawlerForm }),
+      });
+
+      if (response.status === 401) {
+        navigate('/admin/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to save crawler settings');
+      }
+
+      setSuccessMessage('Crawler settings saved successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveBackup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const payload = {
+        backup: {
+          enabled: backupForm.enabled,
+          bucketName: backupForm.bucketName,
+          region: backupForm.region,
+          accessKeyId: backupForm.accessKeyId,
+          // Only send secret if it was changed
+          ...(backupForm.secretAccessKey && { secretAccessKey: backupForm.secretAccessKey }),
+          schedule: backupForm.schedule,
+          retentionDays: backupForm.retentionDays,
+        },
+      };
+
+      const response = await fetch('http://localhost:3001/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 401) {
+        navigate('/admin/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to save backup settings');
+      }
+
+      setSuccessMessage('S3 backup settings saved successfully!');
+      setBackupForm(prev => ({ ...prev, secretAccessKey: '' })); // Clear secret after save
+      await fetchSettings(); // Refresh to get updated secretAccessKeySet status
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
-      <p className="text-muted-foreground">
-        Crawler settings, S3 backup configuration coming soon.
-      </p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <p className="text-muted-foreground">
+          Configure crawler behavior and S3 backup settings
+        </p>
+      </div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-500">
+          {successMessage}
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
+          {error}
+          <button
+            onClick={() => setError(null)}
+            className="ml-4 text-sm underline hover:no-underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Crawler Settings Section */}
+      <div className="bg-card border border-border rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+            <span className="text-xl">🕷️</span>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Crawler Settings</h2>
+            <p className="text-sm text-muted-foreground">
+              Configure how often and how much data the crawler fetches
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSaveCrawler} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Crawl Interval (hours)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="168"
+                value={crawlerForm.intervalHours}
+                onChange={(e) =>
+                  setCrawlerForm({ ...crawlerForm, intervalHours: parseInt(e.target.value) || 1 })
+                }
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                How often to fetch new tweets (1-168 hours)
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                History Depth (days)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={crawlerForm.historyDepthDays}
+                onChange={(e) =>
+                  setCrawlerForm({ ...crawlerForm, historyDepthDays: parseInt(e.target.value) || 90 })
+                }
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                How far back to fetch tweets (1-365 days)
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Rate Limit (per 15 min)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="900"
+                value={crawlerForm.rateLimitPer15Min}
+                onChange={(e) =>
+                  setCrawlerForm({ ...crawlerForm, rateLimitPer15Min: parseInt(e.target.value) || 450 })
+                }
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Twitter API requests allowed per 15 minutes
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save Crawler Settings'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* S3 Backup Settings Section */}
+      <div className="bg-card border border-border rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+            <span className="text-xl">☁️</span>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">S3 Backup Settings</h2>
+            <p className="text-sm text-muted-foreground">
+              Configure automatic database backups to Amazon S3
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSaveBackup} className="space-y-6">
+          {/* Enable Backup Toggle */}
+          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+            <div>
+              <div className="font-medium">Enable S3 Backups</div>
+              <div className="text-sm text-muted-foreground">
+                Automatically backup your database to Amazon S3
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={backupForm.enabled}
+                onChange={(e) => setBackupForm({ ...backupForm, enabled: e.target.checked })}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
+
+          {/* S3 Configuration Fields */}
+          <div className={`space-y-4 ${!backupForm.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+            {/* Bucket Name */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                S3 Bucket Name <span className="text-destructive">*</span>
+              </label>
+              <input
+                type="text"
+                value={backupForm.bucketName}
+                onChange={(e) => setBackupForm({ ...backupForm, bucketName: e.target.value })}
+                placeholder="my-twitter-feels-backups"
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={!backupForm.enabled}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                The name of your S3 bucket (must already exist)
+              </p>
+            </div>
+
+            {/* Region */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                AWS Region <span className="text-destructive">*</span>
+              </label>
+              <select
+                value={backupForm.region}
+                onChange={(e) => setBackupForm({ ...backupForm, region: e.target.value })}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={!backupForm.enabled}
+              >
+                {AWS_REGIONS.map((region) => (
+                  <option key={region.value} value={region.value}>
+                    {region.label} ({region.value})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                The AWS region where your S3 bucket is located
+              </p>
+            </div>
+
+            {/* Credentials */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  AWS Access Key ID <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={backupForm.accessKeyId}
+                  onChange={(e) => setBackupForm({ ...backupForm, accessKeyId: e.target.value })}
+                  placeholder="AKIAIOSFODNN7EXAMPLE"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
+                  disabled={!backupForm.enabled}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  AWS Secret Access Key <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={backupForm.secretAccessKey}
+                  onChange={(e) => setBackupForm({ ...backupForm, secretAccessKey: e.target.value })}
+                  placeholder={settings?.backup.secretAccessKeySet ? '••••••••••••••••' : 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
+                  disabled={!backupForm.enabled}
+                />
+                {settings?.backup.secretAccessKeySet && (
+                  <p className="text-xs text-green-500 mt-1">
+                    Secret key is configured. Leave blank to keep current value.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Schedule */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Backup Schedule
+                </label>
+                <select
+                  value={backupForm.schedule}
+                  onChange={(e) => setBackupForm({ ...backupForm, schedule: e.target.value })}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={!backupForm.enabled}
+                >
+                  {SCHEDULE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  How often to automatically backup the database
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Retention Period (days)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={backupForm.retentionDays}
+                  onChange={(e) =>
+                    setBackupForm({ ...backupForm, retentionDays: parseInt(e.target.value) || 30 })
+                  }
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={!backupForm.enabled}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  How long to keep old backups (1-365 days)
+                </p>
+              </div>
+            </div>
+
+            {/* Security Notice */}
+            <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <div className="flex items-start gap-3">
+                <span className="text-yellow-500 text-xl">⚠️</span>
+                <div className="text-sm">
+                  <div className="font-medium text-yellow-500 mb-1">Security Notice</div>
+                  <p className="text-muted-foreground">
+                    AWS credentials are stored encrypted in the database. For production use, consider using
+                    IAM roles or environment variables instead of storing credentials directly.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save Backup Settings'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Help Section */}
+      <div className="bg-card border border-border rounded-lg p-6">
+        <h3 className="font-semibold mb-3">Need Help?</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <h4 className="font-medium mb-1">Setting up S3 Backups</h4>
+            <ol className="list-decimal list-inside text-muted-foreground space-y-1">
+              <li>Create an S3 bucket in your AWS account</li>
+              <li>Create an IAM user with S3 access permissions</li>
+              <li>Generate access keys for the IAM user</li>
+              <li>Enter the bucket name and credentials above</li>
+            </ol>
+          </div>
+          <div>
+            <h4 className="font-medium mb-1">Recommended IAM Policy</h4>
+            <pre className="bg-muted/50 p-3 rounded-lg text-xs overflow-x-auto">
+{`{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:DeleteObject",
+      "s3:ListBucket"
+    ],
+    "Resource": [
+      "arn:aws:s3:::your-bucket/*",
+      "arn:aws:s3:::your-bucket"
+    ]
+  }]
+}`}
+            </pre>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
