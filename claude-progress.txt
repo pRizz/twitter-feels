@@ -353,3 +353,55 @@ pnpm --dir frontend run dev
 - Form inputs are styled with dark backgrounds and visible borders
 - Button has cyan primary color matching app's accent
 - Password field properly masks input
+
+---
+
+## Session 9 - 2026-01-20
+
+### Feature #53: Admin user management table displays (COMPLETED)
+- **Status**: PASSING
+- **Description**: Table of tracked Twitter users is shown
+
+### Implementation Details:
+1. **Backend API (admin.ts):**
+   - Updated `/api/admin/users` endpoint to return users from database with tweet counts
+   - Added `PUT /api/admin/users/:id` endpoint for enabling/disabling users
+   - Improved `DELETE /api/admin/users/:id` with proper user validation
+   - Added `POST /api/admin/users` for adding new tracked users
+
+2. **Frontend (admin/Users.tsx):**
+   - Created full user management table with columns:
+     - User (avatar, name, bio)
+     - Handle (links to Twitter)
+     - Status (Active/Inactive badge)
+     - Followers (formatted with K/M)
+     - Tweets (count)
+     - Added (date)
+     - Actions (Disable/Enable, Delete)
+   - Stats summary cards (Total Tracked, Active, Total Tweets)
+   - Add User form with Twitter handle and optional display name
+   - Delete confirmation dialog
+   - Loading and error states
+
+### Verification Steps Completed:
+1. Log in as admin - ✅ Logged in via /admin/login
+2. Navigate to /admin/users - ✅ Navigated via sidebar link
+3. Verify user management table renders - ✅ Table with 5 users displayed
+4. Verify columns for name, handle, status - ✅ All columns present (User, Handle, Status, Followers, Tweets, Added, Actions)
+5. Verify action buttons for each row - ✅ Disable and Delete buttons for every row
+
+### Screenshots:
+- `.playwright-mcp/feature53-admin-users-table.png` - Admin Users page with user management table
+
+### Current Progress:
+- Features passing: 6/235 (~2.6%)
+- Feature #53 marked as passing
+
+### Commit:
+- `1677c5a` - Implement Admin User Management Table (Feature #53)
+
+### Notes:
+- Table shows 5 pre-seeded influencers (Elon Musk, Bill Gates, Barack Obama, Sam Altman, Naval)
+- All action buttons functional (Disable/Enable toggles status, Delete with confirmation)
+- Stats cards update dynamically based on user data
+- Only minor console error is 404 for external Twitter profile image (not our code)
