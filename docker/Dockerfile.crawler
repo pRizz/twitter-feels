@@ -4,7 +4,7 @@ FROM rust:1.83-alpine AS builder
 WORKDIR /app
 
 # Install build dependencies
-RUN apk add --no-cache musl-dev sqlite-dev
+RUN apk add --no-cache musl-dev sqlite-dev openssl-dev openssl-libs-static pkgconfig
 
 # Copy Cargo files
 COPY Cargo.toml Cargo.lock ./
@@ -22,7 +22,7 @@ RUN cargo build --release
 # Production image
 FROM alpine:3.19
 
-RUN apk add --no-cache sqlite-libs
+RUN apk add --no-cache sqlite-libs openssl
 
 COPY --from=builder /app/target/release/twitter-feels-crawler /usr/local/bin/
 
