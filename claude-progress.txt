@@ -12730,3 +12730,118 @@ The aggregation system in this app calculates values on-the-fly from the sentime
 - Features passing: 160/235 (~68.1%)
 - Feature #220 marked as passing
 
+
+
+---
+
+## Session - Feature #96 Regression Test - 2026-01-21
+
+### Feature #96: Loading states shown during data fetch (REGRESSION TEST)
+- **Status**: STILL PASSING
+- **Category**: E-ErrorHandling
+- **Description**: Loading indicators appear during API calls
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173/?testDelay=5000
+   - Used testDelay parameter to simulate slow API response
+
+2. **Observe loading state during data fetch** ✅
+   - Accessibility snapshot captured loading state
+   - Shows: status "Loading dashboard data" with "Loading..." text
+   - Proper ARIA role="status" for screen reader accessibility
+
+3. **Verify spinner or skeleton is shown** ✅
+   - Cyan circular spinner visible in center of page
+   - Content area empty during loading
+   - Screenshot: .playwright-mcp/feature96-loading-indicator.png
+
+4. **Verify loading state disappears when data loads** ✅
+   - Loading text disappears when data arrives
+   - Full content displayed: gauges, leaderboards, user cards
+   - Screenshot: .playwright-mcp/feature96-data-loaded.png
+
+### Technical Details:
+- Dashboard.tsx uses isLoading state (line 500)
+- Loading spinner shown when isLoading=true (lines 802-807)
+- Proper accessibility with role="status" and aria-label
+- Content sections hidden with conditional rendering (!isLoading)
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected
+- Feature #96 still working correctly
+
+[Testing] Session complete - verified feature #96 (Loading states shown during data fetch) - still passing
+
+
+
+---
+
+## Session - Feature #219 - 2026-01-21
+
+### Feature #219: Partial data load handled (COMPLETED)
+- **Status**: PASSING
+- **Category**: E-ErrorHandling
+- **Description**: Some data loading while other fails
+
+### Implementation:
+
+**Backend Changes (backend/src/routes/public.ts):**
+1. Added `failSection` query parameter for testing partial failures
+2. Modified response structure to support nullable sections (gauges, leaderboards, users)
+3. Added `sectionErrors` object to describe which sections failed and why
+4. Added `partialFailure` boolean flag when any sections fail
+
+**Frontend Changes (frontend/src/pages/Dashboard.tsx):**
+1. Created `SectionErrorIndicator` component for section-specific error display
+2. Updated `DashboardData` interface to support nullable sections and error metadata
+3. Added partial failure banner with "Retry All" button
+4. Updated each section (Gauges, Leaderboards, Users) to:
+   - Check for section-specific errors
+   - Display error indicator with retry button when failed
+   - Show normal content when loaded successfully
+5. Added `failSection` URL parameter pass-through for testing
+
+### Verification Steps Completed:
+
+1. **Mock partial API failure** ✅
+   - Used ?failSection=leaderboards to simulate leaderboards failing
+   - Used ?failSection=gauges,users to simulate multiple failures
+   - Backend returns null for failed sections + sectionErrors metadata
+
+2. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173/?failSection=leaderboards
+   - Navigated to http://localhost:5173/?failSection=gauges,users
+
+3. **Verify successful data shown** ✅
+   - When leaderboards fail: Gauges and Users load correctly
+   - When gauges+users fail: Leaderboards load correctly
+   - Stats footer always shows (from non-failed response)
+
+4. **Verify error indicator for failed** ✅
+   - Failed sections show error card with warning icon
+   - Error message displays: "Failed to load [section] data"
+   - Retry button available for each failed section
+
+5. **Verify UI functional** ✅
+   - All loaded sections fully interactive
+   - Time/model filters still work
+   - User search still works (when users loaded)
+   - Navigation to user detail pages works
+   - No console errors
+
+### Screenshots:
+- .playwright-mcp/feature219-partial-failure-leaderboards.png - Leaderboards failed, others work
+- .playwright-mcp/feature219-leaderboards-error.png - Error indicator detail
+- .playwright-mcp/feature219-multiple-failures.png - Multiple sections failed
+- .playwright-mcp/feature219-normal-dashboard.png - Normal operation (no failures)
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 160/235 (~68.1%)
+- Feature #219 marked as passing
+
