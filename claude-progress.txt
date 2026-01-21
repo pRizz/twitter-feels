@@ -12120,3 +12120,233 @@ escaped text entities. The code does NOT use dangerouslySetInnerHTML.
 - Login endpoint is exempt since user doesnt have session/token yet
 - Frontend reads token from cookie set by backend (httpOnly: false)
 
+
+
+---
+
+## Testing Session - Feature #212 Regression Test - 2026-01-21
+
+### Feature #212: CSRF protection on forms (VERIFIED)
+- **Status**: STILL PASSING ✅
+- **Category**: A-Security
+- **Description**: Forms protected against CSRF attacks
+
+### Verification Steps Completed:
+
+1. **Inspect form submissions** ✅
+   - Reviewed CSRF implementation in backend (csrf.ts) and frontend (api.ts)
+   - Backend uses Synchronizer Token Pattern with cryptographically secure tokens
+   - Frontend automatically includes X-CSRF-Token header on state-changing requests
+
+2. **Verify CSRF token included** ✅
+   - Successfully submitted form (Save Crawler Settings)
+   - PUT request to /api/admin/settings returned 200 OK
+   - CSRF token fetched via /api/csrf-token endpoint
+
+3. **Try submitting without token** ✅
+   - PUT without token: 403 Forbidden - 'CSRF token missing from request'
+   - POST without token: 403 Forbidden - 'CSRF token missing from request'
+
+4. **Verify rejection** ✅
+   - Invalid token: 403 Forbidden - 'Invalid CSRF token'
+   - All state-changing methods (POST, PUT, PATCH, DELETE) protected
+   - Login/logout endpoints appropriately exempt
+
+### Security Features Confirmed:
+- Cryptographically secure random tokens (32 bytes)
+- Timing-safe comparison to prevent timing attacks
+- SameSite=strict cookie setting
+- Token stored in session and validated server-side
+
+### Screenshots:
+- .playwright-mcp/feature212-csrf-form-success.png - Settings form with CSRF-protected submission
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected - Feature #212 still working correctly
+
+[Testing] Session complete - verified feature #212 (CSRF protection on forms) - still passing
+
+
+
+---
+
+## Testing Session - Feature #7 Regression Test - 2026-01-21
+
+### Feature #7: Dashboard route loads (VERIFIED)
+- **Status**: STILL PASSING ✅
+- **Category**: B-Navigation
+- **Description**: Main dashboard page at / loads correctly
+
+### Verification Steps Completed:
+
+1. **Navigate to /** ✅
+   - Navigated to http://localhost:5173/
+   - Page loaded successfully
+
+2. **Verify page title is correct** ✅
+   - Page title: "Twitter Feels"
+   - Correct title displayed in browser
+
+3. **Verify dashboard content renders** ✅
+   - Header with "Twitter Feels" branding and last updated timestamp
+   - Time filter buttons (Weekly, Monthly, Yearly, All Time)
+   - Model dropdown selector (Combined + 8 ML models)
+   - Sort controls (Followers, Name, Emotion Score)
+   - Average Twitter Feel section with 6 gauges
+   - Emotion Leaderboards (Happy, Sad, Angry, Fearful, Hatred, Thankful)
+   - Tracked Influencers section with 5 users and search
+   - Statistics footer (5 Tracked Users, 89 Tweets, 89 Analyses)
+
+4. **Verify no navigation errors occur** ✅
+   - No console errors detected
+   - All API requests successful
+   - Data loaded and displayed correctly
+
+### Screenshots:
+- .playwright-mcp/feature7-dashboard-verification.png - Full dashboard screenshot
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected - Feature #7 still working correctly
+- Dashboard loads and renders all content properly
+
+[Testing] Session complete - verified feature #7 (Dashboard route loads) - still passing
+
+
+---
+
+## Testing Session - Feature #174 Regression Test - 2026-01-21
+
+### Feature #174: Images have alt text (VERIFIED)
+- **Status**: STILL PASSING ✅
+- **Category**: P-Accessibility
+- **Description**: User avatars have alt text
+
+### Verification Steps Completed:
+
+1. **Inspect avatar images** ✅
+   - Dashboard page: All 8 avatar images have alt text format "${Name}'s avatar"
+   - User detail page (Sam Altman): Avatar has alt text "Sam Altman"
+   - User detail page (Elon Musk): No avatar image (uses text initial "E" instead - accessible fallback)
+   - Tweet detail page: Avatar has alt text "Sam Altman"
+
+2. **Verify alt attribute present** ✅
+   - All `<img>` tags for avatars have the `alt` attribute
+   - Verified via JavaScript evaluation on multiple pages
+   - Verified in source code (Dashboard.tsx, UserDetail.tsx, TweetDetail.tsx, admin/Users.tsx)
+
+3. **Verify alt describes image content** ✅
+   - Dashboard: Uses descriptive format "${displayName || username}'s avatar"
+   - User Detail: Uses user's display name
+   - Tweet Detail: Uses user's display name
+   - All alt text accurately describes who the avatar belongs to
+
+### Code Verification:
+```
+Dashboard.tsx: alt={\`${entry.displayName || entry.username}'s avatar\`}
+UserDetail.tsx: alt={user.display_name}
+TweetDetail.tsx: alt={tweet.user.displayName}
+admin/Users.tsx: alt={user.displayName}
+```
+
+### Console Errors: NONE
+
+### Screenshots:
+- .playwright-mcp/feature174-user-detail-avatar.png - Sam Altman's user page with avatar
+- .playwright-mcp/feature174-user-without-avatar.png - Elon Musk's page with initial fallback  
+- .playwright-mcp/feature174-tweet-detail-avatar.png - Tweet detail with user avatar
+
+### Result:
+- No regression detected - Feature #174 still working correctly
+- All avatar images have descriptive alt text
+- Users without avatar URLs display text initials (accessible fallback)
+
+[Testing] Session complete - verified feature #174 (Images have alt text) - still passing
+
+
+
+
+---
+
+## Session - Feature #215 - 2026-01-21
+
+### Feature #215: Aggregations computed correctly (COMPLETED)
+- **Status**: PASSING
+- **Category**: C-RealData
+- **Description**: Aggregate values match manual calculations
+
+### Verification Steps Completed:
+
+1. **Query raw sentiment analyses** ✅
+   - Retrieved 29 tweets for Sam Altman (user id=4) via /api/users/4/tweets
+   - Retrieved 14 tweets for Elon Musk (user id=46) via /api/users/46/tweets
+   - All tweets include full emotion scores (12 emotions per tweet)
+
+2. **Calculate average manually** ✅
+   - Created Node.js script to calculate averages for all 12 emotions
+   - Script calculates: sum / count for each emotion, rounded to nearest integer
+   - Verified for both users independently
+
+3. **Compare to displayed average** ✅
+   - Sam Altman API emotionAverages: {happy:48, sad:24, angry:20, fearful:15, hatred:9, thankful:37, excited:53, hopeful:31, frustrated:26, sarcastic:16, inspirational:33, anxious:18}
+   - Elon Musk API emotionAverages: {happy:41, sad:20, angry:24, fearful:14, hatred:10, thankful:33, excited:48, hopeful:27, frustrated:31, sarcastic:24, inspirational:33, anxious:16}
+   - Manual calculations match API values EXACTLY for all 24 emotion comparisons
+
+4. **Verify within floating point tolerance** ✅
+   - All differences = 0 (exact match, no floating point issues)
+   - Both users pass all 12 emotion comparisons
+
+### UI Verification:
+- Navigated to /users/4 (Sam Altman) - Emotion Averages section shows correct values
+- Navigated to /users/46 (Elon Musk) - Emotion Averages section shows correct values
+- Values displayed in UI match API response exactly
+
+### Screenshots:
+- .playwright-mcp/feature215-sam-altman-aggregations.png - Sam Altman emotion averages (29 analyses)
+- .playwright-mcp/feature215-elon-musk-aggregations.png - Elon Musk emotion averages (14 analyses)
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 156/235 (~66.4%)
+- Feature #215 marked as passing
+
+### Verification Script Output:
+```
+=== Sam Altman (29 tweets) ===
+happy: manual=48, api=48, diff=0 ✓ PASS
+sad: manual=24, api=24, diff=0 ✓ PASS
+angry: manual=20, api=20, diff=0 ✓ PASS
+fearful: manual=15, api=15, diff=0 ✓ PASS
+hatred: manual=9, api=9, diff=0 ✓ PASS
+thankful: manual=37, api=37, diff=0 ✓ PASS
+excited: manual=53, api=53, diff=0 ✓ PASS
+hopeful: manual=31, api=31, diff=0 ✓ PASS
+frustrated: manual=26, api=26, diff=0 ✓ PASS
+sarcastic: manual=16, api=16, diff=0 ✓ PASS
+inspirational: manual=33, api=33, diff=0 ✓ PASS
+anxious: manual=18, api=18, diff=0 ✓ PASS
+✓ ALL CALCULATIONS MATCH
+
+=== Elon Musk (14 tweets) ===
+happy: manual=41, api=41, diff=0 ✓ PASS
+sad: manual=20, api=20, diff=0 ✓ PASS
+angry: manual=24, api=24, diff=0 ✓ PASS
+fearful: manual=14, api=14, diff=0 ✓ PASS
+hatred: manual=10, api=10, diff=0 ✓ PASS
+thankful: manual=33, api=33, diff=0 ✓ PASS
+excited: manual=48, api=48, diff=0 ✓ PASS
+hopeful: manual=27, api=27, diff=0 ✓ PASS
+frustrated: manual=31, api=31, diff=0 ✓ PASS
+sarcastic: manual=24, api=24, diff=0 ✓ PASS
+inspirational: manual=33, api=33, diff=0 ✓ PASS
+anxious: manual=16, api=16, diff=0 ✓ PASS
+✓ ALL CALCULATIONS MATCH
+
+FINAL RESULT: ✓ ALL USERS PASS
+```
+
+[Testing] Session complete - verified feature #215 (Aggregations computed correctly) - PASSING
