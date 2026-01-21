@@ -66,6 +66,335 @@ const DEFAULT_BACKUP_SETTINGS = {
   retentionDays: 30,
 };
 
+// Backup status interface
+interface BackupStatus {
+  isConfigured: boolean;
+  config: {
+    bucketName: string;
+    region: string;
+    schedule: string;
+  } | null;
+  inProgress: boolean;
+  currentBackup: {
+    id: string;
+    status: string;
+    progress: number;
+    startedAt: string;
+    completedAt?: string;
+    fileSize?: number;
+    fileName?: string;
+    error?: string;
+  } | null;
+  lastBackup: {
+    id: string;
+    fileName: string;
+    fileSize: number;
+    createdAt: string;
+    status: string;
+  } | null;
+  backupHistory: Array<{
+    id: string;
+    fileName: string;
+    fileSize: number;
+    createdAt: string;
+    status: string;
+  }>;
+}
+
+// Backup Operations Component
+function BackupOperations({ onBackupComplete }: { onBackupComplete: () => void }) {
+  const navigate = useNavigate();
+  const { success: showSuccess, error: showError } = useToast();
+  const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [triggering, setTriggering] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [selectedBackupId, setSelectedBackupId] = useState<string | null>(null);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+
+  // Fetch backup status
+  const fetchBackupStatus = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/admin/backup/status', {
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        navigate('/admin/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch backup status');
+      }
+
+      const data: BackupStatus = await response.json();
+      setBackupStatus(data);
+    } catch (err) {
+      console.error('Failed to fetch backup status:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBackupStatus();
+  }, [navigate]);
+
+  // Poll for backup progress when backup is in progress
+  useEffect(() => {
+    if (backupStatus?.inProgress) {
+      const interval = setInterval(fetchBackupStatus, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [backupStatus?.inProgress]);
+
+  // Trigger backup
+  const handleTriggerBackup = async () => {
+    setTriggering(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/admin/backup/trigger', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        navigate('/admin/login');
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to trigger backup');
+      }
+
+      showSuccess('Backup started successfully!');
+      fetchBackupStatus();
+      onBackupComplete();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to trigger backup');
+    } finally {
+      setTriggering(false);
+    }
+  };
+
+  // Restore from backup
+  const handleRestore = async () => {
+    if (!selectedBackupId) return;
+
+    setRestoring(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/admin/backup/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ backupId: selectedBackupId }),
+      });
+
+      if (response.status === 401) {
+        navigate('/admin/login');
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to restore backup');
+      }
+
+      showSuccess('Backup restored successfully!');
+      setShowRestoreConfirm(false);
+      setSelectedBackupId(null);
+      fetchBackupStatus();
+      onBackupComplete();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to restore backup');
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  // Format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Format date
+  const formatDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return date.toLocaleString();
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-card border border-border rounded-lg p-6">
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Restore Confirmation Dialog */}
+      <ConfirmDialog
+        open={showRestoreConfirm}
+        onOpenChange={setShowRestoreConfirm}
+        title="Restore from Backup"
+        description="Are you sure you want to restore from this backup? This will replace your current database with the backup data. This action cannot be undone."
+        confirmLabel={restoring ? 'Restoring...' : 'Restore'}
+        cancelLabel="Cancel"
+        onConfirm={handleRestore}
+        onCancel={() => {
+          setShowRestoreConfirm(false);
+          setSelectedBackupId(null);
+        }}
+        variant="danger"
+      />
+
+      <div className="bg-card border border-border rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+            <span className="text-xl">💾</span>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Backup & Restore</h2>
+            <p className="text-sm text-muted-foreground">
+              Manually trigger backups or restore from previous backups
+            </p>
+          </div>
+        </div>
+
+        {!backupStatus?.isConfigured ? (
+          <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <div className="flex items-start gap-3">
+              <span className="text-yellow-500 text-xl">⚠️</span>
+              <div className="text-sm">
+                <div className="font-medium text-yellow-500 mb-1">S3 Not Configured</div>
+                <p className="text-muted-foreground">
+                  Please enable S3 backups and configure your bucket settings above before triggering backups.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Backup Status and Trigger */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg">
+              <div>
+                <div className="font-medium">Current Status</div>
+                <div className="text-sm text-muted-foreground">
+                  {backupStatus.inProgress ? (
+                    <span className="text-primary">
+                      Backup in progress... {backupStatus.currentBackup?.progress}%
+                    </span>
+                  ) : backupStatus.lastBackup ? (
+                    <span>
+                      Last backup: {formatDate(backupStatus.lastBackup.createdAt)} (
+                      {formatFileSize(backupStatus.lastBackup.fileSize)})
+                    </span>
+                  ) : (
+                    <span>No backups yet</span>
+                  )}
+                </div>
+                {backupStatus.inProgress && backupStatus.currentBackup && (
+                  <div className="mt-2 w-full bg-muted rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${backupStatus.currentBackup.progress}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={handleTriggerBackup}
+                disabled={triggering || backupStatus.inProgress}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {triggering || backupStatus.inProgress ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    {backupStatus.inProgress ? 'Backup in Progress...' : 'Starting...'}
+                  </>
+                ) : (
+                  <>
+                    <span>📤</span>
+                    Trigger Backup Now
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Backup History */}
+            {backupStatus.backupHistory && backupStatus.backupHistory.length > 0 && (
+              <div>
+                <h3 className="font-medium mb-3">Backup History</h3>
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left px-4 py-2 font-medium">File Name</th>
+                        <th className="text-left px-4 py-2 font-medium">Size</th>
+                        <th className="text-left px-4 py-2 font-medium">Created</th>
+                        <th className="text-left px-4 py-2 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {backupStatus.backupHistory.map((backup) => (
+                        <tr key={backup.id} className="border-t border-border">
+                          <td className="px-4 py-2 font-mono text-xs">{backup.fileName}</td>
+                          <td className="px-4 py-2">{formatFileSize(backup.fileSize)}</td>
+                          <td className="px-4 py-2">{formatDate(backup.createdAt)}</td>
+                          <td className="px-4 py-2">
+                            <button
+                              onClick={() => {
+                                setSelectedBackupId(backup.id);
+                                setShowRestoreConfirm(true);
+                              }}
+                              disabled={backupStatus.inProgress}
+                              className="px-3 py-1 text-xs bg-muted hover:bg-muted/80 rounded transition-colors disabled:opacity-50"
+                            >
+                              Restore
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Configuration Info */}
+            <div className="text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span>📍</span>
+                <span>
+                  Backing up to bucket: <span className="font-mono">{backupStatus.config?.bucketName}</span> in{' '}
+                  {backupStatus.config?.region}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span>⏰</span>
+                <span>
+                  Schedule:{' '}
+                  {backupStatus.config?.schedule === 'manual'
+                    ? 'Manual only'
+                    : `${backupStatus.config?.schedule.charAt(0).toUpperCase()}${backupStatus.config?.schedule.slice(1)}`}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 export default function AdminSettings() {
   const navigate = useNavigate();
   const { success: showSuccess } = useToast();
@@ -912,6 +1241,9 @@ export default function AdminSettings() {
           </div>
         </form>
       </div>
+
+      {/* Backup Operations Section */}
+      <BackupOperations onBackupComplete={() => fetchSettings()} />
 
       {/* Change Password Section */}
       <div className="bg-card border border-border rounded-lg p-6">
