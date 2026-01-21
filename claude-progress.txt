@@ -9137,3 +9137,130 @@ Changed the backend API (`/api/dashboard`) to get the `lastUpdated` value from t
 - Frontend catches non-JSON files before sending to backend
 - Backend validates version compatibility, data types, and value ranges
 - Existing configuration is preserved when import fails
+
+
+---
+
+## Regression Test Session - Feature #99 - 2026-01-21
+
+### Feature #99: API returns correctly formatted dashboard data (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: F-UIBackend
+- **Description**: Dashboard API response matches frontend expectations
+
+### Verification Steps Completed:
+
+1. **Send GET request to /api/dashboard** ✅
+   - API endpoint responded with 200 OK
+   - Response is valid JSON
+
+2. **Verify response has expected structure** ✅
+   - lastUpdated: String timestamp ✓
+   - gauges: Array of 6 gauge objects ✓
+   - leaderboards: Array of 6 leaderboard objects ✓
+   - users: Array of user objects ✓
+   - stats: Object with totalUsers, totalTweets, totalAnalyses ✓
+   - emotionAverages: Object with 12 emotion scores ✓
+
+3. **Verify gauge values are numeric** ✅
+   - All 6 gauges have numeric values (19, 39, 31, 65, 29, 39)
+
+4. **Verify leaderboard arrays are properly formatted** ✅
+   - Each leaderboard has emotion (string), highest (array), lowest (array)
+   - Each entry has: userId, username, displayName, avatarUrl, score
+
+### Screenshots:
+- .playwright-mcp/feature99-dashboard-api-verification.png - Dashboard showing API data rendered
+
+### Console Errors:
+- None
+
+### Network Requests:
+- GET /api/dashboard => 200 OK
+- GET /api/models => 200 OK
+
+### Result:
+- No regression detected - Feature #99 still working correctly
+
+[Testing] Session complete - verified feature #99 (API returns correctly formatted dashboard data) - still passing
+
+
+
+---
+
+## Session - Feature #187 - 2026-01-21
+
+### Feature #187: Configuration import works (COMPLETED)
+- **Status**: PASSING
+- **Category**: S-Export
+- **Description**: Admin can import configuration
+
+### Implementation:
+
+1. **Backend: Added POST /api/admin/config/import endpoint**
+   - Validates JSON structure and version compatibility
+   - Imports crawler settings (intervalHours, historyDepthDays, rateLimitPer15Min)
+   - Imports emotions settings (validates color format)
+   - Imports gauges settings (validates structure)
+   - Imports backup settings (non-sensitive only: enabled, schedule, retentionDays)
+   - Returns list of imported keys and any validation warnings
+
+2. **Frontend: Added Import Configuration UI**
+   - Added "Import Configuration" button next to Export button
+   - Uses hidden file input with label for file selection
+   - Accepts .json files only
+   - Parses JSON and sends to backend
+   - Shows success toast with list of imported keys
+   - Refreshes settings form to show imported values
+
+### Verification Steps Completed:
+
+1. **Export configuration file** ✅
+   - Exported via API: GET /api/admin/config/export
+   - File contains: crawler, emotions, gauges, backup (non-sensitive)
+
+2. **Make changes to settings** ✅
+   - Changed crawler settings via API:
+     - intervalHours: 6 → 12
+     - historyDepthDays: 180 → 60
+     - rateLimitPer15Min: 450 → 300
+
+3. **Import the exported file** ✅
+   - Imported via POST /api/admin/config/import
+   - Response: {"success":true,"imported":["crawler","emotions","gauges","backup (non-sensitive settings only)"]}
+
+4. **Verify settings restored** ✅
+   - Verified via API: GET /api/admin/settings
+   - Settings restored to original values:
+     - intervalHours: 6 ✅
+     - historyDepthDays: 180 ✅
+     - rateLimitPer15Min: 450 ✅
+
+### UI Testing:
+- Logged into admin panel
+- Navigated to Settings page
+- Clicked "Import Configuration" button
+- Selected test config file with different values (intervalHours: 24, historyDepthDays: 30, rateLimitPer15Min: 100)
+- Success toast appeared: "Configuration imported successfully! Imported: crawler, emotions, gauges, backup (non-sensitive settings only)"
+- Form fields updated to show imported values
+- Restored original settings via another import
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature187-settings-export-import.png - Settings page with both buttons
+- .playwright-mcp/.playwright-mcp/feature187-export-import-section.png - Export/Import section detail
+- .playwright-mcp/.playwright-mcp/feature187-import-success.png - Success toast after import
+- .playwright-mcp/.playwright-mcp/feature187-import-success-crawler-settings.png - Updated crawler settings after import
+- .playwright-mcp/.playwright-mcp/feature187-settings-restored.png - Settings restored
+
+### Console Errors:
+- Only transient errors from backend restart (connection refused) and session expiration (401), all resolved
+- No persistent JavaScript errors
+
+### Current Progress:
+- Features passing: 128/235 (~54.5%)
+- Feature #187 marked as passing
+
+### Code Changes:
+- backend/src/routes/admin.ts: Added POST /api/admin/config/import endpoint (lines 1579-1756)
+- frontend/src/pages/admin/Settings.tsx: Added Import Configuration button and handler (lines 1107-1176)
+
