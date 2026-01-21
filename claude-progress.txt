@@ -9020,3 +9020,120 @@ Changed the backend API (`/api/dashboard`) to get the `lastUpdated` value from t
 - No visible loading states due to fast response times
 - Gauges render with data almost instantly
 
+
+
+---
+
+## Regression Test Session - Feature #171 - 2026-01-21
+
+### Feature #171: Icon buttons have labels (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: P-Accessibility
+- **Description**: Icon-only buttons have ARIA labels
+
+### Verification Steps Completed:
+
+1. **Find icon-only buttons (theme toggle, etc)** ✅
+   - Identified all icon-only buttons across the application:
+     - Main page: Toggle menu, Toggle theme, Sort descending
+     - Admin pages: Open menu, Close menu
+
+2. **Inspect for aria-label attribute** ✅
+   - All icon-only buttons have proper aria-label attributes:
+     - aria-label="Toggle menu" - Mobile menu button
+     - aria-label="Toggle theme" - Theme toggle button  
+     - aria-label="Sort descending" + title="Sort descending" - Sort button
+     - aria-label="Open menu" - Admin sidebar open
+     - aria-label="Close menu" - Admin sidebar close
+
+3. **Verify label describes action** ✅
+   - All labels clearly describe the button's action
+
+### Screenshots:
+- .playwright-mcp/feature171-icon-buttons-main.png - Main dashboard
+- .playwright-mcp/feature171-icon-buttons-admin.png - Admin page
+
+### Console Errors:
+- None
+
+### Result:
+- No regression detected - Feature #171 still working correctly
+
+[Testing] Session complete - verified feature #171 (Icon buttons have labels) - still passing
+
+
+
+---
+
+## Session - Feature #188 - 2026-01-21
+
+### Feature #188: Invalid config import rejected (COMPLETED)
+- **Status**: PASSING
+- **Category**: S-Export
+- **Description**: Malformed config file is rejected
+
+### Verification Steps Completed:
+
+1. **Create invalid config file** ✅
+   - Created multiple test files with various invalid configurations:
+     - Non-JSON text content
+     - Invalid crawler values (string instead of number, out-of-range 999999)
+     - Invalid emotion colors (not hex format like "not-a-valid-color")
+     - Gauges as string instead of array
+     - Missing required gauge fields (lowLabel, highLabel, emotions)
+     - Unsupported version ("2.0")
+     - Empty config object
+
+2. **Try to import it** ✅
+   - Tested via API with node.js test script
+   - Tested via UI using file upload
+
+3. **Verify error message** ✅
+   - Backend returns proper HTTP 400 with descriptive error messages:
+     - "Unsupported configuration version: 2.0. Expected version 1.0"
+     - "Configuration import failed" with details array
+     - "Crawl interval must be between 1 and 168 hours"
+     - "History depth must be between 1 and 365 days"
+     - "Invalid color format for emotion happy: not-a-valid-color"
+     - "Gauge must have a lowLabel"
+     - "No valid configuration data found in the import file"
+   - Frontend displays clear error messages to user:
+     - "Configuration import failed" (red alert box)
+     - "Invalid JSON file. Please select a valid configuration export file."
+
+4. **Verify existing config unchanged** ✅
+   - After attempting invalid imports, original settings remain:
+     - Crawl Interval: 6 hours (unchanged)
+     - History Depth: 180 days (unchanged)
+     - Rate Limit: 450 per 15 min (unchanged)
+   - Backend validation prevents partial imports of invalid data
+
+### API Tests Results:
+- Test 1: Config without version - Allowed (valid behavior)
+- Test 2: Unsupported version 2.0 - Rejected
+- Test 3: Invalid crawler values - Rejected
+- Test 4: Invalid emotion color - Rejected
+- Test 5: Gauges as string - Rejected
+- Test 6: Gauge missing fields - Rejected
+- Test 7: Empty object - Rejected
+
+### Screenshots:
+- .playwright-mcp/feature188-settings-page.png - Settings page before test
+- .playwright-mcp/feature188-import-export-section.png - Export/Import section
+- .playwright-mcp/feature188-invalid-config-rejected.png - Error message after invalid import
+- .playwright-mcp/feature188-non-json-rejected.png - Error for non-JSON file
+
+### Console Errors:
+- Only expected 400 Bad Request from validation (correct behavior)
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 129/235 (~54.9%)
+- Feature #188 marked as passing
+
+### Notes:
+- Configuration import properly validates all fields before applying changes
+- Clear, actionable error messages help users understand what's wrong
+- Frontend catches non-JSON files before sending to backend
+- Backend validates version compatibility, data types, and value ranges
+- Existing configuration is preserved when import fails
