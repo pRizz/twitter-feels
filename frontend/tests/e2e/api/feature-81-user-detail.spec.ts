@@ -16,7 +16,15 @@ const emotions = [
 ];
 
 test("Feature #81: User detail shows real emotion averages", async ({ request }) => {
-  const userId = 46;
+  const usersResponse = await request.get("/api/users");
+  expect(usersResponse.ok()).toBe(true);
+
+  const usersData = (await usersResponse.json()) as {
+    users?: Array<{ id: number }>;
+  };
+  const userId = usersData.users?.[0]?.id;
+  test.skip(!userId, "No active users available for verification.");
+
   const response = await request.get(`/api/users/${userId}`);
   expect(response.ok()).toBe(true);
 

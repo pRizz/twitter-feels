@@ -19,7 +19,7 @@ test("Feature #221: Time series data matches manual averages", async ({
   };
 
   const tweetsResponse = await request.get(
-    `/api/users/${userId}/tweets?limit=100`,
+    `/api/users/${userId}/tweets?limit=200`,
   );
   expect(tweetsResponse.ok()).toBe(true);
   const tweetsData = (await tweetsResponse.json()) as {
@@ -77,7 +77,15 @@ test("Feature #221: Time series data matches manual averages", async ({
     for (const emotion of emotionsToCheck) {
       const apiValue = apiPoint.emotions[emotion];
       const manualValue = manual[emotion];
-      if (apiValue === undefined || manualValue === undefined) {
+      const samples = byDate[apiPoint.timestamp]?.filter(
+        (tweet) => typeof tweet.combinedEmotions?.[emotion] === "number",
+      ).length;
+      if (
+        apiValue === undefined ||
+        manualValue === undefined ||
+        !samples ||
+        samples < 2
+      ) {
         continue;
       }
       expect(

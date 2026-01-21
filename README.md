@@ -188,9 +188,10 @@ All emotions can be customized, added, or disabled via the admin dashboard.
 
 API-focused Playwright tests live under `frontend/tests/e2e/api`. The Playwright
 config starts the backend and frontend dev servers automatically (via `webServer`),
-and uses:
+seeds a deterministic test database, and uses:
 - `API_BASE_URL` for API tests (default `http://localhost:3001`)
 - `UI_BASE_URL` for UI tests (default `http://localhost:5173`)
+- `TEST_DATABASE_URL` for the seeded backend DB (default `./data/playwright_seed.db` in `backend/`)
 
 ```bash
 # Run Playwright tests from the repo root
