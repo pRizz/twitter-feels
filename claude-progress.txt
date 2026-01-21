@@ -7702,3 +7702,120 @@ Added "Clear Filters" functionality to the Dashboard page:
 - toLocaleString() automatically converts UTC timestamps to user's local timezone
 - Browser timezone is derived from operating system settings
 
+
+---
+
+## Regression Test Session - Feature #165 - 2026-01-21
+
+### Feature #165: Admin dashboard responsive (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: O-Responsive
+- **Description**: Admin pages work on different viewports
+
+### Verification Steps Completed:
+
+1. **Log in as admin on tablet** ✅
+   - Resized viewport to 768x1024 (tablet)
+   - Successfully logged in with admin credentials
+   - Login form and submit button fully accessible
+
+2. **Navigate through admin pages** ✅
+   - Dashboard: Crawler status card, Force Re-Analyze section, Recent Runs table all visible
+   - Tracked Users: Table with user info, Add User button, Disable/Delete actions visible
+   - Settings: Crawler settings, S3 backup settings, password change form all accessible
+   - LLM Models: Model cards with Enable/Disable buttons, status indicators visible
+   - Theme: Emotion colors grid, gauge configuration forms fully functional
+   - Error Logs: Stats cards, charts, filter buttons, error log table all visible
+
+3. **Verify all functions accessible** ✅
+   - Sidebar navigation always visible and clickable
+   - All buttons (Run Now, Refresh, Save, etc.) accessible
+   - Form inputs (text, dropdowns, checkboxes) fully functional
+   - Filter buttons on Error Logs page work correctly
+   - Tables scroll horizontally when content exceeds viewport width
+
+4. **Verify no broken layouts** ✅
+   - No content overflow issues
+   - Sidebar takes appropriate width
+   - Main content area adapts to remaining space
+   - Cards and forms stack appropriately
+   - Tables use horizontal scroll instead of breaking
+
+### Screenshots:
+- .playwright-mcp/feature165-admin-dashboard-tablet.png - Admin Dashboard at 768x1024
+- .playwright-mcp/feature165-tracked-users-tablet.png - Tracked Users page
+- .playwright-mcp/feature165-settings-tablet.png - Settings page
+- .playwright-mcp/feature165-llm-models-tablet.png - LLM Models page
+- .playwright-mcp/feature165-theme-tablet.png - Theme settings page
+- .playwright-mcp/feature165-error-logs-tablet.png - Error Logs page
+
+### Console Errors:
+- Only 401 errors from initial page load before authentication (expected behavior)
+
+### Result:
+- No regression detected - Feature #165 still working correctly
+
+[Testing] Session complete - verified feature #165 (Admin dashboard responsive) - still passing
+
+
+
+---
+
+## Session - Feature #175 - 2026-01-21
+
+### Feature #175: Errors announced to screen reader (COMPLETED)
+- **Status**: PASSING
+- **Category**: P-Accessibility
+- **Description**: Form errors announced via ARIA
+
+### Verification Steps Completed:
+
+1. **Trigger form validation error** ✅
+   - Tested admin login form with whitespace-only username
+   - Tested admin add user form with invalid Twitter handle
+   - Tested admin settings password change form with weak password
+
+2. **Verify error has role=alert or aria-live** ✅
+   - All error messages now have `role="alert"` attribute
+   - Playwright accessibility tree shows errors as `alert` elements
+
+3. **Verify screen reader would announce** ✅
+   - Elements with `role="alert"` are automatically announced by screen readers
+   - Content changes in alert regions trigger announcements via implicit aria-live="assertive"
+
+### Code Changes Made:
+- **Login.tsx**: Added `role="alert"` to login error message div
+- **Settings.tsx**: Added `role="alert"` to:
+  - General error message div
+  - Password success/error message divs
+  - Password validation error paragraphs (currentPassword, newPassword, confirmPassword)
+- **Dashboard.tsx (admin)**: Added `role="alert"` to error display div
+- **Errors.tsx**: Added `role="alert"` to error display div
+- **Theme.tsx**: Added `role="alert"` to error message div
+- **Models.tsx**: Added `role="alert"` to error display div
+- **Dashboard.tsx (public)**: Added `role="alert"` to API error message div
+- **UserDetail.tsx**: Added `role="alert"` to user not found error div
+- **TweetDetail.tsx**: Added `role="alert"` to tweet not found error div
+
+Note: Users.tsx already had `role="alert"` from a previous commit (704bb46)
+
+### Screenshots:
+- .playwright-mcp/feature175-login-error-with-role-alert.png - Login error with role=alert
+- .playwright-mcp/feature175-users-form-validation-error-role-alert.png - Add user validation error
+- .playwright-mcp/feature175-settings-password-validation-error-role-alert.png - Password validation error
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 115/235 (~48.9%)
+- Feature #175 marked as passing
+
+### Commit:
+- 0731e30 - feat: Add role=alert to error messages for screen reader accessibility (#175)
+
+### Notes:
+- WCAG 2.1 Success Criterion 4.1.3 (Status Messages) requires that status messages 
+  be programmatically determined through role or properties
+- Using `role="alert"` makes errors be announced immediately by screen readers
+- This improves accessibility for users relying on assistive technology
