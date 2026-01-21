@@ -136,12 +136,16 @@ router.get('/dashboard', (req, res) => {
       };
     });
 
-    // Get the most recent analysis timestamp for "last updated"
-    const lastAnalysis = db.prepare(`
-      SELECT MAX(analyzed_at) as last_updated FROM sentiment_analyses
-    `).get() as { last_updated: string | null } | undefined;
+    // Get the most recent crawler completion time for "last updated"
+    // This shows when the crawler actually finished running, not when individual analyses were done
+    const lastCrawlerRun = db.prepare(`
+      SELECT completed_at FROM crawler_runs
+      WHERE status = 'completed' AND completed_at IS NOT NULL
+      ORDER BY completed_at DESC
+      LIMIT 1
+    `).get() as { completed_at: string | null } | undefined;
 
-    const lastUpdated = lastAnalysis?.last_updated || new Date().toISOString();
+    const lastUpdated = lastCrawlerRun?.completed_at || new Date().toISOString();
 
     // Get tracked users with their top emotions for the user grid
     const users = db.prepare(`
