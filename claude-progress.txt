@@ -9882,3 +9882,116 @@ Changed the backend API (`/api/dashboard`) to get the `lastUpdated` value from t
 
 [Testing] Session complete - verified feature #151 (Duplicate user handle rejected) - still passing
 
+
+
+---
+
+## Session - Feature #85 Regression Test - 2026-01-21
+
+### Feature #85: Model filter shows model-specific data (VERIFIED)
+- **Status**: PASSING
+- **Category**: C-RealData
+- **Description**: Selecting specific LLM shows that model's analysis
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Dashboard loaded at http://localhost:5174/
+
+2. **Select specific LLM model filter** ✅
+   - Tested Llama-3-Sentiment (3.1) - URL updated to ?model=1
+   - Tested RoBERTa GoEmotions (base) - URL updated to ?model=6
+   - Tested BERTweet Sentiment Analysis (base) - URL updated to ?model=7
+
+3. **Query database for that model's aggregations** ✅
+   - API calls verified via network requests
+   - GET /api/dashboard?timeBucket=weekly&modelId=1 returns data
+   - GET /api/dashboard?timeBucket=weekly&modelId=6 returns no data (filtered correctly)
+
+4. **Compare displayed values** ✅
+   - Combined model: Shows aggregate data (Anger: 18, Inspiration: 38, Mood: 68)
+   - Llama-3-Sentiment (model 1): Shows same data (all analyses from this model)
+   - RoBERTa GoEmotions (model 6): Shows 'No sentiment data' with neutral gauges (50)
+
+5. **Verify only that model's data is shown** ✅
+   - Model with data: Dashboard shows that model's analysis values
+   - Model without data: Shows 'No sentiment data for selected filters' message
+   - Clear Filters button appears when model filter is active
+   - URL parameter correctly reflects selected model
+
+### Screenshots:
+- .playwright-mcp/feature85-model-filter-llama3-sentiment.png - Model with data
+- .playwright-mcp/feature85-model-filter-no-data.png - Model without data
+
+### Console Errors:
+- None
+
+### Result:
+- No regression detected - Feature #85 still working correctly
+
+[Testing] Session complete - verified feature #85 (Model filter shows model-specific data) - still passing
+
+
+
+---
+
+## Session - Feature #194 - 2026-01-21
+
+### Feature #194: Light theme uses correct colors (COMPLETED)
+- **Status**: PASSING
+- **Category**: style
+- **Description**: Light theme matches design system
+
+### Implementation:
+
+Updated CSS variables in `frontend/src/index.css` to match the design spec:
+
+**Before:**
+- `--foreground: 222.2 84% 4.9%` → `#020817` (too dark, almost black)
+- `--primary: 187 100% 28%` → `#008f8f` (different shade of teal)
+
+**After:**
+- `--foreground: 217 33% 17%` → `#1e293b` (correct dark gray per spec)
+- `--primary: 192 91% 37%` → `#0891b2` (correct deep teal per spec)
+
+Also updated:
+- `--card-foreground` and `--popover-foreground` to match
+- `--ring` color to match primary
+
+### Verification Steps Completed:
+
+1. **Enable light theme** ✅
+   - Toggled theme from dark to light mode
+   - HTML element class changed to "light"
+
+2. **Verify background is white (#ffffff)** ✅
+   - `bodyBackgroundHex: "#ffffff"` - EXACT MATCH
+
+3. **Verify text is dark gray (#1e293b)** ✅
+   - `bodyTextColorHex: "#1d283a"` - Within 1% RGB variance
+   - Spec: `#1e293b` (rgb 30, 41, 59)
+   - Actual: `#1d283a` (rgb 29, 40, 58)
+   - Difference due to HSL rounding, visually identical
+
+4. **Verify primary accent is deep teal (#0891b2)** ✅
+   - `activeButtonBgHex: "#0892b4"` - Within 1% RGB variance
+   - Spec: `#0891b2` (rgb 8, 145, 178)
+   - Actual: `#0892b4` (rgb 8, 146, 180)
+   - Difference due to HSL rounding, visually identical
+
+### Screenshots:
+- .playwright-mcp/feature194-light-theme-dashboard.png - Main dashboard
+- .playwright-mcp/feature194-light-theme-verified.png - Dashboard with color verification
+- .playwright-mcp/feature194-light-theme-footer.png - Footer section
+- .playwright-mcp/feature194-light-theme-user-detail.png - User detail page
+- .playwright-mcp/feature194-light-theme-admin-login.png - Admin login page
+
+### Console Errors:
+- None
+
+### Current Progress:
+- Features passing: 136/235 (~57.9%)
+- Feature #194 marked as passing
+
+### Code Changes:
+- frontend/src/index.css: Updated light theme CSS variables for foreground, primary, and ring colors
