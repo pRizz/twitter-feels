@@ -18259,3 +18259,106 @@ Updated the database configurations table to set the correct lowLabel for Anger 
 
 [Testing] Session complete - verified feature #31 (Mood gauge displays with labels) - PASSING
 
+
+
+---
+
+## Session - Feature #110 Regression Test - 2026-01-21
+
+### Feature #110: Emotion colors from config applied to charts (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: F-UIBackend
+- **Description**: Chart colors match configured emotion colors
+
+### Verification Steps Completed:
+
+1. **Query configurations for emotion colors** ✅
+   - Queried database using query-configs.cjs
+   - All 12 emotions have configured colors:
+     - happy: #FFD700, sad: #4169E1, angry: #FF4444
+     - fearful: #9932CC, hatred: #8B0000, thankful: #32CD32
+     - excited: #FF6B35, hopeful: #00CED1, frustrated: #FF8C00
+     - sarcastic: #BA55D3, inspirational: #FFD700, anxious: #708090
+
+2. **Navigate to tweet detail** ✅
+   - Navigated to http://localhost:5173/tweets/294
+   - Tweet detail page loaded successfully
+
+3. **Verify chart bars use configured colors** ✅
+   - Screenshot captured: .playwright-mcp/feature110-emotion-chart-colors.png
+   - Colors visually match configuration:
+     - frustrated: orange (#FF8C00) ✅
+     - thankful: green (#32CD32) ✅
+     - inspirational: gold (#FFD700) ✅
+     - excited: orange (#FF6B35) ✅
+     - happy: gold (#FFD700) ✅
+     - sad: blue (#4169E1) ✅
+     - hopeful: cyan (#00CED1) ✅
+     - angry: red (#FF4444) ✅
+
+4. **Verified admin theme page shows same colors** ✅
+   - Accessed /admin/theme after login
+   - All emotion colors in admin UI match database config
+   - Admin provides UI to change colors (feature working)
+
+### Screenshots:
+- .playwright-mcp/feature110-emotion-chart-colors.png - Tweet detail showing colored emotion bars
+
+### Console Errors: 
+- 401 Unauthorized errors (admin session timeout - separate issue, not related to this feature)
+
+### Code Changes: NONE (regression test only - feature working correctly)
+
+[Testing] Session complete - verified feature #110 (Emotion colors from config applied to charts) - PASSING
+
+
+
+---
+
+## Session - Feature #32 - 2026-01-21
+
+### Feature #32: Intensity gauge displays with labels (VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Intensity gauge shows with Zen/Heated labels
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173
+   - Dashboard loaded successfully
+
+2. **Locate Intensity Gauge** ✅
+   - Found "Intensity Gauge" in the "Average Twitter Feel" section
+   - Gauge is in the second row, middle position (after Mood, before Playfulness)
+
+3. **Verify gauge is visible with value** ✅
+   - Gauge displays with value 27
+   - Red/orange colored progress bar (#FF4444) visible
+   - Value animates from 0 to final value on load
+
+4. **Verify 'Zen' label on low end** ✅
+   - "Zen" label visible on the left side (0% position)
+   - Label styled consistently with other gauges
+
+5. **Verify 'Heated' label on high end** ✅
+   - "Heated" label visible on the right side (100% position)
+   - Label styled consistently with other gauges
+
+### API Verification:
+- Dashboard API returns: {"name":"Intensity Gauge","value":27,"lowLabel":"Zen","highLabel":"Heated","color":"#FF4444"}
+- Configuration matches UI display exactly
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature32-intensity-gauge.png - Dashboard showing Intensity Gauge with Zen/Heated labels
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - gauge already correctly configured)
+
+### Current Progress:
+- Features passing: 215/235 (~91.5%)
+- Feature #32 marked as passing
+
+[Testing] Session complete - verified feature #32 (Intensity gauge displays with labels) - PASSING
+
