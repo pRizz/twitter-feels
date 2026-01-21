@@ -294,6 +294,7 @@ function SortSelector({
         onClick={() => onSortOrderChange(sortOrder === 'asc' ? 'desc' : 'asc')}
         className="p-1.5 bg-card border border-border rounded-lg hover:bg-muted transition-colors"
         title={sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'}
+        aria-label={sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'}
       >
         {sortOrder === 'asc' ? (
           <svg className="w-4 h-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
