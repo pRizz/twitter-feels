@@ -19515,3 +19515,165 @@ curl -s -c cookies.txt -b cookies.txt -X DELETE \
 - Feature #77 marked as passing
 
 [Testing] Session complete - verified feature #77 (Backup progress indicator displays) - PASSING
+
+
+---
+
+## Session - Feature #80 Regression Test - 2026-01-21
+
+### Feature #80: Dashboard shows real aggregated data (VERIFIED - REGRESSION TEST)
+- **Status**: PASSING
+- **Category**: C-RealData
+- **Description**: Dashboard gauges reflect actual database values
+
+### Verification Steps Completed:
+
+1. **Query database for aggregation values** ✅
+   - Called GET /api/dashboard to retrieve current aggregated data
+   - API returned: 2 users, 193 tweets, 492 analyses
+   - Gauge values: Anger=18, Inspiration=36, Gratitude=40, Mood=63, Intensity=27, Playfulness=38
+
+2. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173
+   - Dashboard loaded (initially showing Weekly filter)
+   - Clicked "All Time" to match API query parameters
+
+3. **Compare displayed gauge values to database** ✅
+   - Anger Gauge: API=18, Dashboard=18 ✅
+   - Inspiration Gauge: API=36, Dashboard=36 ✅
+   - Gratitude Gauge: API=40, Dashboard=40 ✅
+   - Mood Gauge: API=63, Dashboard=63 ✅
+   - Intensity Gauge: API=27, Dashboard=27 ✅
+   - Playfulness Gauge: API=38, Dashboard=38 ✅
+
+4. **Verify values match exactly** ✅
+   - All gauge values match between API and UI
+   - Stats match: 2 Tracked Users, 193 Tweets Analyzed, 492 Sentiment Analyses
+   - Leaderboard values match: Sam Altman happy=50, Elon Musk happy=49
+
+### Screenshots:
+- .playwright-mcp/feature80-dashboard-real-data-verification.png - Full dashboard with All Time filter
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 226/235 (~96.2%)
+- Feature #80 still passing - no regression
+
+[Testing] Session complete - verified feature #80 (Dashboard shows real aggregated data) - STILL PASSING
+
+
+---
+
+## Session - Feature #177 Regression Test - 2026-01-21
+
+### Feature #177: Timestamps formatted correctly (VERIFIED - REGRESSION TEST)
+- **Status**: PASSING
+- **Category**: Q-Temporal
+- **Description**: Date/time formatting is consistent
+
+### Verification Steps Completed:
+
+1. **View various timestamps in app** ✅
+   - Dashboard header: 'Last updated: 1/21/2026, 5:43:30 PM'
+   - Time filter range: '(Jan 14, 2026 - Jan 21, 2026)'
+   - Trend chart X-axis: 'Dec 6', 'Jan 18', etc.
+
+2. **Verify consistent format used** ✅
+   - All timestamps use either abbreviated month (Jan, Feb) or numeric US format (M/D/YYYY)
+   - Times use 12-hour format with AM/PM
+   - Date ranges use abbreviated month + day + year
+
+3. **Verify format is readable** ✅
+   - Tweet timestamps: 'Jan 20, 2026, 8:22 AM' - clear and readable
+   - Admin timestamps: '1/21/2026, 5:25:28 PM' - clear and readable
+   - Chart axis: 'Dec 6', 'Jan 18' - concise and appropriate for charts
+
+### Locations Verified:
+- Dashboard header (Last updated)
+- Time filter date ranges
+- User detail page (trend chart X-axis)
+- Tweet list (dates)
+- Tweet detail page (full timestamp)
+- Admin dashboard (Last Run, Next Run)
+- Admin Recent Runs table
+
+### Screenshots:
+- feature177-step1-dashboard-timestamps.png - Dashboard with header and filter timestamps
+- feature177-step2-user-detail-timestamps.png - User page with trend chart dates
+- feature177-step3-tweet-list-timestamps.png - Tweet list with dates
+- feature177-step4-tweet-detail-timestamps.png - Tweet detail with full timestamp
+- feature177-step5-admin-dashboard-timestamps.png - Admin dashboard timestamps
+- feature177-step7-time-filter-timestamps.png - Time filter with yearly range
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 226/235 (~96.2%)
+- Feature #177 still passing - no regression
+
+[Testing] Session complete - verified feature #177 (Timestamps formatted correctly) - STILL PASSING
+
+
+---
+
+## Session - Feature #89 - 2026-01-21
+
+### Feature #89: Deleted user removed from all views (VERIFIED)
+- **Status**: PASSING
+- **Category**: C-RealData
+- **Description**: Deleting user removes them from dashboard, leaderboards
+
+### Verification Steps Completed:
+
+1. **Admin deletes a tracked user** ✅
+   - Logged in as admin (admin/admin)
+   - Navigated to /admin/users
+   - Initial state: 2 users (Elon Musk - 90 tweets, Sam Altman - 103 tweets)
+   - Clicked Delete for Elon Musk
+   - Confirmation dialog appeared (Confirm/Cancel)
+   - Clicked Confirm
+   - Success toast: "Successfully removed @elonmusk from tracked users!"
+   - Stats updated: 1 Total Tracked, 1 Active, 103 Total Tweets
+
+2. **Navigate to public dashboard** ✅
+   - Navigated to http://localhost:5173
+   - Dashboard loaded with updated data
+
+3. **Verify user not in user grid** ✅
+   - "Tracked Influencers" section shows only 1 user card
+   - Only Sam Altman displayed - Elon Musk is GONE
+   - Stats: 1 Tracked Users, 103 Tweets Analyzed, 253 Sentiment Analyses
+
+4. **Verify user not in leaderboards** ✅
+   - All 6 leaderboards checked (happy, sad, angry, fearful, hatred, thankful)
+   - Each leaderboard now only shows Sam Altman
+   - Elon Musk completely removed from all Highest/Lowest rankings
+
+5. **Query database to confirm deletion** ✅
+   - Verified via Node.js script querying SQLite database
+   - twitter_users table: Only Sam Altman (id=4) remains
+   - Elon Musk in twitter_users: DELETED ✓
+   - Elon Musk tweets remaining: 0 (cascading delete worked)
+   - Elon Musk sentiment analyses remaining: 0 (cascading delete worked)
+   - Elon Musk user aggregations remaining: 0 (cascading delete worked)
+   - Total: 1 user, 103 tweets, 253 sentiment analyses
+
+### Screenshots:
+- .playwright-mcp/feature89-step1-users-before-delete.png - Admin users page showing 2 users
+- .playwright-mcp/feature89-step2-dashboard-before-delete.png - Dashboard with both users
+- .playwright-mcp/feature89-step3-delete-confirmation.png - Confirm/Cancel dialog
+- .playwright-mcp/feature89-step4-user-deleted.png - Admin users page with only Sam Altman
+- .playwright-mcp/feature89-step5-dashboard-after-delete.png - Dashboard with only Sam Altman
+
+### Console Errors: NONE
+
+### Database Verification Script:
+- backend/verify-deletion-89.cjs - Confirms cascading delete worked correctly
+
+### Current Progress:
+- Features passing: 226/235 (~96.2%)
+- Feature #89 marked as passing
+
+[Testing] Session complete - verified feature #89 (Deleted user removed from all views) - PASSING
+
