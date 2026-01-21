@@ -11030,3 +11030,158 @@ The 404 page was already implemented:
 - Breadcrumb implementation was already present from previous session (Feature #203)
 - This session verified the feature works correctly
 - Navigation path clearly shows current location in the application hierarchy
+
+
+---
+
+## Session - Feature #147 Regression Test - 2026-01-21
+
+### Feature #147: History depth validates range (VERIFIED)
+- **Status**: PASSING (No regression)
+- **Category**: M-FormValidation
+- **Description**: History depth must be within valid range
+
+### Verification Steps Completed:
+
+1. **Navigate to crawler settings** ✅
+   - Logged into admin at /admin/login
+   - Navigated to /admin/settings
+   - Found "History Depth (days)" field with help text "1-365 days"
+
+2. **Enter invalid history depth (-1)** ✅
+   - Entered -1 in the History Depth field
+   - Clicked "Save Crawler Settings"
+   - Validation error displayed: "Value must be greater than or equal to 1."
+   - Field highlighted with cyan border
+
+3. **Enter invalid history depth (9999)** ✅
+   - Entered 9999 in the History Depth field
+   - Clicked "Save Crawler Settings"
+   - Validation error displayed: "Value must be less than or equal to 365."
+   - Field highlighted with cyan border
+
+4. **Enter valid value, verify success** ✅
+   - Entered 180 in the History Depth field
+   - Clicked "Save Crawler Settings"
+   - Success notification: "Crawler settings saved successfully!"
+   - No validation errors
+
+### Screenshots:
+- .playwright-mcp/feature147-settings-page.png - Settings page overview
+- .playwright-mcp/feature147-invalid-value-test.png - Validation error for -1
+- .playwright-mcp/feature147-high-value-test.png - Validation error for 9999
+- .playwright-mcp/feature147-valid-value-success.png - Success with valid value
+
+### Console Errors:
+- Only expected 401 errors from pre-login state (not related to feature)
+
+### Result:
+- No regression detected - Feature #147 still working correctly
+
+[Testing] Session complete - verified feature #147 (History depth validates range) - still passing
+
+
+---
+
+## Session - Feature #171 Regression Test - 2026-01-21
+
+### Feature #171: Icon buttons have labels (REGRESSION TEST)
+- **Status**: PASSING (verified)
+- **Category**: P-Accessibility
+- **Description**: Icon-only buttons have ARIA labels
+
+### Verification Steps Completed:
+
+1. **Find icon-only buttons** ✅
+   - Theme toggle button (sun/moon icon) in header
+   - Sort toggle button in dashboard
+   - Mobile menu toggle button
+   - Admin sidebar toggle button
+   - Toast dismiss button
+   - Dialog close button
+
+2. **Inspect for aria-label attribute** ✅
+   - PublicLayout.tsx: aria-label="Toggle menu" (line 55), aria-label="Toggle theme" (line 69)
+   - AdminLayout.tsx: aria-label="Close menu" / "Open menu" (line 103), aria-label="Close menu" (line 145)
+   - Dashboard.tsx: aria-label="Sort ascending/descending" (line 364)
+   - toaster.tsx: aria-label="Dismiss notification" (line 56)
+   - ConfirmDialog.tsx: aria-label="Close" (line 61)
+
+3. **Verify label describes action** ✅
+   - "Toggle theme" - clearly describes theme switching action
+   - "Toggle menu" / "Open menu" / "Close menu" - clearly describes menu action
+   - "Sort ascending" / "Sort descending" - clearly describes sort direction
+   - "Dismiss notification" - clearly describes dismissing toast
+   - "Close" - clearly describes closing the dialog
+
+### Accessibility Snapshot Verification:
+- button "Toggle theme" [ref=e10] - theme toggle has accessible name
+- button "Sort descending" [ref=e36] - sort button has accessible name
+
+### Screenshots:
+- .playwright-mcp/feature171-main-dashboard.png - Dashboard with icon buttons
+- .playwright-mcp/feature171-admin-dashboard.png - Admin panel with navigation icons
+- .playwright-mcp/feature171-verified.png - Final verification
+
+### Console Errors:
+- None
+
+### Result:
+- No regression detected - Feature #171 still working correctly
+- All icon-only buttons have descriptive ARIA labels for screen readers
+
+[Testing] Session complete - verified feature #171 (Icon buttons have labels) - still passing
+
+
+---
+
+## Session - Feature #206 - 2026-01-21
+
+### Feature #206: Admin sidebar navigation works (VERIFIED)
+- **Status**: PASSING
+- **Category**: B-Navigation
+- **Description**: All admin nav items navigate correctly
+
+### Verification Steps Completed:
+
+1. **Log in as admin** ✅
+   - Logged in with admin/admin123
+   - Redirected to /admin dashboard
+
+2. **Click each sidebar nav item** ✅
+   - Dashboard (/admin) → Loaded correctly
+   - Tracked Users (/admin/users) → Loaded correctly
+   - Settings (/admin/settings) → Loaded correctly
+   - LLM Models (/admin/models) → Loaded correctly
+   - Theme (/admin/theme) → Loaded correctly
+   - Error Logs (/admin/errors) → Loaded correctly
+
+3. **Verify correct page loads** ✅
+   - Each navigation item routes to the correct URL
+   - Each page displays the correct content
+
+4. **Verify active state shown** ✅
+   - Active nav item is highlighted in cyan/teal color
+   - Active state correctly updates when navigating between pages
+   - The [active] attribute is present on the currently selected nav link
+
+### Screenshots:
+- .playwright-mcp/feature206-step1-admin-dashboard.png - Initial dashboard with Dashboard active
+- .playwright-mcp/feature206-step2-tracked-users.png - Tracked Users page with active state
+- .playwright-mcp/feature206-step3-settings.png - Settings page with active state
+- .playwright-mcp/feature206-step4-llm-models.png - LLM Models page with active state
+- .playwright-mcp/feature206-step5-theme.png - Theme page with active state
+- .playwright-mcp/feature206-step6-error-logs.png - Error Logs page with active state
+- .playwright-mcp/feature206-step7-back-to-dashboard.png - Dashboard with active state restored
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 146/235 (~62.1%)
+- Feature #206 marked as passing
+
+### Notes:
+- All 6 admin sidebar navigation items work correctly
+- Active states properly highlight the current page
+- Navigation between pages is smooth with no errors
+- React Router handles client-side routing correctly
