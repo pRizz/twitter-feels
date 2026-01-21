@@ -19,6 +19,14 @@ const endpoints = [
   { name: 'CSRF Token', url: 'http://localhost:3001/api/csrf-token' },
 ];
 
+function getAdminCredentials() {
+  const { ADMIN_USERNAME: adminUsername, ADMIN_PASSWORD: adminPassword } = process.env;
+  if (!adminUsername || !adminPassword) {
+    throw new Error('Set ADMIN_USERNAME and ADMIN_PASSWORD to run admin login tests.');
+  }
+  return { adminUsername, adminPassword };
+}
+
 // Admin endpoints require authentication - we'll test these separately
 const adminEndpoints = [
   { name: 'Admin Me', url: 'http://localhost:3001/api/admin/me' },
@@ -75,6 +83,7 @@ async function login() {
   const csrfCookie = csrfResponse.headers.get('set-cookie');
 
   // Login
+  const { adminUsername, adminPassword } = getAdminCredentials();
   const loginResponse = await fetch('http://localhost:3001/api/admin/login', {
     method: 'POST',
     headers: {
@@ -82,7 +91,7 @@ async function login() {
       'x-csrf-token': csrfToken,
       'Cookie': csrfCookie || ''
     },
-    body: JSON.stringify({ username: 'admin', password: 'admin123456!' }),
+    body: JSON.stringify({ username: adminUsername, password: adminPassword }),
     credentials: 'include'
   });
 

@@ -1,5 +1,6 @@
 // Admin Dashboard - Overview with crawler status and quick stats
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Activity, Clock, AlertTriangle, CheckCircle2, Loader2, Play, RefreshCw, RotateCcw } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/useToast';
@@ -335,6 +336,7 @@ function RecentRunsTable({ runs }: { runs: CrawlerRun[] }) {
 }
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<CrawlerStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -352,13 +354,7 @@ export default function AdminDashboard() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Need to login - for now, auto-login
-          await api.post('/api/admin/login', { username: 'admin', password: 'admin' });
-          // Retry
-          const retryResponse = await api.get('/api/admin/crawler/status');
-          if (!retryResponse.ok) throw new Error('Failed to fetch status');
-          const data = await retryResponse.json();
-          setStatus(data);
+          navigate('/admin/login');
           return;
         }
         throw new Error('Failed to fetch crawler status');

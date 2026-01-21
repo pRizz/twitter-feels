@@ -31,8 +31,17 @@ function makeRequest(options, postData) {
   });
 }
 
+function getAdminCredentials() {
+  const { ADMIN_USERNAME: adminUsername, ADMIN_PASSWORD: adminPassword } = process.env;
+  if (!adminUsername || !adminPassword) {
+    throw new Error('Set ADMIN_USERNAME and ADMIN_PASSWORD to run admin login tests.');
+  }
+  return { adminUsername, adminPassword };
+}
+
 async function login() {
-  const data = JSON.stringify({ username: 'admin', password: 'admin' });
+  const { adminUsername, adminPassword } = getAdminCredentials();
+  const data = JSON.stringify({ username: adminUsername, password: adminPassword });
   const result = await makeRequest({
     hostname: 'localhost',
     port: 3001,

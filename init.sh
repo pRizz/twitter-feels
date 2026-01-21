@@ -30,6 +30,32 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+command_exists() {
+    command -v "$1" &> /dev/null
+}
+
+is_running_in_docker() {
+    if [ -f "/.dockerenv" ]; then
+        return 0
+    fi
+
+    if [ -f "/proc/1/cgroup" ] && grep -qE "(docker|containerd|kubepods)" /proc/1/cgroup; then
+        return 0
+    fi
+
+    return 1
+}
+
+maybe_warn_docker_best_practice() {
+    if is_running_in_docker; then
+        return 0
+    fi
+
+    log_warn "Not running inside a container. For best isolation, use Docker:"
+    log_warn "  docker compose up --build"
+    log_warn "Dockerfiles are in ./docker and docker-compose.yml at repo root."
+}
+
 check_command() {
     if ! command -v "$1" &> /dev/null; then
         log_error "$1 is not installed. Please install it first."
@@ -253,8 +279,118 @@ EOF
     fi
 }
 
+generate_admin_password() {
+    if command_exists openssl; then
+        openssl rand -base64 48 | tr -d '\n'
+        return 0
+    fi
+
+    if command_exists python3; then
+        python3 - << 'PY'
+import secrets
+print(secrets.token_urlsafe(48))
+PY
+        return 0
+    fi
+
+    return 1
+}
+
+update_admin_password_hash() {
+    local password="$1"
+    local db_path="backend/data/twitter_feels.db"
+
+    if [ ! -f "$db_path" ]; then
+        log_warn "Admin database not found at $db_path. Skipping password update."
+        return 0
+    fi
+
+    if ! command_exists sqlite3; then
+        log_warn "sqlite3 not installed. Update admin password manually in $db_path."
+        return 0
+    fi
+
+    sqlite3 "$db_path" "UPDATE admin_users SET password_hash = 'hashed_${password}' WHERE username = 'admin';" || \
+        log_warn "Failed to update admin password hash in $db_path"
+}
+
+ensure_admin_password() {
+    local password_file="backend/.admin_password"
+
+    if [ ! -d "backend" ]; then
+        return 0
+    fi
+
+    if [ -f "$password_file" ]; then
+        log_info "Admin password already exists at $password_file"
+        return 0
+    fi
+
+    local password
+    password=$(generate_admin_password) || {
+        log_error "Unable to generate admin password (requires openssl or python3)."
+        return 1
+    }
+
+    umask 077
+    printf "%s" "$password" > "$password_file"
+    chmod 600 "$password_file" 2>/dev/null || true
+
+    log_success "Generated admin password and stored in $password_file"
+    log_info "Generated using openssl rand -base64 48 (or python3 secrets)."
+    log_info "Admin username: admin"
+    log_info "Admin password: $password"
+
+    update_admin_password_hash "$password"
+}
+
+show_admin_password() {
+    local password_file="backend/.admin_password"
+
+    if [ ! -f "$password_file" ]; then
+        log_warn "No stored admin password found. Run './init.sh admin-password' to generate one."
+        return 0
+    fi
+
+    log_info "Admin password (stored in $password_file):"
+    cat "$password_file"
+    echo ""
+}
+
+revoke_admin_password() {
+    local password_file="backend/.admin_password"
+
+    if [ -f "$password_file" ]; then
+        rm -f "$password_file"
+        log_success "Removed stored admin password at $password_file"
+    else
+        log_warn "No stored admin password found to revoke."
+    fi
+
+    local revoke_token
+    revoke_token=$(generate_admin_password) || revoke_token="revoked_$(date +%s)"
+
+    if [ -f "backend/data/twitter_feels.db" ] && command_exists sqlite3; then
+        sqlite3 "backend/data/twitter_feels.db" \
+            "UPDATE admin_users SET password_hash = 'hashed_${revoke_token}' WHERE username = 'admin';" || \
+            log_warn "Failed to revoke admin password in database."
+        log_success "Admin password revoked in database."
+    else
+        log_warn "Could not revoke password in database (missing sqlite3 or DB)."
+    fi
+
+    log_info "Run './init.sh admin-password' to generate a new admin password."
+}
+
+rotate_admin_password() {
+    revoke_admin_password
+    ensure_admin_password
+    show_admin_password
+}
+
 run_dev() {
     log_info "Starting development servers..."
+    maybe_warn_docker_best_practice
 
     # Check if tmux is available for split terminal
     if command -v tmux &> /dev/null && [ -z "${TMUX:-}" ]; then
@@ -291,6 +427,9 @@ print_help() {
     echo "  dev       Start development servers (frontend + backend)"
     echo "  build     Build all components for production"
     echo "  docker    Build and run with Docker Compose"
+    echo "  admin-password        Show or generate the admin password"
+    echo "  revoke-admin-password Revoke the current admin password"
+    echo "  rotate-admin-password Revoke and generate a new admin password"
     echo "  help      Show this help message"
     echo ""
     echo "If no command is provided, 'setup' followed by 'dev' will run."
@@ -351,10 +490,13 @@ main() {
             create_env_files
             setup_frontend
             setup_backend
+            ensure_admin_password
             setup_crawler
+            maybe_warn_docker_best_practice
             log_success "Setup complete! Run './init.sh dev' to start development servers."
             ;;
         dev)
+            maybe_warn_docker_best_practice
             run_dev
             ;;
         build)
@@ -373,11 +515,23 @@ main() {
             create_env_files
             setup_frontend
             setup_backend
+            ensure_admin_password
             setup_crawler
             echo ""
             log_success "Setup complete!"
             echo ""
+            maybe_warn_docker_best_practice
             run_dev
+            ;;
+        admin-password)
+            ensure_admin_password
+            show_admin_password
+            ;;
+        revoke-admin-password)
+            revoke_admin_password
+            ;;
+        rotate-admin-password)
+            rotate_admin_password
             ;;
         *)
             log_error "Unknown command: $command"

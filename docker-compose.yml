@@ -19,7 +19,7 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - db-data:/app/data
+      - ./backend/data:/app/data
       - ./backend/.env:/app/.env:ro
     environment:
       - NODE_ENV=production
@@ -30,13 +30,10 @@ services:
       context: ./crawler
       dockerfile: ../docker/Dockerfile.crawler
     volumes:
-      - db-data:/app/data
+      - ./backend/data:/app/data
       - ./crawler/.env:/app/.env:ro
     depends_on:
       - backend
     environment:
       - DATABASE_URL=/app/data/twitter_feels.db
 
-volumes:
-  db-data:
-    driver: local

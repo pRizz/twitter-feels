@@ -1,5 +1,6 @@
+const path = require('path');
 const Database = require('better-sqlite3');
-const db = new Database('/Users/peterryszkiewicz/Repos/twitter-feels/backend/data/twitter_feels.db');
+const db = new Database(path.resolve(__dirname, 'data', 'twitter_feels.db'));
 
 // Get current gauge config
 const config = db.prepare("SELECT value FROM configurations WHERE key = 'gauges'").get();

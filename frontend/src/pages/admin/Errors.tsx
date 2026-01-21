@@ -1,5 +1,6 @@
 // Admin Errors - API error logs and analytics
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
   Clock,
@@ -414,6 +415,7 @@ function ErrorLogTable({
 }
 
 export default function AdminErrors() {
+  const navigate = useNavigate();
   const [errors, setErrors] = useState<ApiError[]>([]);
   const [stats, setStats] = useState<ErrorStats | null>(null);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -430,14 +432,7 @@ export default function AdminErrors() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Auto-login for development
-          await api.post('/api/admin/login', { username: 'admin', password: 'admin' });
-          // Retry
-          const retryResponse = await api.get(`/api/admin/errors?page=${page}&limit=20${typeParam}`);
-          if (!retryResponse.ok) throw new Error('Failed to fetch errors');
-          const data = await retryResponse.json();
-          setErrors(data.errors);
-          setPagination(data.pagination);
+          navigate('/admin/login');
           return;
         }
         throw new Error('Failed to fetch error logs');
@@ -461,13 +456,7 @@ export default function AdminErrors() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Auto-login for development
-          await api.post('/api/admin/login', { username: 'admin', password: 'admin' });
-          // Retry
-          const retryResponse = await api.get('/api/admin/errors/stats');
-          if (!retryResponse.ok) throw new Error('Failed to fetch stats');
-          const data = await retryResponse.json();
-          setStats(data);
+          navigate('/admin/login');
           return;
         }
         throw new Error('Failed to fetch error statistics');

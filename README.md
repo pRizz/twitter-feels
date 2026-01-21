@@ -114,6 +114,46 @@ TWITTER_BEARER_TOKEN=your-twitter-token
 CRAWL_INTERVAL_HOURS=1
 ```
 
+### Admin Credentials
+
+Admin credentials are stored in the SQLite database (`backend/data/twitter_feels.db`). By default, the schema seeds a development user of `admin` / `admin` using a placeholder hash format (`hashed_<password>`). The `init.sh` script creates `backend/.env` (or copies from `backend/.env.example`) but does not enforce or validate admin credentials.
+
+To update the default admin password in development:
+
+```bash
+sqlite3 backend/data/twitter_feels.db \
+  "UPDATE admin_users SET password_hash = 'hashed_NEW_PASSWORD' WHERE username = 'admin';"
+```
+
+You can also let the init script generate a long, cryptographically secure password and store it locally:
+
+```bash
+./init.sh admin-password
+```
+
+This generates a password (using `openssl rand -base64 48` or `python3`'s `secrets`), writes it to `backend/.admin_password` with `0600` permissions, and updates the database hash. If the file already exists, it is reused and nothing is regenerated.
+
+To revoke the stored password and invalidate it in the database:
+
+```bash
+./init.sh revoke-admin-password
+```
+
+To rotate the password in one step (revoke + generate):
+
+```bash
+./init.sh rotate-admin-password
+```
+
+Local test utilities that log in as admin (for example `verify-api-performance.js` or the scripts under `.playwright-mcp/`) read plaintext credentials from environment variables at runtime. Set these to match the database:
+
+```bash
+export ADMIN_USERNAME=admin
+export ADMIN_PASSWORD=your-plaintext-password
+node verify-api-performance.js
+```
+Use a dedicated local admin password for these scripts and keep it out of version control.
+
 ### Default Emotions
 
 The system tracks 12 emotions by default:
@@ -155,6 +195,8 @@ docker compose up --build -d
 # View logs
 docker compose logs -f
 ```
+
+Docker runs the SQLite database from a host bind mount at `./backend/data` (mapped to `/app/data` in the backend and crawler containers). This keeps `twitter_feels.db` accessible on the host for snapshots and backups.
 
 ### Manual Build
 
