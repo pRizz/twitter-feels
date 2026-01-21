@@ -10977,3 +10977,56 @@ The 404 page was already implemented:
 
 [Testing] Session complete - verified feature #165 (Admin dashboard responsive) - still passing
 
+
+---
+
+## Session - Feature #204 - 2026-01-21
+
+### Feature #204: Breadcrumbs show navigation path (VERIFIED)
+- **Status**: PASSING
+- **Category**: B-Navigation
+- **Description**: Breadcrumbs reflect current location
+
+### Verification Steps Completed:
+
+1. **Navigate to tweet detail** ✅
+   - Navigated to /tweets/52 (long tweet from Sam Altman)
+   - Page loaded successfully
+
+2. **Verify breadcrumb shows Home > User > Tweet** ✅
+   - Breadcrumb navigation element present
+   - Shows: "Home / Sam Altman / Tweet"
+   - Home links to "/"
+   - Sam Altman links to "/users/4"
+   - Tweet is current page (non-link text)
+
+3. **Click breadcrumb item** ✅
+   - Clicked "Sam Altman" breadcrumb link
+   - Navigated correctly to /users/4 (User Detail page)
+   - Clicked "Home" breadcrumb link
+   - Navigated correctly to / (Dashboard)
+
+4. **Verify correct navigation** ✅
+   - All breadcrumb links navigate to correct destinations
+   - No 404 errors or broken links
+   - Page content loads correctly after navigation
+
+### Implementation Details:
+- TweetDetail.tsx: Uses `<nav>` element with breadcrumb links
+- Pattern: Home (/) > User Name (/users/:id) > Tweet (current)
+- Consistent with UserDetail.tsx breadcrumb pattern (Dashboard > User Name)
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature204-breadcrumbs-tweet-detail.png
+- .playwright-mcp/.playwright-mcp/feature204-user-detail-breadcrumbs.png
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 145/235 (~61.7%)
+- Feature #204 marked as passing
+
+### Notes:
+- Breadcrumb implementation was already present from previous session (Feature #203)
+- This session verified the feature works correctly
+- Navigation path clearly shows current location in the application hierarchy
