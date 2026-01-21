@@ -10584,3 +10584,119 @@ Interactive element hover glow effects were already implemented in the CSS as pa
 - No regression detected - Feature #61 still working correctly
 
 [Testing] Session complete - verified feature #61 (Admin can browse Hugging Face models) - still passing
+
+---
+
+## Session - Feature #173 Regression Test - 2026-01-21
+
+### Feature #173: Form labels associated (REGRESSION TEST)
+- **Status**: PASSING (verified)
+- **Category**: P-Accessibility
+- **Description**: Form inputs have associated labels
+
+### Verification Steps Completed:
+
+1. **Inspect form fields** ✅
+   - Verified across multiple pages: Admin Login, Add User form, Settings page
+   - All form fields have proper label associations
+
+2. **Verify each has label element** ✅
+   - Admin Login: 2 labels (Username, Password)
+   - Add User form: 2 labels (Twitter Handle, Display Name)
+   - Settings page: 14+ labels (Crawler settings, S3 backup, Change password)
+
+3. **Verify label linked via for attribute** ✅
+   - All inputs have proper `id` attributes
+   - All labels have matching `for` attributes that link to input IDs
+   - Examples verified:
+     - `<label for="username">` → `<input id="username">`
+     - `<label for="password">` → `<input id="password">`
+     - `<label for="twitter-handle">` → `<input id="twitter-handle">`
+     - `<label for="crawl-interval">` → `<input id="crawl-interval">`
+
+4. **Click label, verify input focused** ✅
+   - Clicking "Username" label → Username input focused
+   - Clicking "Password" label → Password input focused
+   - Clicking "Twitter Handle *" label → Twitter Handle input focused
+   - Clicking "Display Name (optional)" label → Display Name input focused
+   - Clicking "Crawl Interval (hours)" label → Crawl Interval input focused
+   - Clicking "Current Password *" label → Current Password input focused
+
+### Screenshots:
+- .playwright-mcp/feature173-login-form-labels.png - Login form labels
+- .playwright-mcp/feature173-settings-form-labels.png - Settings form labels
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected - Feature #173 still working correctly
+
+[Testing] Session complete - verified feature #173 (Form labels associated) - still passing
+
+
+---
+
+## Session - Feature #200 - 2026-01-21
+
+### Feature #200: Monospace for technical info (COMPLETED)
+- **Status**: PASSING
+- **Category**: style
+- **Description**: Model names and versions use monospace font
+
+### Implementation:
+
+Applied `font-mono` Tailwind CSS class to all model name and version displays:
+
+1. **TweetDetail.tsx** - ModelAnalysisCard component:
+   - Model name: Added `font-mono` to `<h4>` element
+   - Version: Added `font-mono` to version `<span>`
+
+2. **Models.tsx (Admin)** - Installed and Available models:
+   - Model names: Added `font-mono` to `<h3>` elements
+   - Versions: Added `font-mono` to version `<span>` elements
+
+3. **Dashboard.tsx** - Model filter dropdown:
+   - Added `font-mono` to `<select>` element
+   - "Combined" option uses `font-sans` to distinguish from model names
+
+### Verification Steps Completed:
+
+1. **Navigate to model information** ✅
+   - Tweet Detail: /tweets/37, /tweets/52
+   - Admin Models: /admin/models
+   - Dashboard: Model filter dropdown
+
+2. **Verify monospace font used** ✅
+   - All elements use "JetBrains Mono", monospace
+   - Computed styles verified via browser evaluation
+
+3. **Check tweet detail model info** ✅
+   - "Llama-3-Sentiment" and "v3.1" displayed in monospace
+   - Consistent across multiple tweet pages
+
+4. **Verify consistency** ✅
+   - All model names and versions across all pages use monospace
+   - Admin Models page shows all installed models in monospace
+   - Dashboard filter dropdown uses monospace for model names
+
+### Screenshots:
+- .playwright-mcp/feature200-tweet-detail-before.png - Before changes
+- .playwright-mcp/feature200-model-info-after.png - After changes (monospace)
+- .playwright-mcp/feature200-admin-models.png - Admin models page
+- .playwright-mcp/feature200-dashboard-model-filter.png - Dashboard with model filter
+- .playwright-mcp/feature200-tweet52-model-info.png - Consistency check on another tweet
+
+### Console Errors:
+- None
+
+### Current Progress:
+- Features passing: 141/235 (~60.0%)
+- Feature #200 marked as passing
+
+### Code Changes:
+- frontend/src/pages/TweetDetail.tsx: Added font-mono to model name and version
+- frontend/src/pages/admin/Models.tsx: Added font-mono to model names and versions
+- frontend/src/pages/Dashboard.tsx: Added font-mono to model filter dropdown
+
+### Design Spec Reference:
+- app_spec.txt line 492: "Monospace: For technical/model info"
