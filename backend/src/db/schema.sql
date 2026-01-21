@@ -111,6 +111,40 @@ CREATE TABLE IF NOT EXISTS api_errors (
     resolved INTEGER DEFAULT 0
 );
 
+-- Analysis Queue (jobs for LLM processing)
+CREATE TABLE IF NOT EXISTS analysis_queue (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tweet_id INTEGER NOT NULL,
+    llm_model_id INTEGER,
+    status TEXT NOT NULL DEFAULT 'pending', -- pending, processing, completed, failed
+    attempt_count INTEGER DEFAULT 0,
+    last_error TEXT,
+    enqueued_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(tweet_id, llm_model_id),
+    FOREIGN KEY (tweet_id) REFERENCES tweets(id) ON DELETE CASCADE,
+    FOREIGN KEY (llm_model_id) REFERENCES llm_models(id)
+);
+
+-- Crawler checkpoints (resume support)
+CREATE TABLE IF NOT EXISTS crawler_checkpoints (
+    twitter_user_id INTEGER PRIMARY KEY,
+    last_tweet_timestamp TEXT NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (twitter_user_id) REFERENCES twitter_users(id) ON DELETE CASCADE
+);
+
+-- Reanalysis requests (force re-run sentiment)
+CREATE TABLE IF NOT EXISTS reanalysis_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    request_type TEXT NOT NULL, -- tweet, user, all
+    tweet_id INTEGER,
+    twitter_user_id INTEGER,
+    status TEXT NOT NULL DEFAULT 'pending', -- pending, processing, completed
+    requested_at TEXT DEFAULT (datetime('now')),
+    processed_at TEXT
+);
+
 -- Configurations (key-value store)
 CREATE TABLE IF NOT EXISTS configurations (
     key TEXT PRIMARY KEY,
@@ -138,6 +172,9 @@ CREATE INDEX IF NOT EXISTS idx_user_agg_bucket ON user_aggregations(time_bucket,
 CREATE INDEX IF NOT EXISTS idx_global_agg_bucket ON global_aggregations(time_bucket, bucket_start_date);
 CREATE INDEX IF NOT EXISTS idx_api_errors_type ON api_errors(error_type);
 CREATE INDEX IF NOT EXISTS idx_api_errors_time ON api_errors(occurred_at);
+CREATE INDEX IF NOT EXISTS idx_analysis_queue_status ON analysis_queue(status);
+CREATE INDEX IF NOT EXISTS idx_analysis_queue_tweet ON analysis_queue(tweet_id);
+CREATE INDEX IF NOT EXISTS idx_reanalysis_status ON reanalysis_requests(status);
 
 -- Default configuration values
 INSERT OR IGNORE INTO configurations (key, value) VALUES

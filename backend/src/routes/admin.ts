@@ -1460,6 +1460,9 @@ router.post('/reanalyze', (req, res) => {
 
     let tweetsToAnalyze = 0;
     let message = '';
+    let requestType: 'tweet' | 'user' | 'all';
+    let requestTweetId: number | null = null;
+    let requestUserId: number | null = null;
 
     if (tweetId) {
       // Re-analyze a single tweet
@@ -1469,6 +1472,8 @@ router.post('/reanalyze', (req, res) => {
       }
       tweetsToAnalyze = 1;
       message = `Re-analysis started for tweet #${tweetId}`;
+      requestType = 'tweet';
+      requestTweetId = Number(tweetId);
     } else if (userId) {
       // Re-analyze all tweets for a specific user
       const user = db.prepare('SELECT id, username FROM twitter_users WHERE id = ?').get(userId) as { id: number; username: string } | undefined;
@@ -1478,47 +1483,114 @@ router.post('/reanalyze', (req, res) => {
       const { count } = db.prepare('SELECT COUNT(*) as count FROM tweets WHERE twitter_user_id = ?').get(userId) as { count: number };
       tweetsToAnalyze = count;
       message = `Re-analysis started for ${count} tweets from @${user.username}`;
+      requestType = 'user';
+      requestUserId = Number(userId);
     } else if (all) {
       // Re-analyze all tweets
       const { count } = db.prepare('SELECT COUNT(*) as count FROM tweets').get() as { count: number };
       tweetsToAnalyze = count;
       message = `Re-analysis started for all ${count} tweets`;
+      requestType = 'all';
     } else {
       return res.status(400).json({ error: 'Must specify tweetId, userId, or all=true' });
     }
 
-    // Create a reanalysis run record
-    const newRun = db.prepare(`
-      INSERT INTO crawler_runs (status, tweets_fetched, tweets_analyzed, errors_count)
-      VALUES ('running', 0, 0, 0)
+    const request = db.prepare(`
+      INSERT INTO reanalysis_requests (request_type, tweet_id, twitter_user_id)
+      VALUES (?, ?, ?)
       RETURNING *
-    `).get() as CrawlerRun;
+    `).get(requestType, requestTweetId, requestUserId) as { id: number; requested_at: string };
 
     res.json({
       success: true,
       message,
-      runId: newRun.id,
+      requestId: request.id,
       tweetsToAnalyze,
-      startedAt: newRun.started_at,
+      requestedAt: request.requested_at,
     });
-
-    // Simulate reanalysis completion after a few seconds (for demo purposes)
-    // In production, the Rust crawler would handle actual re-analysis
-    const simulatedDuration = Math.min(tweetsToAnalyze * 500, 10000); // Max 10 seconds
-    setTimeout(() => {
-      db.prepare(`
-        UPDATE crawler_runs
-        SET status = 'completed',
-            completed_at = datetime('now'),
-            tweets_fetched = 0,
-            tweets_analyzed = ?
-        WHERE id = ?
-      `).run(tweetsToAnalyze, newRun.id);
-      console.log(`Re-analysis run ${newRun.id} completed (simulated): ${tweetsToAnalyze} tweets`);
-    }, simulatedDuration);
   } catch (error) {
     console.error('Error triggering re-analysis:', error);
     res.status(500).json({ error: 'Failed to trigger re-analysis' });
+  }
+});
+
+interface ReanalysisRequestRow {
+  id: number;
+  request_type: string;
+  tweet_id: number | null;
+  twitter_user_id: number | null;
+  status: string;
+  requested_at: string;
+  processed_at: string | null;
+}
+
+// GET /api/admin/reanalyze/requests
+router.get('/reanalyze/requests', (req, res) => {
+  try {
+    const { status = 'pending', limit = '50' } = req.query;
+    const limitNum = Math.min(parseInt(limit as string, 10), 100);
+    const requestStatus = typeof status === 'string' ? status : 'pending';
+
+    const rows = db.prepare(`
+      SELECT id, request_type, tweet_id, twitter_user_id, status, requested_at, processed_at
+      FROM reanalysis_requests
+      WHERE status = ?
+      ORDER BY requested_at ASC
+      LIMIT ?
+    `).all(requestStatus, limitNum) as ReanalysisRequestRow[];
+
+    res.json({
+      requests: rows.map((row) => ({
+        id: row.id,
+        requestType: row.request_type,
+        tweetId: row.tweet_id,
+        userId: row.twitter_user_id,
+        status: row.status,
+        requestedAt: row.requested_at,
+        processedAt: row.processed_at,
+      })),
+    });
+  } catch (error) {
+    console.error('Error fetching reanalysis requests:', error);
+    res.status(500).json({ error: 'Failed to fetch reanalysis requests' });
+  }
+});
+
+// POST /api/admin/reanalyze/cancel/:id
+router.post('/reanalyze/cancel/:id', (req, res) => {
+  const { id } = req.params;
+  const requestId = parseInt(id, 10);
+
+  if (isNaN(requestId)) {
+    return res.status(400).json({ error: 'Invalid request id' });
+  }
+
+  try {
+    const request = db.prepare(`
+      SELECT id, status FROM reanalysis_requests WHERE id = ?
+    `).get(requestId) as { id: number; status: string } | undefined;
+
+    if (!request) {
+      return res.status(404).json({ error: 'Reanalysis request not found' });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(409).json({
+        error: 'Only pending requests can be cancelled',
+        status: request.status,
+      });
+    }
+
+    db.prepare(`
+      UPDATE reanalysis_requests
+      SET status = 'cancelled', processed_at = datetime('now')
+      WHERE id = ?
+    `).run(requestId);
+
+    res.json({ success: true, requestId, status: 'cancelled' });
+  } catch (error) {
+    console.error('Error cancelling reanalysis request:', error);
+    res.status(500).json({ error: 'Failed to cancel reanalysis request' });
   }
 });
 
