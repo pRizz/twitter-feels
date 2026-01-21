@@ -966,7 +966,7 @@ export default function AdminSettings() {
               }`}
             />
             {passwordErrors.currentPassword && (
-              <p className="text-xs text-destructive mt-1">
+              <p role="alert" className="text-xs text-destructive mt-1">
                 {passwordErrors.currentPassword}
               </p>
             )}
@@ -990,7 +990,7 @@ export default function AdminSettings() {
               }`}
             />
             {passwordErrors.newPassword ? (
-              <p className="text-xs text-destructive mt-1">
+              <p role="alert" className="text-xs text-destructive mt-1">
                 {passwordErrors.newPassword}
               </p>
             ) : (
@@ -1018,7 +1018,7 @@ export default function AdminSettings() {
               }`}
             />
             {passwordErrors.confirmPassword && (
-              <p className="text-xs text-destructive mt-1">
+              <p role="alert" className="text-xs text-destructive mt-1">
                 {passwordErrors.confirmPassword}
               </p>
             )}

@@ -123,12 +123,12 @@ function UserProfileHeader({ user }: { user: UserData }) {
               onError={(e) => {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = '';
-                e.currentTarget.parentElement!.innerHTML = `<div class="w-full h-full bg-primary-cyan/20 flex items-center justify-center"><span class="text-3xl font-bold text-primary-cyan">${user.display_name?.[0] || user.username[0]}</span></div>`;
+                e.currentTarget.parentElement!.innerHTML = `<div class="w-full h-full bg-primary-cyan/20 flex items-center justify-center"><span class="text-3xl font-bold text-primary">${user.display_name?.[0] || user.username[0]}</span></div>`;
               }}
             />
           ) : (
             <div className="w-full h-full bg-primary-cyan/20 flex items-center justify-center">
-              <span className="text-3xl font-bold text-primary-cyan">
+              <span className="text-3xl font-bold text-primary">
                 {user.display_name?.[0] || user.username[0]}
               </span>
             </div>
@@ -144,7 +144,7 @@ function UserProfileHeader({ user }: { user: UserData }) {
             href={`https://twitter.com/${user.username}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary-cyan hover:underline inline-flex items-center gap-1"
+            className="text-primary hover:underline inline-flex items-center gap-1"
           >
             @{user.username}
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,7 +167,7 @@ function UserProfileHeader({ user }: { user: UserData }) {
               <span className="text-muted-foreground ml-1">Following</span>
             </div>
             <div>
-              <span className="text-xl font-bold text-primary-cyan">{user.tweetCount}</span>
+              <span className="text-xl font-bold text-primary">{user.tweetCount}</span>
               <span className="text-muted-foreground ml-1">Tweets Analyzed</span>
             </div>
           </div>
@@ -377,7 +377,7 @@ function TweetList({
               )}
             </div>
             {tweet.analysisCount > 0 && (
-              <span className="text-primary-cyan">
+              <span className="text-primary">
                 {tweet.analysisCount} {tweet.analysisCount === 1 ? 'analysis' : 'analyses'}
               </span>
             )}
@@ -500,7 +500,7 @@ function EmotionTrends({ userId }: { userId: number }) {
     return (
       <div className="bg-card rounded-lg p-6 border border-border shadow-md">
         <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-          <span className="text-primary-cyan">📈</span>
+          <span className="text-primary">📈</span>
           Emotion Trends
         </h2>
         <div className="animate-pulse h-64 bg-muted rounded"></div>
@@ -512,7 +512,7 @@ function EmotionTrends({ userId }: { userId: number }) {
     return (
       <div className="bg-card rounded-lg p-6 border border-border shadow-md">
         <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-          <span className="text-primary-cyan">📈</span>
+          <span className="text-primary">📈</span>
           Emotion Trends
         </h2>
         <p className="text-muted-foreground text-center py-8">
@@ -532,7 +532,7 @@ function EmotionTrends({ userId }: { userId: number }) {
     <div className="bg-card rounded-lg p-6 border border-border shadow-md">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-          <span className="text-primary-cyan">📈</span>
+          <span className="text-primary">📈</span>
           Emotion Trends
         </h2>
         <div className="flex gap-2">
@@ -716,7 +716,7 @@ export default function UserDetail() {
     <div className="container mx-auto py-8 px-4 animate-fade-in">
       {/* Breadcrumb */}
       <nav className="mb-6 text-sm">
-        <Link to="/" className="text-muted-foreground hover:text-primary-cyan transition-colors">
+        <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">
           Dashboard
         </Link>
         <span className="mx-2 text-muted-foreground">/</span>
@@ -730,9 +730,9 @@ export default function UserDetail() {
 
       {/* Error state */}
       {error && !isLoading && (
-        <div className="bg-error/10 border border-error/30 rounded-lg p-6 text-center">
+        <div role="alert" className="bg-error/10 border border-error/30 rounded-lg p-6 text-center">
           <p className="text-error font-medium mb-2">{error}</p>
-          <Link to="/" className="text-primary-cyan hover:underline">
+          <Link to="/" className="text-primary hover:underline">
             Return to Dashboard
           </Link>
         </div>

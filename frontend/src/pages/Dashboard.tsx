@@ -209,7 +209,7 @@ function TimePeriodSelector({
             onClick={() => onChange(period.value)}
             className={`px-3 py-1.5 text-sm transition-colors ${
               value === period.value
-                ? 'bg-primary-cyan text-white'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-card text-foreground hover:bg-muted'
             }`}
           >
@@ -542,7 +542,7 @@ export default function Dashboard() {
 
       {/* Error message with retry option */}
       {error && (
-        <div className="mb-6 p-4 bg-error/10 border border-error/30 rounded-lg">
+        <div role="alert" className="mb-6 p-4 bg-error/10 border border-error/30 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">

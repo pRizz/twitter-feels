@@ -538,7 +538,7 @@ export default function AdminErrors() {
 
       {/* Error display */}
       {error && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+        <div role="alert" className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
           <p className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
             {error}

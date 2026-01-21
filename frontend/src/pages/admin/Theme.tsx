@@ -190,7 +190,7 @@ export default function AdminTheme() {
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
+        <div role="alert" className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
           {error}
           <button
             onClick={() => setError(null)}

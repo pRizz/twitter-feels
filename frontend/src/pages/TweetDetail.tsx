@@ -99,7 +99,11 @@ function ModelAnalysisCard({ analysis }: { analysis: TweetAnalysis }) {
         </div>
         <div className="text-right">
           <span className="text-xs text-muted-foreground">
-            {new Date(analysis.analyzedAt).toLocaleDateString()}
+            {new Date(analysis.analyzedAt).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+            })}
           </span>
           {analysis.durationMs && (
             <span className="text-xs text-muted-foreground block">
@@ -209,7 +213,7 @@ export default function TweetDetail() {
   if (error) {
     return (
       <div className="container mx-auto py-8 px-4">
-        <div className="bg-card rounded-lg p-8 border border-border text-center">
+        <div role="alert" className="bg-card rounded-lg p-8 border border-border text-center">
           <h1 className="text-2xl font-bold text-error mb-4">Error</h1>
           <p className="text-muted-foreground mb-6">{error}</p>
           <Link
@@ -254,7 +258,7 @@ export default function TweetDetail() {
       <div className="mb-6">
         <Link
           to={`/users/${tweet.user.id}`}
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary-cyan transition-colors"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -285,7 +289,7 @@ export default function TweetDetail() {
               />
             ) : (
               <div className="w-full h-full bg-primary-cyan/20 flex items-center justify-center">
-                <span className="text-lg font-bold text-primary-cyan">
+                <span className="text-lg font-bold text-primary">
                   {tweet.user.displayName?.[0] || tweet.user.username[0]}
                 </span>
               </div>
@@ -294,7 +298,7 @@ export default function TweetDetail() {
           <div className="flex-1">
             <Link
               to={`/users/${tweet.user.id}`}
-              className="font-semibold text-foreground hover:text-primary-cyan transition-colors"
+              className="font-semibold text-foreground hover:text-primary transition-colors"
             >
               {tweet.user.displayName}
             </Link>
@@ -303,7 +307,7 @@ export default function TweetDetail() {
           {/* Tweet type badges */}
           <div className="flex gap-2">
             {tweet.isRetweet && (
-              <span className="px-2 py-1 text-xs bg-primary-cyan/10 text-primary-cyan rounded-full">
+              <span className="px-2 py-1 text-xs bg-primary-cyan/10 text-primary rounded-full">
                 Retweet
               </span>
             )}
@@ -371,7 +375,7 @@ export default function TweetDetail() {
             href={`https://twitter.com/${tweet.user.username}/status/${tweet.tweetId}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-auto flex items-center gap-1 text-primary-cyan hover:underline"
+            className="ml-auto flex items-center gap-1 text-primary hover:underline"
           >
             View on Twitter
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,7 +393,7 @@ export default function TweetDetail() {
       {/* Emotion Breakdown Section */}
       <section className="mb-8 animate-slide-up" style={{ animationDelay: '0.1s' }}>
         <h2 className="text-2xl font-semibold mb-6 text-foreground flex items-center gap-2">
-          <span className="text-primary-cyan">📊</span>
+          <span className="text-primary">📊</span>
           Emotion Breakdown
         </h2>
 

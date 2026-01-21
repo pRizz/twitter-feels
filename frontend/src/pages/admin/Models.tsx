@@ -267,7 +267,7 @@ export default function AdminModels() {
 
   if (error) {
     return (
-      <div className="p-4 bg-destructive/10 text-destructive rounded-lg">
+      <div role="alert" className="p-4 bg-destructive/10 text-destructive rounded-lg">
         <p>Error: {error}</p>
         <button
           onClick={fetchModels}

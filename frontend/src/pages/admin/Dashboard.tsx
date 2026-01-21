@@ -251,7 +251,7 @@ function ForceReanalyzePanel({
         <button
           onClick={onReanalyze}
           disabled={isDisabled || isReanalyzing}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-amber-600 text-amber-950 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isReanalyzing ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -470,7 +470,7 @@ export default function AdminDashboard() {
       </div>
 
       {error && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+        <div role="alert" className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
           <p className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
             {error}
