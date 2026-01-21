@@ -12892,3 +12892,72 @@ The aggregation system in this app calculates values on-the-fly from the sentime
 
 [Testing] Session complete - verified feature #96 (Loading states shown during data fetch) - still passing
 
+
+
+---
+
+## Session - Feature #221 - 2026-01-21
+
+### Feature #221: Time series data for charts accurate (COMPLETED)
+- **Status**: PASSING
+- **Category**: F-UIBackend
+- **Description**: Chart data matches time bucket values
+
+### Verification Steps Completed:
+
+1. **Query time series aggregations** ✅
+   - Queried /api/users/4/trends with timeBucket=daily, weekly, monthly
+   - API returns properly structured data with timestamps and emotion averages
+   - Data points are in chronological order with all 12 emotions
+
+2. **View trend chart** ✅
+   - Navigated to user detail page for Sam Altman (user id=4)
+   - Emotion Trends chart renders correctly with Daily/Weekly/Monthly selectors
+   - Chart shows 4 default emotions: happy, thankful, excited, inspirational
+   - Emotion toggle buttons allow showing/hiding individual emotions
+
+3. **Compare data points** ✅
+   - Hovered over chart data points to view tooltips
+   - Compared tooltip values against API response data
+
+4. **Verify values match** ✅
+   Daily (Dec 30/2025-12-31):
+   - API: happy=13, thankful=43, excited=54, inspirational=52
+   - Chart: happy:13, thankful:43, excited:54, inspirational:52 ✓ EXACT MATCH
+
+   Weekly (Dec 21/2025-12-22 week):
+   - API: happy=36, thankful=43, excited=50, inspirational=40
+   - Chart: happy:36, thankful:43, excited:50, inspirational:40 ✓ EXACT MATCH
+
+   Monthly (Dec 2025):
+   - API: happy=40, thankful=38, excited=51, inspirational=39
+   - Chart: happy:40, thankful:38, excited:51, inspirational:39 ✓ EXACT MATCH
+
+### Technical Notes:
+- The trends API aggregates from individual sentiment_analyses (each model counts separately)
+- This differs from combinedEmotions on tweets which averages across models per tweet
+- Both behaviors are correct for their respective purposes
+- Time bucket calculations use proper date bucketing:
+  - Daily: YYYY-MM-DD format
+  - Weekly: Start of week (Monday) as bucket key
+  - Monthly: YYYY-MM format
+
+### Screenshots:
+- .playwright-mcp/feature221-trend-chart-daily.png - Daily chart view
+- .playwright-mcp/feature221-tooltip-verification.png - Daily tooltip showing Dec 30 values
+- .playwright-mcp/feature221-weekly-tooltip.png - Weekly tooltip showing Dec 21 values
+- .playwright-mcp/feature221-monthly-tooltip.png - Monthly tooltip showing Dec 2025 values
+
+### Console Errors: 
+Only Vite dev server HMR/WebSocket errors (dev server issues, not application errors)
+
+### Verification Scripts Created:
+- verify-timeseries.js - Comprehensive time series calculation verification
+- verify-chart-vs-api.js - Chart data vs API data verification
+
+### Current Progress:
+- Features passing: 161/235 (~68.5%)
+- Feature #221 marked as passing
+
+[Testing] Session complete - verified feature #221 (Time series data for charts accurate) - PASSING
+
