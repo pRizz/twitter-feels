@@ -9995,3 +9995,166 @@ Also updated:
 
 ### Code Changes:
 - frontend/src/index.css: Updated light theme CSS variables for foreground, primary, and ring colors
+
+
+---
+
+## Session - Feature #186 Regression Test - 2026-01-21
+
+### Feature #186: Configuration export works (REGRESSION TEST)
+- **Status**: PASSING (verified)
+- **Category**: S-Export
+- **Description**: Admin can export configuration
+
+### Verification Steps Completed:
+
+1. **Navigate to admin settings** ✅
+   - Logged into admin panel with admin/admin123
+   - Navigated to Settings page (/admin/settings)
+   - Located Configuration Export/Import section
+
+2. **Click export configuration** ✅
+   - Clicked '📥 Export Configuration' button
+   - Export triggered successfully
+
+3. **Verify file downloads** ✅
+   - File downloaded: twitter-feels-config.json
+   - Success toast displayed: 'Configuration exported successfully!'
+
+4. **Verify file contains config data** ✅
+   - File is valid JSON (114 lines)
+   - Contains exportedAt timestamp: 2026-01-21T14:05:15.002Z
+   - Contains version: 1.0
+   - Contains crawler settings (intervalHours, historyDepthDays, rateLimitPer15Min)
+   - Contains emotions config (12 emotions with colors)
+   - Contains gauges config (6 gauges with labels and emotion mappings)
+   - Contains backup settings (enabled, schedule, retentionDays)
+   - Sensitive data (AWS credentials) properly excluded
+
+### Screenshots:
+- .playwright-mcp/feature186-config-export-success.png - Export button and success state
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 137/235 (~58.3%)
+- Feature #186 regression test PASSED
+
+### Notes:
+- Export functionality working correctly
+- File downloads with proper filename
+- JSON structure is complete and valid
+- Security: AWS credentials excluded from export
+
+[Testing] Session complete - verified feature #186 (Configuration export works) - still passing
+
+
+---
+
+## Session - Feature #9 Regression Test - 2026-01-21
+
+### Feature #9: Tweet detail route loads (VERIFIED)
+- **Status**: PASSING
+- **Category**: B-Navigation
+- **Description**: Tweet detail page at /tweets/:id loads correctly
+
+### Verification Steps Completed:
+
+1. **Navigate to /tweets/:id** ✅
+   - Tested /tweets/37 - Loaded successfully
+   - Tested /tweets/52 - Loaded successfully
+   - Page URL correctly reflects tweet ID
+
+2. **Page loads without errors** ✅
+   - No console errors detected
+   - Only React DevTools info message (not an error)
+
+3. **Tweet content section renders** ✅
+   - User avatar and name displayed (Sam Altman)
+   - Twitter handle visible (@sama)
+   - Tweet text fully displayed
+   - Timestamp shown (Jan 17, 2026, 5:02 PM)
+   - Engagement metrics: likes, retweets, replies
+   - 'View on Twitter' external link present
+   - 'Back to @username' navigation link works
+
+4. **Emotion breakdown is visible** ✅
+   - Horizontal bar chart with 12 emotions
+   - Color-coded bars matching design system
+   - Numeric scores displayed (0-100 scale)
+   - Analysis by Model section shows model info
+
+### Screenshots:
+- .playwright-mcp/feature9-tweet-detail-verification.png - Full page screenshot
+
+### Console Errors:
+- None
+
+### Result:
+- No regression detected - Feature #9 still working correctly
+
+[Testing] Session complete - verified feature #9 (Tweet detail route loads) - still passing
+
+
+
+---
+
+## Session - Feature #196 - 2026-01-21
+
+### Feature #196: Cards have proper shadows (COMPLETED)
+- **Status**: PASSING
+- **Category**: style
+- **Description**: Card components have shadow with color tint
+
+### Implementation Details:
+
+1. **Added custom shadow classes to tailwind.config.js**:
+   - `shadow-card`: Standard card shadow with color tint
+   - `shadow-card-lg`: Larger shadow for prominent cards (e.g., login card)
+   - `shadow-card-hover`: Enhanced shadow on hover
+
+2. **Added CSS definitions in index.css**:
+   - Light mode: Teal tint (`rgba(8, 145, 178)`) - matches light mode palette
+   - Dark mode: Cyan tint (`rgba(0, 212, 255)`) - matches primary accent
+
+3. **Updated card components**:
+   - Dashboard.tsx: Gauge cards, Leaderboard cards, User cards
+   - UserDetail.tsx: Profile header, Emotion averages, Trends chart, Tweet list
+   - TweetDetail.tsx: Tweet card, Emotion breakdown card
+   - admin/Login.tsx: Login form card (uses shadow-card-lg)
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173
+   - Dashboard loaded successfully
+
+2. **Inspect card components** ✅
+   - Found multiple card components with `.shadow-card` class
+   - Cards include: Gauge cards, Leaderboard cards, User cards
+
+3. **Verify shadows are present** ✅
+   - Dark mode: `rgba(0, 212, 255, 0.1) 0px 4px 6px -1px, rgba(0, 212, 255, 0.1) 0px 2px 4px -2px`
+   - Light mode: `rgba(8, 145, 178, 0.1) 0px 4px 6px -1px, rgba(8, 145, 178, 0.08) 0px 2px 4px -2px`
+   - Admin login: `rgba(0, 212, 255, 0.15) 0px 10px 15px -3px` (larger shadow)
+
+4. **Verify shadow has slight color tint** ✅
+   - Dark mode: Cyan tint (#00d4ff) - matches design spec primary accent
+   - Light mode: Teal tint (#0891b2) - matches design spec light mode teal
+   - Opacity is subtle (0.1) matching "slight color tint" requirement
+
+### Screenshots:
+- .playwright-mcp/feature196-dashboard-cards-initial.png - Before changes
+- .playwright-mcp/feature196-dark-mode-cards-cyan-shadow.png - Dark mode with cyan shadows
+- .playwright-mcp/feature196-light-mode-cards-teal-shadow.png - Light mode with teal shadows  
+- .playwright-mcp/feature196-user-detail-cards-shadow.png - User detail page cards
+- .playwright-mcp/feature196-admin-login-card-shadow.png - Admin login card (shadow-card-lg)
+
+### Console Errors:
+- None
+
+### Current Progress:
+- Features passing: 136/235 (~57.9%)
+- Feature #196 marked as passing
+
+
