@@ -20225,3 +20225,69 @@ curl -s -c cookies.txt -b cookies.txt -X DELETE \
 - Feature #45 marked as passing
 
 [Testing] Session complete - verified feature #45 (Clicking tweet navigates to tweet detail) - PASSING
+
+
+---
+
+## Session - Feature #49 - 2026-01-21
+
+### Feature #49: Tweet detail shows LLM model info (VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Shows which model generated the analysis
+
+### Verification Steps Completed:
+
+1. **Navigate to tweet detail page** ✅
+   - Navigated to http://localhost:5173/users/4 (Sam Altman)
+   - Clicked on tweet "Thank you all for your kind messages..."
+   - Successfully navigated to /tweets/348
+
+2. **Locate model information section** ✅
+   - Found "🤖 Analysis by Model" section at bottom of page
+   - Section displays model cards in a responsive grid (1-3 columns)
+
+3. **Verify model name is displayed** ✅
+   - All 4 model names clearly displayed in monospace font:
+     - "BERTweet Sentiment Analysis"
+     - "Twitter RoBERTa Sentiment"
+     - "Llama-3-Sentiment"
+     - "RoBERTa GoEmotions"
+
+4. **Verify model version is shown** ✅
+   - Version displayed below model name:
+     - "vbase" for BERTweet
+     - "vlatest" for Twitter RoBERTa
+     - "v3.1" for Llama-3
+     - "vbase" for RoBERTa GoEmotions
+
+5. **Verify analysis timestamp is visible** ✅
+   - Analysis date shown on right side: "1/21/2026"
+   - Analysis duration in milliseconds: 1234ms, 1983ms, 1580ms, 1887ms
+
+6. **Additional: Verified single-model tweet** ✅
+   - Navigated to /tweets/52 (tweet with only 1 analysis)
+   - Only one model card displayed: "Llama-3-Sentiment v3.1"
+   - All model info correctly shown
+
+### API Verification:
+- GET /api/tweets/348 returns complete model data:
+  - model.name (e.g., "BERTweet Sentiment Analysis")
+  - model.version (e.g., "base", "latest", "3.1")
+  - model.provider (e.g., "huggingface", "local")
+  - analysis.analyzedAt (timestamp)
+  - analysis.durationMs (duration in milliseconds)
+
+### Screenshots:
+- .playwright-mcp/feature49-tweet-detail-llm-model-info.png - Tweet detail page showing tweet and emotion breakdown
+- .playwright-mcp/feature49-analysis-by-model-section.png - Analysis by Model section with 4 models
+- .playwright-mcp/feature49-single-model-analysis.png - Tweet with single model analysis
+- .playwright-mcp/feature49-single-model-bottom.png - Single model Analysis by Model section
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 233/235 (~99.1%)
+- Feature #49 marked as passing
+
+[Testing] Session complete - verified feature #49 (Tweet detail shows LLM model info) - PASSING
