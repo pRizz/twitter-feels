@@ -16357,3 +16357,114 @@ Added confirmation dialog to the Force Re-Analyze functionality in the admin das
 - Feature #76 marked as passing
 
 [Testing] Session complete - verified feature #76 (Admin can trigger manual backup) - PASSING
+
+
+---
+
+## Session - Feature #166 Regression Test - 2026-01-21
+
+### Feature #166: Long text truncates properly (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: O-Responsive
+- **Description**: Long tweet content doesn't overflow
+
+### Verification Steps Completed:
+
+1. **View tweet with very long content** ✅
+   - Navigated to Sam Altman's user page (/users/4)
+   - Found test tweet from Jan 22, 2026 with extremely long content
+   - Tweet contains ~1500+ characters including paragraphs, bullet points, emojis
+
+2. **Verify text truncates or wraps** ✅
+   - CSS classes applied: `line-clamp-3 whitespace-pre-wrap`
+   - webkitLineClamp: 3 limits display to 3 lines
+   - Text shows ellipsis (...) at end of truncated content
+   - Computed styles confirmed: overflow: hidden, webkitLineClamp: 3
+
+3. **Verify no horizontal overflow** ✅
+   - Layout intact - no horizontal scrollbar
+   - Content stays within card boundaries
+   - Responsive layout maintained
+
+4. **Verify full text available on click** ✅
+   - Clicked on truncated tweet card
+   - Navigated to /tweets/52 (tweet detail page)
+   - Full content displayed including:
+     - Multiple paragraphs properly formatted
+     - Bullet points (Point 1-4) preserved
+     - Special characters (@mentions, #hashtags) rendered
+     - Emojis (🚀🎉💡) displayed correctly
+   - whitespace-pre-wrap preserves line breaks
+
+### Technical Verification:
+- offsetHeight: 60px (visible height)
+- scrollHeight: 360px (full content height)
+- isTruncated: true (scrollHeight > offsetHeight)
+- Classes: text-foreground text-sm line-clamp-3 mb-3 whitespace-pre-wrap
+
+### Screenshots:
+- .playwright-mcp/feature166-truncation-list-view.png - Initial page load
+- .playwright-mcp/feature166-long-tweet-in-list.png - Truncated tweet in list
+- .playwright-mcp/feature166-full-text-detail-page.png - Full content on detail page
+- .playwright-mcp/feature166-detail-page-full.png - Full page showing all content
+
+### Console Errors: NONE
+
+### Code Changes: NONE (regression test only - feature working correctly)
+
+### Current Progress:
+- Features passing: 192/235 (~81.7%)
+- Feature #166 confirmed still PASSING
+
+[Testing] Session complete - verified feature #166 (Long text truncates properly) - PASSING
+
+
+
+---
+
+## Session - Feature #23 - 2026-01-21
+
+### Feature #23: Theme toggle switches to light mode (VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Clicking theme toggle switches from dark to light mode
+
+### Verification Steps Completed:
+
+1. **Navigate to homepage in dark mode** ✅
+   - Navigated to http://localhost:5173
+   - Page loaded with `<html class="dark">`
+   - Dark navy background with cyan accents and white text visible
+
+2. **Click theme toggle button** ✅
+   - Clicked "Toggle theme" button in header (top right corner)
+   - Toggle executed successfully
+
+3. **Verify light theme colors are applied** ✅
+   - HTML class changed from "dark" to "light"
+   - Text color changed from white to dark gray/black
+   - Cards have white backgrounds with subtle borders
+   - Accent colors (cyan for headings, colorful gauges) preserved
+   - Theme toggle icon changed from sun to moon
+
+4. **Verify background changes to white/light gray** ✅
+   - Main page background is now white
+   - Card surfaces are white with subtle borders
+   - Footer has light gray background
+   - Full page screenshot confirms entire page styled in light mode
+
+### Screenshots:
+- .playwright-mcp/feature23-dark-mode-initial.png - Initial dark mode state
+- .playwright-mcp/feature23-light-mode-after-toggle.png - After clicking toggle
+- .playwright-mcp/feature23-light-mode-full-page.png - Full page in light mode
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 193/235 (~82.1%)
+- Feature #23 marked as passing
+
+[Testing] Session complete - verified feature #23 (Theme toggle switches to light mode) - PASSING
+
