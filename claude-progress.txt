@@ -11898,3 +11898,113 @@ curl /api/admin/settings → 200 {crawler: {...}, backup: {...}}
 - Features passing: 152/235 (~64.7%)
 - Feature #211 marked as passing
 
+
+
+---
+
+## Testing Session - Feature #106 Regression Test - 2026-01-21
+
+### Feature #106: Sort functionality works (VERIFIED)
+- **Status**: STILL PASSING ✅
+- **Category**: F-UIBackend
+- **Description**: Sorting data works correctly with real data
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173/
+   - Dashboard loaded successfully with all data
+
+2. **Sort leaderboard by emotion** ✅
+   - Changed sort dropdown from "Followers" to "Emotion Score"
+   - URL updated to ?sortBy=score
+   - Users reordered by top emotion score (descending): 62, 56, 55, 52, 48
+
+3. **Verify order is correct** ✅
+   - Descending order: Bill Gates (62) → Elon Musk (56) → Sundar Pichai (55) → Sam Altman (52) → XSS Test User (48)
+   - Order matches expected descending sort
+
+4. **Change sort direction** ✅
+   - Clicked "Sort descending" button to toggle to ascending
+   - Button changed to "Sort ascending"
+   - URL updated to ?sortBy=score&sortOrder=asc
+
+5. **Verify order reverses** ✅
+   - Ascending order: XSS Test User (48) → Sam Altman (52) → Sundar Pichai (55) → Elon Musk (56) → Bill Gates (62)
+   - Order correctly reversed
+
+### Additional Testing:
+- **Sort by Name** ✅
+  - Changed to sort by Name (ascending)
+  - Users in alphabetical order: Bill Gates → Elon Musk → Sam Altman → Sundar Pichai → XSS Test User
+  - Correct alphabetical sorting confirmed
+
+### Screenshots:
+- .playwright-mcp/feature106-initial-state.png - Initial dashboard state (Followers sort)
+- .playwright-mcp/feature106-sorted-by-emotion-desc.png - Sorted by Emotion Score (descending)
+- .playwright-mcp/feature106-sorted-by-emotion-asc.png - Sorted by Emotion Score (ascending)
+- .playwright-mcp/feature106-sorted-by-name.png - Sorted by Name (ascending)
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected - Feature #106 still working correctly
+- All sort options (Followers, Name, Emotion Score) work
+- Sort direction toggle works correctly
+- URL query parameters update properly
+
+[Testing] Session complete - verified feature #106 (Sort functionality works) - still passing
+
+
+---
+
+## Session - Feature #213 - 2026-01-21
+
+### Feature #213: XSS prevention in displayed content (COMPLETED)
+- **Status**: PASSING
+- **Category**: A-Security
+- **Description**: Tweet content sanitized for display
+
+### Verification Steps Completed:
+
+1. **Create tweet with script tag in content** ✅
+   - Added XSS test content to mock tweet generation function in backend
+   - Content includes script tags, onerror handlers, and javascript links
+   - Created test user "XSS Test User (Feature 213)" and triggered crawler
+   - Tweet stored in database with malicious content
+
+2. **View tweet in UI** ✅
+   - Navigated to user detail page at /users/49
+   - XSS tweet visible in "Recent Tweets" section
+   - Clicked through to tweet detail page at /tweets/119
+
+3. **Verify script not executed** ✅
+   - NO JavaScript alert boxes appeared
+   - Browser console shows NO errors related to script execution
+   - React default text rendering prevents script execution
+
+4. **Verify content escaped** ✅
+   - Tweet content displays as LITERAL TEXT, not rendered HTML
+   - Script tags visible as text characters
+   - Img tags visible as text characters
+   - Anchor tags visible as text characters
+   - All HTML entities properly escaped by React JSX rendering
+
+### Technical Explanation:
+React automatically escapes content rendered with JSX curly braces.
+This is React built-in XSS protection - any HTML in the string is converted to
+escaped text entities. The code does NOT use dangerouslySetInnerHTML.
+
+### Screenshots:
+- .playwright-mcp/feature213-xss-prevention-tweet-detail.png - Tweet detail showing escaped XSS content
+- .playwright-mcp/feature213-xss-prevention-user-tweets.png - User page with XSS tweet in list
+
+### Console Errors: NONE
+
+### Code Changes:
+- backend/src/routes/admin.ts: Added XSS test tweet content to mock data generator
+
+### Current Progress:
+- Features passing: 153/235 (~65.1%)
+- Feature #213 marked as passing
+
