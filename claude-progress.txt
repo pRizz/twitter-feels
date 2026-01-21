@@ -6968,3 +6968,69 @@ Added "Clear Filters" functionality to the Dashboard page:
 - The `line-clamp-3` Tailwind utility works correctly for text truncation
 - Full text accessible on detail page with preserved formatting
 - Responsive design handles long text at all viewport sizes
+
+---
+
+## Session - Feature #167 - 2026-01-21
+
+### Feature #167: Tables scroll on mobile (COMPLETED)
+- **Status**: PASSING
+- **Category**: O-Responsive
+- **Description**: Data tables scroll horizontally on small screens
+
+### Verification Steps Completed:
+
+1. **Set viewport to mobile** ✅
+   - Set viewport to 375x667 (mobile dimensions)
+   - Verified responsive layout activates
+
+2. **Navigate to admin user table** ✅
+   - Logged in as admin
+   - Navigated to /admin/users
+   - Mobile-responsive layout with hamburger menu working
+
+3. **Verify table scrolls horizontally** ✅
+   - Table now scrolls horizontally (scrollWidth: 833px > clientWidth: 333px)
+   - Successfully scrolled table to see all columns:
+     - Before scroll: User, Handle, Status (partial)
+     - After scroll: Shows Followers, Tweets, Added, Actions columns
+   - Table uses `min-w-[700px]` to ensure horizontal scrolling
+
+4. **Verify scroll indicators present** ✅
+   - Scroll indicator showing "← Swipe to see more columns →"
+   - Indicator only visible on mobile (hidden on desktop with `md:hidden`)
+
+### Implementation Details:
+1. **AdminLayout.tsx**: Added mobile-responsive sidebar with hamburger menu toggle
+   - Added Menu and X icons from lucide-react
+   - Added sidebarOpen state with toggle functionality
+   - Sidebar slides in/out with smooth animation
+   - Auto-close sidebar on navigation (useEffect on location.pathname)
+   - Mobile header with hamburger menu (visible only on mobile)
+   - Overlay background when sidebar is open
+
+2. **Users.tsx**: Added horizontal scroll for tables on mobile
+   - Added scroll indicator visible only on mobile: "← Swipe to see more columns →"
+   - Set `min-w-[700px]` on table to ensure scrolling
+   - Added `whitespace-nowrap` and `min-w-[...]` on column headers
+
+### Screenshots:
+- .playwright-mcp/feature167-mobile-admin-layout.png - Mobile layout with hamburger menu
+- .playwright-mcp/feature167-mobile-sidebar-open.png - Mobile sidebar opened
+- .playwright-mcp/feature167-mobile-user-table-with-scroll-indicator.png - Table with scroll indicator
+- .playwright-mcp/feature167-mobile-table-scrolled-right.png - Table scrolled to show middle columns
+- .playwright-mcp/feature167-mobile-table-scrolled-far-right.png - Table scrolled to show Actions column
+- .playwright-mcp/feature167-desktop-user-table.png - Desktop view (unchanged, working correctly)
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 107/235 (~45.5%)
+- Feature #167 marked as passing
+
+### Notes:
+- Changes implemented in AdminLayout.tsx and Users.tsx
+- Mobile sidebar with hamburger menu improves navigation
+- Horizontal scroll on tables allows viewing all columns on small screens
+- Desktop layout remains unchanged (sidebar always visible)
