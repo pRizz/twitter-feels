@@ -101,7 +101,7 @@ function Leaderboard({ data }: { data: LeaderboardData }) {
                   <span className="text-xs text-muted-foreground w-4">{index + 1}.</span>
                   <div className="w-6 h-6 rounded-full bg-muted overflow-hidden">
                     {entry.avatarUrl ? (
-                      <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" />
+                      <img src={entry.avatarUrl} alt={`${entry.displayName || entry.username}'s avatar`} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-primary-cyan/20" />
                     )}
@@ -126,7 +126,7 @@ function Leaderboard({ data }: { data: LeaderboardData }) {
                   <span className="text-xs text-muted-foreground w-4">{index + 1}.</span>
                   <div className="w-6 h-6 rounded-full bg-muted overflow-hidden">
                     {entry.avatarUrl ? (
-                      <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" />
+                      <img src={entry.avatarUrl} alt={`${entry.displayName || entry.username}'s avatar`} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-primary-violet/20" />
                     )}
@@ -157,7 +157,7 @@ function UserCard({ user }: { user: UserSummary }) {
       <div className="flex items-start gap-3">
         <div className="w-12 h-12 rounded-full bg-muted overflow-hidden flex-shrink-0">
           {user.avatarUrl ? (
-            <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+            <img src={user.avatarUrl} alt={`${user.displayName || user.username}'s avatar`} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-primary-cyan/20 flex items-center justify-center">
               <span className="text-lg font-bold text-primary-cyan">
@@ -233,8 +233,9 @@ function ModelFilter({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Model:</span>
+      <label htmlFor="model-filter" className="text-sm text-muted-foreground">Model:</label>
       <select
+        id="model-filter"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary-cyan/50"
@@ -280,8 +281,9 @@ function SortSelector({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Sort:</span>
+      <label htmlFor="sort-by" className="text-sm text-muted-foreground">Sort:</label>
       <select
+        id="sort-by"
         value={sortBy}
         onChange={(e) => onSortByChange(e.target.value)}
         className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary-cyan/50"

@@ -596,10 +596,11 @@ export default function AdminSettings() {
         <form onSubmit={handleSaveCrawler} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label htmlFor="crawl-interval" className="block text-sm font-medium mb-1">
                 Crawl Interval (hours)
               </label>
               <input
+                id="crawl-interval"
                 type="number"
                 min="1"
                 max="168"
@@ -624,10 +625,11 @@ export default function AdminSettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label htmlFor="history-depth" className="block text-sm font-medium mb-1">
                 History Depth (days)
               </label>
               <input
+                id="history-depth"
                 type="number"
                 min="1"
                 max="365"
@@ -652,10 +654,11 @@ export default function AdminSettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label htmlFor="rate-limit" className="block text-sm font-medium mb-1">
                 Rate Limit (per 15 min)
               </label>
               <input
+                id="rate-limit"
                 type="number"
                 min="1"
                 max="900"
@@ -718,17 +721,19 @@ export default function AdminSettings() {
           {/* Enable Backup Toggle */}
           <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
             <div>
-              <div className="font-medium">Enable S3 Backups</div>
+              <div className="font-medium" id="enable-backups-label">Enable S3 Backups</div>
               <div className="text-sm text-muted-foreground">
                 Automatically backup your database to Amazon S3
               </div>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label htmlFor="enable-backups" className="relative inline-flex items-center cursor-pointer">
               <input
+                id="enable-backups"
                 type="checkbox"
                 checked={backupForm.enabled}
                 onChange={(e) => setBackupForm({ ...backupForm, enabled: e.target.checked })}
                 className="sr-only peer"
+                aria-labelledby="enable-backups-label"
               />
               <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
             </label>
@@ -738,10 +743,11 @@ export default function AdminSettings() {
           <div className={`space-y-4 ${!backupForm.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
             {/* Bucket Name */}
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label htmlFor="s3-bucket-name" className="block text-sm font-medium mb-1">
                 S3 Bucket Name <span className="text-destructive">*</span>
               </label>
               <input
+                id="s3-bucket-name"
                 type="text"
                 value={backupForm.bucketName}
                 onChange={(e) => {
@@ -767,10 +773,11 @@ export default function AdminSettings() {
 
             {/* Region */}
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label htmlFor="aws-region" className="block text-sm font-medium mb-1">
                 AWS Region <span className="text-destructive">*</span>
               </label>
               <select
+                id="aws-region"
                 value={backupForm.region}
                 onChange={(e) => setBackupForm({ ...backupForm, region: e.target.value })}
                 className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -790,10 +797,11 @@ export default function AdminSettings() {
             {/* Credentials */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label htmlFor="aws-access-key" className="block text-sm font-medium mb-1">
                   AWS Access Key ID <span className="text-destructive">*</span>
                 </label>
                 <input
+                  id="aws-access-key"
                   type="text"
                   value={backupForm.accessKeyId}
                   onChange={(e) => setBackupForm({ ...backupForm, accessKeyId: e.target.value })}
@@ -804,10 +812,11 @@ export default function AdminSettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label htmlFor="aws-secret-key" className="block text-sm font-medium mb-1">
                   AWS Secret Access Key <span className="text-destructive">*</span>
                 </label>
                 <input
+                  id="aws-secret-key"
                   type="password"
                   value={backupForm.secretAccessKey}
                   onChange={(e) => setBackupForm({ ...backupForm, secretAccessKey: e.target.value })}
@@ -826,10 +835,11 @@ export default function AdminSettings() {
             {/* Schedule */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label htmlFor="backup-schedule" className="block text-sm font-medium mb-1">
                   Backup Schedule
                 </label>
                 <select
+                  id="backup-schedule"
                   value={backupForm.schedule}
                   onChange={(e) => setBackupForm({ ...backupForm, schedule: e.target.value })}
                   className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -847,10 +857,11 @@ export default function AdminSettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label htmlFor="retention-days" className="block text-sm font-medium mb-1">
                   Retention Period (days)
                 </label>
                 <input
+                  id="retention-days"
                   type="number"
                   min="1"
                   max="365"
@@ -938,10 +949,11 @@ export default function AdminSettings() {
 
         <form onSubmit={handleChangePassword} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label htmlFor="current-password" className="block text-sm font-medium mb-1">
               Current Password <span className="text-destructive">*</span>
             </label>
             <input
+              id="current-password"
               type="password"
               value={passwordForm.currentPassword}
               onChange={(e) => {
@@ -961,10 +973,11 @@ export default function AdminSettings() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label htmlFor="new-password" className="block text-sm font-medium mb-1">
               New Password <span className="text-destructive">*</span>
             </label>
             <input
+              id="new-password"
               type="password"
               value={passwordForm.newPassword}
               onChange={(e) => {
@@ -988,10 +1001,11 @@ export default function AdminSettings() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label htmlFor="confirm-password" className="block text-sm font-medium mb-1">
               Confirm New Password <span className="text-destructive">*</span>
             </label>
             <input
+              id="confirm-password"
               type="password"
               value={passwordForm.confirmPassword}
               onChange={(e) => {

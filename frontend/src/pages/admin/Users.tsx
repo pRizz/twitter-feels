@@ -271,10 +271,11 @@ export default function AdminUsers() {
           <h3 className="font-semibold mb-4">Add New Tracked User</h3>
           <form onSubmit={handleAddUser} className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm text-muted-foreground mb-1">
+              <label htmlFor="twitter-handle" className="block text-sm text-muted-foreground mb-1">
                 Twitter Handle *
               </label>
               <input
+                id="twitter-handle"
                 type="text"
                 value={newHandle}
                 onChange={(e) => {
@@ -303,10 +304,11 @@ export default function AdminUsers() {
               )}
             </div>
             <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm text-muted-foreground mb-1">
+              <label htmlFor="display-name" className="block text-sm text-muted-foreground mb-1">
                 Display Name (optional)
               </label>
               <input
+                id="display-name"
                 type="text"
                 value={newDisplayName}
                 onChange={(e) => setNewDisplayName(e.target.value)}

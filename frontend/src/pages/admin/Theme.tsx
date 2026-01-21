@@ -237,7 +237,11 @@ export default function AdminTheme() {
                   className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg"
                 >
                   <div className="relative">
+                    <label htmlFor={`emotion-color-${emotion}`} className="sr-only">
+                      Change {emotionDisplayNames[emotion] || emotion} color
+                    </label>
                     <input
+                      id={`emotion-color-${emotion}`}
                       type="color"
                       value={config.color}
                       onChange={(e) => handleEmotionColorChange(emotion, e.target.value)}

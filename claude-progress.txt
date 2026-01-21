@@ -7335,3 +7335,83 @@ Added "Clear Filters" functionality to the Dashboard page:
 - Cyan/teal focus color provides good contrast in both light and dark modes
 - Accessibility requirement met for keyboard navigation
 
+
+---
+
+## Regression Test Session - Feature #140 - 2026-01-21
+
+---
+
+## Session - Feature #144 - 2026-01-21
+
+### Feature #144: Search is case-insensitive (REGRESSION TEST)
+- **Status**: PASSING (no regression)
+- **Category**: L-SearchFilter
+- **Description**: Search works regardless of case
+
+### Verification Steps Completed:
+
+1. **Searched for 'SAM' (uppercase)** ✅
+   - Found 'Sam Altman' correctly
+
+2. **Searched for 'SaM aLtMaN' (mixed case)** ✅
+   - Found 'Sam Altman' correctly
+
+3. **Searched for 'SAMA' (uppercase handle)** ✅
+   - Found @sama correctly (handle is lowercase in database)
+
+4. **Verified results are same regardless of case** ✅
+   - All three searches returned the same user
+
+**Note:** Original feature steps mentioned 'ELONMUSK' but that user doesn't exist in the database. Tested with actual user 'Sam Altman' (@sama) to verify case-insensitivity.
+
+### Screenshots:
+- .playwright-mcp/feature144-case-insensitive-search.png - Search with 'SAMA' uppercase
+- .playwright-mcp/feature144-case-insensitive-search-result.png - Results showing Sam Altman found
+
+### Console Errors:
+- None
+
+### Current Progress:
+- Features passing: 113/235 (~48.1%)
+- Feature #144 verified - still passing (no regression)
+
+[Testing] Session complete - verified feature #144 (Search is case-insensitive) - still passing
+
+### Feature #140: Very long search handled (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING ✅
+- **Category**: L-SearchFilter
+- **Description**: Extremely long search strings handled
+
+### Verification Steps Completed:
+
+1. **Enter very long string (500+ chars)** ✅
+   - Entered 560 characters of 'a' into the search input
+   - Text was accepted without issue
+
+2. **Verify no crash** ✅
+   - Page remained stable
+   - No JavaScript errors in console
+   - All API requests returned 200 OK
+
+3. **Verify sensible behavior** ✅
+   - Search input displays text (visually truncated)
+   - "Clear Filters" button appeared indicating active filter
+   - Message displayed: "No users found matching 'aaa...'. Try a different search term."
+   - Long search term was intelligently truncated with ellipsis in the message
+   - Dashboard remained fully functional
+
+### Screenshots:
+- feature140-initial-dashboard.png - Dashboard before search
+- feature140-long-search-handled.png - Dashboard with long search entered
+- feature140-no-users-found-message.png - "No users found" message with truncated search term
+
+### Console Errors:
+- None
+
+### Network Requests:
+- All API calls returned 200 OK
+
+### Result:
+- No regression detected - Feature #140 still working correctly
+[Testing] Session complete - regression fixed for feature #154 (Whitespace-only rejected for required)
