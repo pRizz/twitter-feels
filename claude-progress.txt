@@ -7819,3 +7819,71 @@ Note: Users.tsx already had `role="alert"` from a previous commit (704bb46)
   be programmatically determined through role or properties
 - Using `role="alert"` makes errors be announced immediately by screen readers
 - This improves accessibility for users relying on assistive technology
+
+---
+
+## Session - Feature #177 - 2026-01-21
+
+### Feature #177: Timestamps formatted correctly (COMPLETED)
+- **Status**: PASSING
+- **Category**: Q-Temporal
+- **Description**: Date/time formatting is consistent
+
+### Verification Steps Completed:
+
+1. **View various timestamps in app** ✅
+   - Reviewed timestamps across all pages:
+     - Dashboard header: "Last updated: 1/21/2026, 1:11:35 PM"
+     - User detail tweet list: "Jan 17, 2026"
+     - Tweet detail: "Jan 17, 2026, 5:02 PM"
+     - Admin dashboard: "Last updated: 7:32:40 AM"
+     - Crawler runs table: "1/20/2026, 11:58:47 PM"
+     - Error logs: "19h ago" + "1/20/2026, 12:24:38 PM"
+     - Chart axes: "01:00 PM", "Jan 16"
+
+2. **Verify consistent format used** ✅
+   - All timestamps use 12-hour format with AM/PM
+   - All dates use US locale (month/day/year)
+   - Short month names ("Jan", "Feb") for display
+   - Numeric format ("1/20/2026") for tables
+   - Relative times ("7 hours ago") alongside absolute times
+
+3. **Verify format is readable** ✅
+   - All formats are human-readable
+   - Context-appropriate formats used (relative vs absolute)
+   - Consistent use of 'en-US' locale in code
+
+### Timestamp Format Summary:
+
+| Context | Format | Example |
+|---------|--------|---------|
+| Header "Last updated" | Numeric date + time (12h) | "1/21/2026, 1:11:35 PM" |
+| Tweet list dates | Short month + day + year | "Jan 17, 2026" |
+| Tweet detail timestamp | Short month + day + year + time | "Jan 17, 2026, 5:02 PM" |
+| Analysis date | Numeric date | "1/20/2026" |
+| Admin "Last updated" | Time only (12h) | "7:32:40 AM" |
+| Crawler run times | Numeric date + time (12h) | "1/20/2026, 11:58:47 PM" |
+| Relative times | Human-friendly | "7 hours ago", "19h ago", "1d ago" |
+
+### Screenshots:
+- .playwright-mcp/feature177-dashboard-timestamps.png
+- .playwright-mcp/feature177-user-detail-timestamps.png
+- .playwright-mcp/feature177-tweet-detail-timestamps.png
+- .playwright-mcp/feature177-admin-dashboard-timestamps.png
+- .playwright-mcp/feature177-error-logs-timestamps.png
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 117/235 (~49.8%)
+- Feature #177 marked as passing
+
+### Commit:
+- d00c117 - Verify Feature #177: Timestamps formatted correctly
+
+### Notes:
+- No code changes required - timestamps were already correctly implemented
+- All date formatting uses JavaScript's locale-aware Date methods with 'en-US' locale
+- Consistent 12-hour time format throughout the application
+- Relative times ("X hours ago") provide additional context in admin pages
