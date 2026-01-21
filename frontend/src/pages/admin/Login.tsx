@@ -12,6 +12,17 @@ export default function AdminLogin() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Validate whitespace-only input
+    if (!username.trim()) {
+      setError('Username is required');
+      return;
+    }
+    if (!password.trim()) {
+      setError('Password is required');
+      return;
+    }
+
     setLoading(true);
 
     try {

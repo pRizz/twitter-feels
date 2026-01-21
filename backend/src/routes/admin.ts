@@ -78,7 +78,11 @@ router.post('/login', (req, res) => {
   const { username, password } = req.body;
 
   // TODO: Implement actual authentication with password hash comparison
-  if (!username || !password) {
+  // Check for missing or whitespace-only values
+  const trimmedUsername = typeof username === 'string' ? username.trim() : '';
+  const trimmedPassword = typeof password === 'string' ? password.trim() : '';
+
+  if (!trimmedUsername || !trimmedPassword) {
     return res.status(400).json({ error: 'Username and password required' });
   }
 
