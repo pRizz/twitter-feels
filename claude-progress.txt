@@ -13018,3 +13018,114 @@ Only Vite dev server HMR/WebSocket errors (dev server issues, not application er
 
 [Testing] Session complete - verified feature #223 (Admin routes redirect to login) - PASSING
 
+
+
+---
+
+## Session - Feature #104 Regression Test - 2026-01-21
+
+### Feature #104: Changes sync between admin and public views (REGRESSION TEST)
+- **Status**: STILL PASSING
+- **Category**: F-UIBackend
+- **Description**: Admin changes reflect in public dashboard after refresh
+
+### Verification Steps Completed:
+
+1. **Admin changes emotion color** ✅
+   - Logged into admin panel at /admin
+   - Navigated to Theme settings (/admin/theme)
+   - Changed Happy emotion color from #FFD700 (gold) to #00FF00 (bright green)
+   - Saved emotion colors successfully
+
+2. **Refresh public dashboard** ✅
+   - Opened new browser tab with public dashboard (http://localhost:5173/)
+   - Refreshed the page to fetch latest settings
+
+3. **Verify color change is visible** ✅
+   - Navigated to user detail page (Sam Altman /users/4)
+   - Happy emotion bar now displayed in bright green (#00FF00)
+   - Color change confirmed in Emotion Averages section
+   - Screenshot: .playwright-mcp/feature104-user-detail-emotion-colors.png
+
+4. **Admin changes gauge label** ✅
+   - Changed Anger Gauge low label from 'Peaceful' to 'Chill'
+   - Saved gauge settings successfully
+
+5. **Refresh dashboard, verify label changed** ✅
+   - Refreshed public dashboard
+   - Anger Gauge now shows 'Chill' instead of 'Peaceful' at 0% position
+   - Screenshot: .playwright-mcp/feature104-dashboard-after.png
+
+### Cleanup:
+- Reverted Happy color back to #FFD700 (gold)
+- Reverted Anger Gauge low label back to 'Peaceful'
+- Both changes saved and verified
+
+### Screenshots:
+- .playwright-mcp/feature104-dashboard-before.png - Dashboard BEFORE admin changes
+- .playwright-mcp/feature104-dashboard-after.png - Dashboard AFTER admin changes (showing 'Chill')
+- .playwright-mcp/feature104-user-detail-emotion-colors.png - User detail page showing green Happy color
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected
+- Feature #104 still working correctly
+- Admin theme changes (emotion colors and gauge labels) sync to public views after refresh
+
+[Testing] Session complete - verified feature #104 (Changes sync between admin and public views) - still passing
+
+
+
+---
+
+## Session - Feature #222 - 2026-01-21
+
+### Feature #222: Form data preserved on validation error (COMPLETED)
+- **Status**: PASSING
+- **Category**: G-State
+- **Description**: Failed submit keeps form data
+
+### Verification Steps Completed:
+
+1. **Fill form with multiple fields** ✅
+   - Crawler Settings form: Set Crawl Interval=12, History Depth=999 (invalid), Rate Limit=300
+   - Change Password form: Set Current Password, New Password (invalid), Confirm Password (non-matching)
+
+2. **Submit with one invalid field** ✅
+   - Clicked "Save Crawler Settings" with invalid History Depth (999 > 365 max)
+   - Clicked "Change Password" with too-short password and non-matching confirmation
+
+3. **Verify validation error shown** ✅
+   - Crawler Settings: Browser native validation "Value must be less than or equal to 365."
+   - Change Password: Custom validation errors displayed:
+     - New Password: "Must be at least 12 characters, Must contain an uppercase letter, Must contain a number, Must contain a special character"
+     - Confirm Password: "Passwords do not match"
+
+4. **Verify other fields still have values** ✅
+   - Crawler Settings: Crawl Interval=12 ✓, Rate Limit=300 ✓ (both preserved)
+   - Change Password: Current Password ✓, New Password ✓, Confirm Password ✓ (all preserved)
+
+### Technical Implementation:
+- Forms use React state management (useState hooks) for form values
+- Validation errors are stored in separate state objects (crawlerErrors, passwordErrors, etc.)
+- onChange handlers clear specific field errors while preserving values
+- Form submission validates all fields and sets errors without clearing values
+- Both HTML5 native validation (min/max on number inputs) and custom JS validation work correctly
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature222-step2-after-submit.png - Crawler form with HTML5 validation tooltip
+- .playwright-mcp/.playwright-mcp/feature222-crawler-form-preserved.png - Crawler form showing preserved values
+- .playwright-mcp/.playwright-mcp/feature222-password-form-validation.png - Password form with custom validation errors
+
+### Console Errors: 
+- Only Vite HMR/WebSocket errors (dev server issues, unrelated to feature)
+- No application errors
+
+### Code Changes: NONE (feature was already implemented correctly)
+
+### Current Progress:
+- Features passing: 163/235 (~69.4%)
+- Feature #222 marked as passing
+
+[Testing] Session complete - verified feature #222 (Form data preserved on validation error) - PASSING
