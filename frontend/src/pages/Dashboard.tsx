@@ -50,6 +50,30 @@ interface DashboardData {
   timeCutoff?: string;
 }
 
+// Helper function to adjust color brightness
+function adjustBrightness(hex: string, percent: number): string {
+  // Remove # if present
+  const color = hex.replace('#', '');
+
+  // Parse RGB values
+  const r = parseInt(color.substring(0, 2), 16);
+  const g = parseInt(color.substring(2, 4), 16);
+  const b = parseInt(color.substring(4, 6), 16);
+
+  // Adjust brightness
+  const adjust = (value: number) => {
+    const adjusted = Math.round(value + (255 * percent / 100));
+    return Math.max(0, Math.min(255, adjusted));
+  };
+
+  const newR = adjust(r);
+  const newG = adjust(g);
+  const newB = adjust(b);
+
+  // Convert back to hex
+  return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+}
+
 // Gauge component
 function Gauge({ name, value, lowLabel, highLabel, color }: GaugeData) {
   const [animatedValue, setAnimatedValue] = useState(0);
@@ -59,16 +83,28 @@ function Gauge({ name, value, lowLabel, highLabel, color }: GaugeData) {
     return () => clearTimeout(timer);
   }, [value]);
 
+  // Create gradient colors: lighter on left edge, main color, darker on right
+  const lighterColor = adjustBrightness(color, 25);
+  const darkerColor = adjustBrightness(color, -15);
+
   return (
-    <div className="bg-card rounded-lg p-4 shadow-md border border-border">
+    <div className="bg-card rounded-lg p-4 shadow-card border border-border">
       <h3 className="text-lg font-semibold mb-2 text-foreground">{name}</h3>
       <div className="relative h-8 bg-muted rounded-full overflow-hidden">
         <div
           className="absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ease-out"
           style={{
             width: `${animatedValue}%`,
-            backgroundColor: color,
-            boxShadow: `0 0 10px ${color}40`,
+            background: `linear-gradient(90deg, ${lighterColor} 0%, ${color} 50%, ${darkerColor} 100%)`,
+            boxShadow: `0 0 12px ${color}50, inset 0 1px 1px ${lighterColor}40`,
+          }}
+        />
+        {/* Subtle highlight overlay for 3D effect */}
+        <div
+          className="absolute inset-y-0 left-0 rounded-full pointer-events-none transition-all duration-1000 ease-out"
+          style={{
+            width: `${animatedValue}%`,
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%)',
           }}
         />
         <div className="absolute inset-0 flex items-center justify-center">
@@ -88,7 +124,7 @@ function Gauge({ name, value, lowLabel, highLabel, color }: GaugeData) {
 // Leaderboard component
 function Leaderboard({ data }: { data: LeaderboardData }) {
   return (
-    <div className="bg-card rounded-lg p-4 shadow-md border border-border">
+    <div className="bg-card rounded-lg p-4 shadow-card border border-border">
       <h3 className="text-lg font-semibold mb-3 text-foreground capitalize">
         {data.emotion} Leaderboard
       </h3>
