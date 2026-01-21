@@ -12350,3 +12350,61 @@ FINAL RESULT: ✓ ALL USERS PASS
 ```
 
 [Testing] Session complete - verified feature #215 (Aggregations computed correctly) - PASSING
+
+
+---
+
+## Testing Session - Feature #123 Regression Test - 2026-01-21
+
+### Feature #123: Double-click submit doesn't duplicate (VERIFIED)
+- **Status**: STILL PASSING ✅
+- **Category**: I-Idempotency
+- **Description**: Rapid clicks on forms don't create duplicates
+
+### Verification Steps Completed:
+
+1. **Log in as admin** ✅
+   - Navigated to http://localhost:5173/admin
+   - Logged in with admin/admin123 credentials
+   - Redirected to admin dashboard
+
+2. **Navigate to add user form** ✅
+   - Clicked "Tracked Users" in sidebar
+   - Clicked "+ Add User" button
+   - Add user form appeared
+
+3. **Fill in user details** ✅
+   - Twitter Handle: @dblclk123
+   - Display Name: Double Click Test User
+   - Form validation passed
+
+4. **Double-click submit rapidly** ✅
+   - Used Playwright's dblclick() method on "Add User" button
+   - This simulates rapid double-clicking
+
+5. **Verify only one user created** ✅
+   - API response: Only ONE entry for username "dblclk123" (id=52)
+   - Table shows single entry for "Double Click Test User"
+   - Total user count increased by 1 (not 2)
+   - Confirmed via: curl http://localhost:3001/api/users
+
+### Technical Implementation:
+- The form properly disables the submit button after first click
+- Server-side likely has request deduplication
+- No duplicate records created despite rapid double-click
+
+### Cleanup:
+- Deleted test user (@dblclk123) after verification
+
+### Screenshots:
+- .playwright-mcp/feature123-double-click-result.png - User list after double-click (shows single entry)
+
+### Console Errors: 
+- Only Vite HMR/WebSocket errors (dev server issues, unrelated to feature)
+- No application errors
+
+### Result:
+- No regression detected - Feature #123 still working correctly
+- Idempotency protection is functioning properly
+
+[Testing] Session complete - verified feature #123 (Double-click submit doesn't duplicate) - still passing

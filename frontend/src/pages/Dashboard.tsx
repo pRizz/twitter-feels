@@ -382,6 +382,38 @@ const VALID_TIME_PERIODS = ['weekly', 'monthly', 'yearly', 'all_time'];
 const VALID_SORT_BY = ['followers', 'name', 'score'];
 const VALID_SORT_ORDER = ['asc', 'desc'];
 
+// Error types for better error handling
+type ErrorType = 'timeout' | 'network' | 'server' | 'unknown';
+
+interface ErrorState {
+  message: string;
+  type: ErrorType;
+}
+
+// Helper to classify errors
+function classifyError(err: unknown): ErrorState {
+  if (err instanceof Error) {
+    // AbortError is thrown when fetch is aborted (timeout)
+    if (err.name === 'AbortError' || err.message.includes('timeout') || err.message.includes('Timeout')) {
+      return {
+        message: 'Request timed out. The server is taking too long to respond.',
+        type: 'timeout'
+      };
+    }
+    // Network errors (offline, DNS failure, CORS, etc.)
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      return {
+        message: 'Network error. Please check your internet connection.',
+        type: 'network'
+      };
+    }
+  }
+  return {
+    message: 'Failed to load dashboard data. Please try again.',
+    type: 'unknown'
+  };
+}
+
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -412,7 +444,7 @@ export default function Dashboard() {
   const [sortOrder, setSortOrderState] = useState(getInitialSortOrder);
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorState | null>(null);
   const [models, setModels] = useState<LLMModel[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState('');
 
@@ -525,47 +557,67 @@ export default function Dashboard() {
     fetchModels();
   }, []);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setIsLoading(true);
-        // Check URL for delay param (used for testing loading states)
-        const urlParams = new URLSearchParams(window.location.search);
-        const testDelay = urlParams.get('testDelay') || '';
-        const delayParam = testDelay ? `&delay=${testDelay}` : '';
-        const response = await fetch(
-          `http://localhost:3001/api/dashboard?timeBucket=${timePeriod}&modelId=${modelFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}${delayParam}`
-        );
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data');
-        }
-        const dashboardData = await response.json();
-        setData(dashboardData);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching dashboard:', err);
-        setError('Failed to load dashboard data');
-        // Use default/sample data for display
-        setData({
-          lastUpdated: new Date().toISOString(),
-          gauges: DEFAULT_GAUGES,
-          leaderboards: [
-            {
-              emotion: 'happiness',
-              highest: [],
-              lowest: [],
-            },
-          ],
-          users: [],
-          stats: { totalUsers: 0, totalTweets: 0, totalAnalyses: 0 },
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Fetch dashboard data with timeout support
+  const fetchDashboardData = useCallback(async () => {
+    // Create AbortController for timeout
+    const controller = new AbortController();
 
-    fetchDashboardData();
+    // Check URL for testTimeout param (for testing timeout handling)
+    const urlParams = new URLSearchParams(window.location.search);
+    const testTimeout = urlParams.get('testTimeout');
+
+    // Set timeout duration (default 15 seconds, or custom for testing)
+    const timeoutMs = testTimeout ? parseInt(testTimeout, 10) : 15000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      setIsLoading(true);
+      // Check URL for delay param (used for testing loading states)
+      const testDelay = urlParams.get('testDelay') || '';
+      const delayParam = testDelay ? `&delay=${testDelay}` : '';
+      const response = await fetch(
+        `http://localhost:3001/api/dashboard?timeBucket=${timePeriod}&modelId=${modelFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}${delayParam}`,
+        { signal: controller.signal }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data');
+      }
+      const dashboardData = await response.json();
+      setData(dashboardData);
+      setError(null);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error('Error fetching dashboard:', err);
+
+      // Classify the error for appropriate message
+      const errorState = classifyError(err);
+      setError(errorState);
+
+      // Use default/sample data for display
+      setData({
+        lastUpdated: new Date().toISOString(),
+        gauges: DEFAULT_GAUGES,
+        leaderboards: [
+          {
+            emotion: 'happiness',
+            highest: [],
+            lowest: [],
+          },
+        ],
+        users: [],
+        stats: { totalUsers: 0, totalTweets: 0, totalAnalyses: 0 },
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, [timePeriod, modelFilter, sortBy, sortOrder]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const gauges = data?.gauges?.length ? data.gauges : DEFAULT_GAUGES;
   const leaderboards = data?.leaderboards || [];
@@ -611,29 +663,24 @@ export default function Dashboard() {
 
       {/* Error message with retry option */}
       {error && (
-        <div role="alert" className="mb-6 p-4 bg-error/10 border border-error/30 rounded-lg">
+        <div role="alert" className="mb-6 p-4 bg-error/10 border border-error/30 rounded-lg" data-error-type={error.type}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span className="text-error">{error}</span>
+              {error.type === 'timeout' ? (
+                <svg className="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              )}
+              <span className="text-error font-medium">{error.message}</span>
             </div>
             <button
               onClick={() => {
                 setError(null);
-                setIsLoading(true);
-                fetch(`http://localhost:3001/api/dashboard?timeBucket=${timePeriod}&modelId=${modelFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}`)
-                  .then(res => {
-                    if (!res.ok) throw new Error('Failed to fetch');
-                    return res.json();
-                  })
-                  .then(dashboardData => {
-                    setData(dashboardData);
-                    setError(null);
-                  })
-                  .catch(() => setError('Failed to load dashboard data. Please try again.'))
-                  .finally(() => setIsLoading(false));
+                fetchDashboardData();
               }}
               className="px-3 py-1.5 text-sm bg-error/20 hover:bg-error/30 text-error rounded-md transition-colors flex items-center gap-1"
             >
@@ -644,7 +691,11 @@ export default function Dashboard() {
             </button>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            Unable to connect to the server. Please check your connection and try again.
+            {error.type === 'timeout'
+              ? 'The request took too long. Click Retry to try again, or wait a moment and refresh the page.'
+              : error.type === 'network'
+              ? 'Unable to connect to the server. Please check your internet connection and try again.'
+              : 'Something went wrong. Please try again or contact support if the issue persists.'}
           </p>
         </div>
       )}

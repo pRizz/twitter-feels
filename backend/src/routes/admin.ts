@@ -341,10 +341,10 @@ function generateMockTweetsForUser(userId: number, username: string): number {
     VALUES (?, ?, ?, ?, ?, 0, 0)
   `);
 
-  // Get an enabled LLM model for analysis
-  const model = db.prepare(`
-    SELECT id FROM llm_models WHERE is_enabled = 1 LIMIT 1
-  `).get() as { id: number } | undefined;
+  // Get ALL enabled LLM models for multi-model analysis (Feature #216)
+  const allModels = db.prepare(`
+    SELECT id FROM llm_models WHERE is_enabled = 1
+  `).all() as { id: number }[];
 
   const insertAnalysis = db.prepare(`
     INSERT INTO sentiment_analyses (tweet_id, llm_model_id, emotion_scores, analysis_duration_ms)
@@ -375,23 +375,31 @@ function generateMockTweetsForUser(userId: number, username: string): number {
         tweetsCreated++;
         const newTweetId = Number(result.lastInsertRowid);
 
-        // Generate sentiment analysis if we have a model
-        if (model) {
-          const emotionScores = JSON.stringify({
-            happy: Math.floor(Math.random() * 100),
-            sad: Math.floor(Math.random() * 50),
-            angry: Math.floor(Math.random() * 40),
-            fearful: Math.floor(Math.random() * 30),
-            hatred: Math.floor(Math.random() * 20),
-            thankful: Math.floor(Math.random() * 80),
-            excited: Math.floor(Math.random() * 90),
-            hopeful: Math.floor(Math.random() * 70),
-            frustrated: Math.floor(Math.random() * 50),
-            sarcastic: Math.floor(Math.random() * 40),
-            inspirational: Math.floor(Math.random() * 60),
-            anxious: Math.floor(Math.random() * 35),
-          });
-          insertAnalysis.run(newTweetId, model.id, emotionScores, Math.floor(Math.random() * 2000) + 500);
+        // Generate sentiment analyses from MULTIPLE models (Feature #216 - Combined model scores)
+        // For each tweet, randomly select 2-4 models to analyze it
+        if (allModels.length > 0) {
+          const numModels = Math.min(allModels.length, Math.floor(Math.random() * 3) + 2); // 2-4 models
+          const shuffledModels = [...allModels].sort(() => Math.random() - 0.5);
+          const selectedModels = shuffledModels.slice(0, numModels);
+
+          for (const model of selectedModels) {
+            // Generate different emotion scores for each model (simulating model variation)
+            const emotionScores = JSON.stringify({
+              happy: Math.floor(Math.random() * 100),
+              sad: Math.floor(Math.random() * 50),
+              angry: Math.floor(Math.random() * 40),
+              fearful: Math.floor(Math.random() * 30),
+              hatred: Math.floor(Math.random() * 20),
+              thankful: Math.floor(Math.random() * 80),
+              excited: Math.floor(Math.random() * 90),
+              hopeful: Math.floor(Math.random() * 70),
+              frustrated: Math.floor(Math.random() * 50),
+              sarcastic: Math.floor(Math.random() * 40),
+              inspirational: Math.floor(Math.random() * 60),
+              anxious: Math.floor(Math.random() * 35),
+            });
+            insertAnalysis.run(newTweetId, model.id, emotionScores, Math.floor(Math.random() * 2000) + 500);
+          }
         }
       }
     } catch {

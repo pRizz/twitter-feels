@@ -3,6 +3,17 @@ import db from '../db/connection.js';
 
 const router = Router();
 
+// Helper function to calculate median from an array of numbers
+function calculateMedian(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+  }
+  return sorted[mid];
+}
+
 // Helper function to calculate gauge value from emotion scores
 function calculateGaugeValue(
   gaugeConfig: { emotions: string[]; invertedEmotions?: string[] },
@@ -369,9 +380,10 @@ router.get('/users/:id', (req, res) => {
       WHERE t.twitter_user_id = ?
     `).all(id) as Array<{ emotion_scores: string }>;
 
-    // Aggregate emotion scores
+    // Aggregate emotion scores - collect all values for median calculation
     const emotionSums: Record<string, number> = {};
     const emotionCounts: Record<string, number> = {};
+    const emotionValues: Record<string, number[]> = {};
 
     for (const analysis of userAnalyses) {
       const scores = JSON.parse(analysis.emotion_scores);
@@ -379,6 +391,10 @@ router.get('/users/:id', (req, res) => {
         if (typeof score === 'number') {
           emotionSums[emotion] = (emotionSums[emotion] || 0) + score;
           emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
+          if (!emotionValues[emotion]) {
+            emotionValues[emotion] = [];
+          }
+          emotionValues[emotion].push(score);
         }
       }
     }
@@ -387,6 +403,12 @@ router.get('/users/:id', (req, res) => {
     const emotionAverages: Record<string, number> = {};
     for (const emotion of Object.keys(emotionSums)) {
       emotionAverages[emotion] = Math.round(emotionSums[emotion] / emotionCounts[emotion]);
+    }
+
+    // Calculate medians
+    const emotionMedians: Record<string, number> = {};
+    for (const emotion of Object.keys(emotionValues)) {
+      emotionMedians[emotion] = calculateMedian(emotionValues[emotion]);
     }
 
     // Get emotion colors from configuration
@@ -408,6 +430,7 @@ router.get('/users/:id', (req, res) => {
       ...user,
       aggregations,
       emotionAverages, // Real-time calculated averages from sentiment_analyses
+      emotionMedians,  // Real-time calculated medians from sentiment_analyses
       emotionColors,
       analysisCount: userAnalyses.length,
       tweetCount: tweetStats?.total_tweets || 0,

@@ -55,6 +55,7 @@ interface UserData {
   updated_at: string;
   aggregations: AggregationData[];
   emotionAverages: Record<string, number>; // Real-time calculated averages
+  emotionMedians: Record<string, number>;  // Real-time calculated medians
   emotionColors: Record<string, { color: string; enabled: boolean }>;
   analysisCount: number;
   tweetCount: number;
@@ -177,16 +178,20 @@ function UserProfileHeader({ user }: { user: UserData }) {
   );
 }
 
-// Emotion averages display
+// Emotion stats display (averages and medians with toggle)
 function EmotionAverages({
   emotionAverages,
+  emotionMedians,
   emotionColors,
   analysisCount,
 }: {
   emotionAverages: Record<string, number>;
+  emotionMedians?: Record<string, number>;
   emotionColors: Record<string, { color: string; enabled: boolean }>;
   analysisCount: number;
 }) {
+  const [showMedians, setShowMedians] = useState(false);
+
   // Check if we have any data
   const hasData = emotionAverages && Object.keys(emotionAverages).length > 0;
 
@@ -195,7 +200,7 @@ function EmotionAverages({
       <div className="bg-card rounded-lg p-6 border border-border shadow-card">
         <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
           <span className="text-primary-violet">📊</span>
-          Emotion Averages
+          Emotion Statistics
         </h2>
         <p className="text-muted-foreground text-center py-8">
           No sentiment analysis data available yet. Check back after tweets have been analyzed.
@@ -220,8 +225,11 @@ function EmotionAverages({
     anxious: '#708090',
   };
 
+  // Use medians if toggle is on, otherwise averages
+  const displayData = showMedians && emotionMedians ? emotionMedians : emotionAverages;
+
   // Sort emotions by value (highest first)
-  const emotions = Object.entries(emotionAverages).sort((a, b) => b[1] - a[1]);
+  const emotions = Object.entries(displayData).sort((a, b) => b[1] - a[1]);
 
   // Get color for an emotion - prefer API colors, fall back to defaults
   const getColor = (emotion: string): string => {
@@ -233,13 +241,39 @@ function EmotionAverages({
 
   return (
     <div className="bg-card rounded-lg p-6 border border-border shadow-card">
-      <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-        <span className="text-primary-violet">📊</span>
-        Emotion Averages
-        <span className="text-sm font-normal text-muted-foreground">
-          ({analysisCount} {analysisCount === 1 ? 'analysis' : 'analyses'})
-        </span>
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+          <span className="text-primary-violet">📊</span>
+          Emotion {showMedians ? 'Medians' : 'Averages'}
+          <span className="text-sm font-normal text-muted-foreground">
+            ({analysisCount} {analysisCount === 1 ? 'analysis' : 'analyses'})
+          </span>
+        </h2>
+        {emotionMedians && Object.keys(emotionMedians).length > 0 && (
+          <div className="flex gap-1 p-1 bg-muted rounded-md">
+            <button
+              onClick={() => setShowMedians(false)}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                !showMedians
+                  ? 'bg-primary-cyan text-background'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Average
+            </button>
+            <button
+              onClick={() => setShowMedians(true)}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                showMedians
+                  ? 'bg-primary-cyan text-background'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Median
+            </button>
+          </div>
+        )}
+      </div>
       <div className="space-y-3">
         {emotions.map(([emotion, value]) => (
           <div key={emotion} className="flex items-center gap-3">
@@ -744,9 +778,10 @@ export default function UserDetail() {
           <UserProfileHeader user={user} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Emotion Averages */}
+            {/* Emotion Averages/Medians */}
             <EmotionAverages
               emotionAverages={user.emotionAverages}
+              emotionMedians={user.emotionMedians}
               emotionColors={user.emotionColors}
               analysisCount={user.analysisCount}
             />
