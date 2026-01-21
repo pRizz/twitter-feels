@@ -92,9 +92,9 @@ function ModelAnalysisCard({ analysis }: { analysis: TweetAnalysis }) {
     <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h4 className="font-medium text-foreground">{analysis.model.name}</h4>
+          <h4 className="font-medium text-foreground font-mono">{analysis.model.name}</h4>
           {analysis.model.version && (
-            <span className="text-xs text-muted-foreground">v{analysis.model.version}</span>
+            <span className="text-xs text-muted-foreground font-mono">v{analysis.model.version}</span>
           )}
         </div>
         <div className="text-right">

@@ -303,9 +303,9 @@ function ModelFilter({
         id="model-filter"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary-cyan/50"
+        className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary-cyan/50 font-mono"
       >
-        <option value="combined">Combined</option>
+        <option value="combined" className="font-sans">Combined</option>
         {models.map((model) => (
           <option key={model.id} value={model.id}>
             {model.name}

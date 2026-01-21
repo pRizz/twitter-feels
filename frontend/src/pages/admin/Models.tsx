@@ -317,8 +317,8 @@ export default function AdminModels() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-lg">{model.name}</h3>
-                        <span className="text-sm text-muted-foreground">
+                        <h3 className="font-semibold text-lg font-mono">{model.name}</h3>
+                        <span className="text-sm text-muted-foreground font-mono">
                           v{model.version}
                         </span>
                         {getStatusBadge(model.downloadStatus, isDownloading ? progressPercent : undefined)}
@@ -419,8 +419,8 @@ export default function AdminModels() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-lg">{model.name}</h3>
-                      <span className="text-sm text-muted-foreground">
+                      <h3 className="font-semibold text-lg font-mono">{model.name}</h3>
+                      <span className="text-sm text-muted-foreground font-mono">
                         v{model.version}
                       </span>
                       <span className="px-2 py-0.5 rounded text-xs bg-primary/20 text-primary">
