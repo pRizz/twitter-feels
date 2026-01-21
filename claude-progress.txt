@@ -15195,3 +15195,182 @@ This session was assigned to work on Feature #221, but the feature was already m
 
 [Testing] Session complete - verified feature #58 (Admin can update crawl interval) - PASSING
 
+
+---
+
+## Session - Feature #59 - 2026-01-21
+
+### Feature #59: Admin can update history depth (VERIFIED)
+- **Status**: PASSING
+- **Category**: D-Workflow
+- **Description**: Admin can change how far back to crawl (in days)
+
+### Verification Steps Completed:
+
+1. **Log in as admin** ✅
+   - Navigated to /admin/login
+   - Entered valid credentials (admin/admin)
+   - Successfully redirected to /admin dashboard
+
+2. **Navigate to /admin/settings** ✅
+   - Clicked Settings link in sidebar
+   - Settings page loaded with Crawler Settings section
+
+3. **Locate history depth input** ✅
+   - Found "History Depth (days)" spinbutton input
+   - Initial value was "90" days
+
+4. **Change value to new depth (e.g., 60 days)** ✅
+   - Changed value from "90" to "60" days
+
+5. **Save settings** ✅
+   - Clicked "Save Crawler Settings" button
+   - API PUT /api/admin/settings succeeded
+
+6. **Verify success message** ✅
+   - Toast notification appeared: "Crawler settings saved successfully!"
+
+7. **Refresh and verify persistence** ✅
+   - Refreshed the settings page
+   - Value remained "60" after refresh
+   - Navigated to Admin Dashboard
+   - Dashboard showed "60 day history" in Crawler Status panel
+   - Reset back to default "90" using Reset to Defaults button
+
+### Screenshots:
+- .playwright-mcp/feature59-initial-settings.png - Initial settings showing depth = 90
+- .playwright-mcp/feature59-history-depth-changed-to-60.png - Value changed to 60
+- .playwright-mcp/feature59-settings-saved-success.png - Success message after saving
+- .playwright-mcp/feature59-persistence-verified.png - Value persisted after page refresh
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 183/235 (~77.9%)
+- Feature #59 marked as passing
+
+[Testing] Session complete - verified feature #59 (Admin can update history depth) - PASSING
+
+
+
+
+---
+
+## Session - Feature #67 - 2026-01-21
+
+### Feature #67: Error logs show categorization (VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Errors are categorized by type
+
+### Verification Steps Completed:
+
+1. **Navigate to admin error logs** ✅
+   - Logged in as admin (admin/admin)
+   - Clicked "Error Logs" in sidebar
+   - Navigated to /admin/errors page
+
+2. **Verify error type column exists** ✅
+   - Table has "Type" column clearly visible
+   - Each error shows categorized type with color-coded icon:
+     - Network (cyan)
+     - Rate Limit (orange)
+     - Authentication (red)
+     - API Change (purple)
+     - Other (gray)
+
+3. **Verify filter by error type works** ✅
+   - Filter buttons: All, Rate Limit, Authentication, Network, API Change, Other
+   - Clicking "Rate Limit" filters to 2 errors
+   - Clicking "Network" filters to 4 errors
+   - Clicking "Authentication" filters to 1 error
+   - Clicking "All" shows all 9 errors
+   - Count updates correctly (e.g., "Showing 1-2 of 2")
+
+4. **Verify rate_limit, auth, network categories exist** ✅
+   - Network: 4 errors (44.4%)
+   - Rate Limit: 2 errors (22.2%)
+   - Authentication: 1 error (11.1%)
+   - API Change: 1 error (11.1%)
+   - Other: 1 error (11.1%)
+
+### Additional Features Verified:
+- "Errors by Type" summary chart with percentages
+- Hourly Error Rate (24h) chart
+- Daily Error Rate (7d) chart
+- Total Errors count: 9
+- Unresolved count: 5
+- Last 24 Hours count: 6
+
+### Screenshots:
+- .playwright-mcp/feature67-error-logs-page.png - Full error logs page
+- .playwright-mcp/feature67-error-type-column.png - Full page with all errors
+- .playwright-mcp/feature67-rate-limit-filter.png - Rate Limit filter active
+- .playwright-mcp/feature67-auth-filter.png - Authentication filter active
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 184/235 (~78.3%)
+- Feature #67 marked as passing
+
+[Testing] Session complete - verified feature #67 (Error logs show categorization) - PASSING
+
+
+---
+
+## Session - Feature #127 Regression Test - 2026-01-21
+
+### Feature #127: Delete user removes from search (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: J-Cleanup
+- **Description**: Deleted user no longer appears in search results
+
+### Verification Steps Completed:
+
+1. **Admin deletes a user** ✅
+   - Logged in as admin (admin/admin)
+   - Navigated to /admin/users
+   - Found "Test User 123" (@testuser123) in the user list
+   - Clicked "Delete" button
+   - Confirmed deletion in confirmation dialog
+   - Success message appeared: "Successfully removed @testuser123 from tracked users!"
+   - User count decreased from 4 to 3
+
+2. **Navigate to dashboard search** ✅
+   - Navigated to http://localhost:5173/ (main dashboard)
+   - Located "Tracked Influencers" section with search box
+
+3. **Search for deleted user** ✅
+   - Typed "Test User" in the search box
+   - Search executed immediately (real-time filtering)
+
+4. **Verify no results found** ✅
+   - Message displayed: "No users found matching "Test User". Try a different search term."
+   - No user cards shown in results
+   - Tracked Users count shows 3 (confirming deletion)
+
+### Test Cleanup:
+- Re-added "Test User 123" (@testuser123) for future tests
+- User successfully added back to the system
+
+### Screenshots:
+- .playwright-mcp/feature127-search-before-delete.png - Search showing Test User 123 before deletion
+- .playwright-mcp/feature127-test-user-in-search.png - Test User 123 card visible in search results
+- .playwright-mcp/feature127-user-deleted.png - Admin page after deletion (3 users remaining)
+- .playwright-mcp/feature127-no-results-after-delete.png - Search results page
+- .playwright-mcp/feature127-no-users-found-message.png - "No users found" message displayed
+
+### Console Errors: NONE
+
+### Code Changes: NONE (regression test only - feature working correctly)
+
+### Current Progress:
+- Features passing: 183/235 (~77.9%)
+- Feature #127 confirmed still PASSING
+
+[Testing] Session complete - verified feature #127 (Delete user removes from search) - PASSING
