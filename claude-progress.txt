@@ -10361,3 +10361,62 @@ Interactive element hover glow effects were already implemented in the CSS as pa
 - Hover glow effects are applied via CSS to all buttons and links
 - Smooth 0.2s transitions for animation
 - Both dark and light mode have appropriate color schemes
+
+
+---
+
+## Session - Feature #54 Regression Test - 2026-01-21
+
+### Feature #54: Admin can add tracked Twitter user (REGRESSION TEST)
+- **Status**: PASSING (verified)
+- **Category**: D-Workflow
+- **Description**: Admin can add a new Twitter account to track
+
+### Verification Steps Completed:
+
+1. **Log in as admin** ✅
+   - Logged into admin panel with admin/admin123
+   - Redirected to /admin dashboard
+
+2. **Navigate to /admin/users** ✅
+   - Clicked 'Tracked Users' in navigation
+   - Page shows list of tracked users with stats
+
+3. **Click 'Add User' button** ✅
+   - Form appeared with Twitter Handle and Display Name fields
+   - Add User button initially disabled until handle entered
+
+4. **Enter Twitter handle** ✅
+   - Entered '@test_user54'
+   - Validation working (handles > 15 chars rejected)
+
+5. **Submit the form** ✅
+   - Clicked 'Add User' button
+   - API call successful
+
+6. **Verify user appears in the list** ✅
+   - New row appeared: test_user54
+   - Handle: @test_user54 (links to Twitter)
+   - Status: Active
+   - Followers: 0, Tweets: 0
+   - Added: Jan 21, 2026
+   - Stats updated: Total Tracked 1→2, Active 1→2
+
+7. **Verify success message displayed** ✅
+   - Toast notification: 'Successfully added @test_user54 to tracked users!'
+   - Green checkmark icon
+
+### Screenshots:
+- .playwright-mcp/feature54-add-user-success.png - User added with success toast
+
+### Console Errors:
+- None
+
+### Cleanup:
+- Deleted test user after verification
+
+### Result:
+- No regression detected - Feature #54 still working correctly
+
+[Testing] Session complete - verified feature #54 (Admin can add tracked Twitter user) - still passing
+
