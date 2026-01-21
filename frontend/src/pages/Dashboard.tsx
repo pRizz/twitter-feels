@@ -1,5 +1,5 @@
 // Dashboard page - Main public dashboard with gauges, leaderboards, and user grid
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 // Types for dashboard data
@@ -472,6 +472,10 @@ function classifyError(err: unknown): ErrorState {
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Request counter to ignore stale responses - increments with each new request
+  // When a newer request is made, responses from older requests are ignored
+  const requestCounterRef = useRef(0);
+
   // Read initial values from URL params, falling back to defaults
   const getInitialTimePeriod = () => {
     const param = searchParams.get('period');
@@ -612,8 +616,13 @@ export default function Dashboard() {
     fetchModels();
   }, []);
 
-  // Fetch dashboard data with timeout support
+  // Fetch dashboard data with timeout support and stale response prevention
   const fetchDashboardData = useCallback(async () => {
+    // Increment request counter to track this request
+    // Any response from a previous request will be ignored
+    requestCounterRef.current += 1;
+    const currentRequestId = requestCounterRef.current;
+
     // Create AbortController for timeout
     const controller = new AbortController();
 
@@ -640,14 +649,35 @@ export default function Dashboard() {
 
       clearTimeout(timeoutId);
 
+      // Check if this response is stale (a newer request has been made)
+      if (currentRequestId !== requestCounterRef.current) {
+        // This is a stale response - ignore it
+        console.log(`Ignoring stale dashboard response (request ${currentRequestId}, current ${requestCounterRef.current})`);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data');
       }
       const dashboardData = await response.json();
+
+      // Double-check staleness after parsing (in case another request started during parse)
+      if (currentRequestId !== requestCounterRef.current) {
+        console.log(`Ignoring stale dashboard response after parse (request ${currentRequestId}, current ${requestCounterRef.current})`);
+        return;
+      }
+
       setData(dashboardData);
       setError(null);
     } catch (err) {
       clearTimeout(timeoutId);
+
+      // Don't update state if this is a stale request (unless it was aborted by AbortController)
+      if (currentRequestId !== requestCounterRef.current) {
+        console.log(`Ignoring stale dashboard error (request ${currentRequestId}, current ${requestCounterRef.current})`);
+        return;
+      }
+
       console.error('Error fetching dashboard:', err);
 
       // Classify the error for appropriate message
@@ -669,7 +699,10 @@ export default function Dashboard() {
         stats: { totalUsers: 0, totalTweets: 0, totalAnalyses: 0 },
       });
     } finally {
-      setIsLoading(false);
+      // Only update loading state if this is still the current request
+      if (currentRequestId === requestCounterRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [timePeriod, modelFilter, sortBy, sortOrder]);
 

@@ -1,5 +1,5 @@
 // User Detail page - Shows detailed sentiment analysis for a specific user
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   LineChart,
@@ -452,15 +452,36 @@ function EmotionTrends({ userId }: { userId: number }) {
   const [timeBucket, setTimeBucket] = useState<string>('daily');
   const [selectedEmotions, setSelectedEmotions] = useState<Set<string>>(new Set());
 
+  // Request counter to ignore stale responses
+  const requestCounterRef = useRef(0);
+
   useEffect(() => {
     const fetchTrends = async () => {
+      // Increment request counter for stale response tracking
+      requestCounterRef.current += 1;
+      const currentRequestId = requestCounterRef.current;
+
       try {
         setIsLoading(true);
         const response = await fetch(
           `http://localhost:3001/api/users/${userId}/trends?timeBucket=${timeBucket}`
         );
+
+        // Check if this response is stale
+        if (currentRequestId !== requestCounterRef.current) {
+          console.log(`Ignoring stale trends response (request ${currentRequestId}, current ${requestCounterRef.current})`);
+          return;
+        }
+
         if (response.ok) {
           const data = await response.json();
+
+          // Double-check staleness after parse
+          if (currentRequestId !== requestCounterRef.current) {
+            console.log(`Ignoring stale trends response after parse (request ${currentRequestId}, current ${requestCounterRef.current})`);
+            return;
+          }
+
           setTrends(data);
           // Default: select top 4 emotions by average value if none selected
           if (selectedEmotions.size === 0 && data.dataPoints.length > 0) {
@@ -479,9 +500,16 @@ function EmotionTrends({ userId }: { userId: number }) {
           }
         }
       } catch (err) {
+        // Don't update state if stale
+        if (currentRequestId !== requestCounterRef.current) {
+          return;
+        }
         console.error('Error fetching trends:', err);
       } finally {
-        setIsLoading(false);
+        // Only update loading state if this is still the current request
+        if (currentRequestId === requestCounterRef.current) {
+          setIsLoading(false);
+        }
       }
     };
     fetchTrends();
@@ -677,9 +705,17 @@ export default function UserDetail() {
   // Time filter state for tweets
   const [tweetTimePeriod, setTweetTimePeriod] = useState<string>('all_time');
 
-  // Fetch user tweets
+  // Request counters to ignore stale responses
+  const tweetRequestCounterRef = useRef(0);
+  const userRequestCounterRef = useRef(0);
+
+  // Fetch user tweets with stale response prevention
   const fetchTweets = async (page: number = 1, period: string = tweetTimePeriod) => {
     if (!id) return;
+
+    // Increment request counter for stale response tracking
+    tweetRequestCounterRef.current += 1;
+    const currentRequestId = tweetRequestCounterRef.current;
 
     try {
       setTweetsLoading(true);
@@ -687,19 +723,39 @@ export default function UserDetail() {
         `http://localhost:3001/api/users/${id}/tweets?page=${page}&limit=10&period=${period}`
       );
 
+      // Check if this response is stale
+      if (currentRequestId !== tweetRequestCounterRef.current) {
+        console.log(`Ignoring stale tweets response (request ${currentRequestId}, current ${tweetRequestCounterRef.current})`);
+        return;
+      }
+
       if (!response.ok) {
         console.error('Failed to fetch tweets');
         return;
       }
 
       const data: TweetListResponse = await response.json();
+
+      // Double-check staleness after parse
+      if (currentRequestId !== tweetRequestCounterRef.current) {
+        console.log(`Ignoring stale tweets response after parse (request ${currentRequestId}, current ${tweetRequestCounterRef.current})`);
+        return;
+      }
+
       setTweets(data.tweets);
       setTweetPagination(data.pagination);
       setTweetColors(data.emotionColors);
     } catch (err) {
+      // Don't update state if stale
+      if (currentRequestId !== tweetRequestCounterRef.current) {
+        return;
+      }
       console.error('Error fetching tweets:', err);
     } finally {
-      setTweetsLoading(false);
+      // Only update loading state if this is still the current request
+      if (currentRequestId === tweetRequestCounterRef.current) {
+        setTweetsLoading(false);
+      }
     }
   };
 
@@ -718,9 +774,19 @@ export default function UserDetail() {
     const fetchUser = async () => {
       if (!id) return;
 
+      // Increment request counter for stale response tracking
+      userRequestCounterRef.current += 1;
+      const currentRequestId = userRequestCounterRef.current;
+
       try {
         setIsLoading(true);
         const response = await fetch(`http://localhost:3001/api/users/${id}`);
+
+        // Check if this response is stale (user navigated to different user)
+        if (currentRequestId !== userRequestCounterRef.current) {
+          console.log(`Ignoring stale user response (request ${currentRequestId}, current ${userRequestCounterRef.current})`);
+          return;
+        }
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -730,16 +796,30 @@ export default function UserDetail() {
         }
 
         const userData = await response.json();
+
+        // Double-check staleness after parse
+        if (currentRequestId !== userRequestCounterRef.current) {
+          console.log(`Ignoring stale user response after parse (request ${currentRequestId}, current ${userRequestCounterRef.current})`);
+          return;
+        }
+
         setUser(userData);
         setError(null);
 
         // Fetch tweets after user data is loaded
         fetchTweets(1);
       } catch (err) {
+        // Don't update state if stale
+        if (currentRequestId !== userRequestCounterRef.current) {
+          return;
+        }
         console.error('Error fetching user:', err);
         setError(err instanceof Error ? err.message : 'Failed to load user data');
       } finally {
-        setIsLoading(false);
+        // Only update loading state if this is still the current request
+        if (currentRequestId === userRequestCounterRef.current) {
+          setIsLoading(false);
+        }
       }
     };
 
