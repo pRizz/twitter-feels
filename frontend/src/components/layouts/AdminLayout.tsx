@@ -11,6 +11,8 @@ import {
   AlertTriangle,
   LogOut,
   Loader2,
+  Menu,
+  X,
 } from 'lucide-react';
 
 // Authentication hook that checks session with backend
@@ -55,6 +57,12 @@ export default function AdminLayout() {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Close sidebar when route changes (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   // Show loading spinner while checking auth
   if (isLoading) {
@@ -83,17 +91,64 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-border">
-        <div className="p-4">
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Mobile header with hamburger menu */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border">
+        <Link to="/" className="text-xl font-bold text-primary">
+          Twitter Feels
+        </Link>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 text-muted-foreground hover:text-foreground"
+          aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
+        >
+          {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - hidden on mobile unless toggled, always visible on desktop */}
+      <aside
+        className={`
+          fixed md:static inset-y-0 left-0 z-50
+          w-64 bg-card border-r border-border
+          transform transition-transform duration-200 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0 md:flex md:flex-col
+        `}
+      >
+        <div className="p-4 hidden md:block">
           <Link to="/" className="text-xl font-bold text-primary">
             Twitter Feels
           </Link>
           <p className="text-sm text-muted-foreground">Admin Panel</p>
         </div>
 
-        <nav className="mt-4">
+        {/* Mobile sidebar header */}
+        <div className="p-4 flex items-center justify-between md:hidden border-b border-border">
+          <div>
+            <Link to="/" className="text-xl font-bold text-primary">
+              Twitter Feels
+            </Link>
+            <p className="text-sm text-muted-foreground">Admin Panel</p>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="p-2 text-muted-foreground hover:text-foreground"
+            aria-label="Close menu"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <nav className="mt-4 flex-1">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -113,7 +168,7 @@ export default function AdminLayout() {
           })}
         </nav>
 
-        <div className="absolute bottom-4 left-0 right-0 px-4">
+        <div className="p-4 border-t border-border md:border-t-0 md:absolute md:bottom-4 md:left-0 md:right-0 md:px-4">
           <button
             onClick={handleLogout}
             className="flex items-center space-x-3 px-4 py-3 text-sm text-muted-foreground hover:text-destructive w-full"
@@ -125,7 +180,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
         <Outlet />
       </main>
     </div>

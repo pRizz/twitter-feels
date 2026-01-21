@@ -378,17 +378,23 @@ export default function AdminUsers() {
         </div>
       ) : (
         <div className="bg-card border border-border rounded-lg overflow-hidden">
+          {/* Scroll indicator for mobile */}
+          <div className="md:hidden text-xs text-muted-foreground px-4 py-2 bg-muted/30 flex items-center gap-2">
+            <span>←</span>
+            <span>Swipe to see more columns</span>
+            <span>→</span>
+          </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[700px]">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">User</th>
-                  <th className="text-left px-4 py-3 font-medium">Handle</th>
-                  <th className="text-left px-4 py-3 font-medium">Status</th>
-                  <th className="text-right px-4 py-3 font-medium">Followers</th>
-                  <th className="text-right px-4 py-3 font-medium">Tweets</th>
-                  <th className="text-left px-4 py-3 font-medium">Added</th>
-                  <th className="text-center px-4 py-3 font-medium">Actions</th>
+                  <th className="text-left px-4 py-3 font-medium whitespace-nowrap min-w-[180px]">User</th>
+                  <th className="text-left px-4 py-3 font-medium whitespace-nowrap min-w-[100px]">Handle</th>
+                  <th className="text-left px-4 py-3 font-medium whitespace-nowrap min-w-[80px]">Status</th>
+                  <th className="text-right px-4 py-3 font-medium whitespace-nowrap min-w-[90px]">Followers</th>
+                  <th className="text-right px-4 py-3 font-medium whitespace-nowrap min-w-[70px]">Tweets</th>
+                  <th className="text-left px-4 py-3 font-medium whitespace-nowrap min-w-[100px]">Added</th>
+                  <th className="text-center px-4 py-3 font-medium whitespace-nowrap min-w-[150px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
