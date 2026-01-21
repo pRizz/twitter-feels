@@ -12,6 +12,9 @@ config();
 import publicRoutes from './routes/public.js';
 import adminRoutes from './routes/admin.js';
 
+// Import CSRF middleware
+import { csrfTokenMiddleware, csrfValidationMiddleware, getCsrfToken } from './middleware/csrf.js';
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -59,11 +62,17 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// CSRF token generation middleware (applies to all routes after session)
+app.use(csrfTokenMiddleware);
+
+// Endpoint to get CSRF token for initial SPA load
+app.get('/api/csrf-token', getCsrfToken);
+
 // Public routes (rate limited)
 app.use('/api', publicLimiter, publicRoutes);
 
-// Admin routes (authentication required)
-app.use('/api/admin', adminRoutes);
+// Admin routes (authentication required, CSRF validated)
+app.use('/api/admin', csrfValidationMiddleware, adminRoutes);
 
 // Error handling
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

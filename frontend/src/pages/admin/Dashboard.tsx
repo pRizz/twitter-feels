@@ -1,6 +1,7 @@
 // Admin Dashboard - Overview with crawler status and quick stats
 import { useEffect, useState } from 'react';
 import { Activity, Clock, AlertTriangle, CheckCircle2, Loader2, Play, RefreshCw, RotateCcw } from 'lucide-react';
+import { api } from '@/lib/api';
 
 // Types for crawler status
 interface CrawlerRun {
@@ -341,23 +342,14 @@ export default function AdminDashboard() {
   // Fetch crawler status
   const fetchStatus = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/admin/crawler/status', {
-        credentials: 'include',
-      });
+      const response = await api.get('/api/admin/crawler/status');
 
       if (!response.ok) {
         if (response.status === 401) {
           // Need to login - for now, auto-login
-          await fetch('http://localhost:3001/api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ username: 'admin', password: 'admin' }),
-          });
+          await api.post('/api/admin/login', { username: 'admin', password: 'admin' });
           // Retry
-          const retryResponse = await fetch('http://localhost:3001/api/admin/crawler/status', {
-            credentials: 'include',
-          });
+          const retryResponse = await api.get('/api/admin/crawler/status');
           if (!retryResponse.ok) throw new Error('Failed to fetch status');
           const data = await retryResponse.json();
           setStatus(data);
@@ -380,10 +372,7 @@ export default function AdminDashboard() {
   const triggerCrawler = async () => {
     setIsTriggering(true);
     try {
-      const response = await fetch('http://localhost:3001/api/admin/crawler/trigger', {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const response = await api.post('/api/admin/crawler/trigger');
 
       if (!response.ok) {
         const data = await response.json();
@@ -404,12 +393,7 @@ export default function AdminDashboard() {
     setIsReanalyzing(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:3001/api/admin/reanalyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ all: true }),
-      });
+      const response = await api.post('/api/admin/reanalyze', { all: true });
 
       if (!response.ok) {
         const data = await response.json();

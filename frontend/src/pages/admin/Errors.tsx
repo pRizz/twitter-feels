@@ -14,6 +14,7 @@ import {
   Activity,
   AlertCircle,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 // Type definitions
 interface ApiError {
@@ -425,25 +426,14 @@ export default function AdminErrors() {
     try {
       setLoading(true);
       const typeParam = type !== 'all' ? `&type=${type}` : '';
-      const response = await fetch(
-        `http://localhost:3001/api/admin/errors?page=${page}&limit=20${typeParam}`,
-        { credentials: 'include' }
-      );
+      const response = await api.get(`/api/admin/errors?page=${page}&limit=20${typeParam}`);
 
       if (!response.ok) {
         if (response.status === 401) {
           // Auto-login for development
-          await fetch('http://localhost:3001/api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ username: 'admin', password: 'admin' }),
-          });
+          await api.post('/api/admin/login', { username: 'admin', password: 'admin' });
           // Retry
-          const retryResponse = await fetch(
-            `http://localhost:3001/api/admin/errors?page=${page}&limit=20${typeParam}`,
-            { credentials: 'include' }
-          );
+          const retryResponse = await api.get(`/api/admin/errors?page=${page}&limit=20${typeParam}`);
           if (!retryResponse.ok) throw new Error('Failed to fetch errors');
           const data = await retryResponse.json();
           setErrors(data.errors);
@@ -467,23 +457,14 @@ export default function AdminErrors() {
   // Fetch error stats
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/admin/errors/stats', {
-        credentials: 'include',
-      });
+      const response = await api.get('/api/admin/errors/stats');
 
       if (!response.ok) {
         if (response.status === 401) {
           // Auto-login for development
-          await fetch('http://localhost:3001/api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ username: 'admin', password: 'admin' }),
-          });
+          await api.post('/api/admin/login', { username: 'admin', password: 'admin' });
           // Retry
-          const retryResponse = await fetch('http://localhost:3001/api/admin/errors/stats', {
-            credentials: 'include',
-          });
+          const retryResponse = await api.get('/api/admin/errors/stats');
           if (!retryResponse.ok) throw new Error('Failed to fetch stats');
           const data = await retryResponse.json();
           setStats(data);

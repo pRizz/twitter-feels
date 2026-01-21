@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/useToast';
+import { api } from '@/lib/api';
 
 interface TrackedUser {
   id: number;
@@ -66,9 +67,7 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/admin/users', {
-        credentials: 'include',
-      });
+      const response = await api.get('/api/admin/users');
 
       if (response.status === 401) {
         navigate('/admin/login');
@@ -106,14 +105,9 @@ export default function AdminUsers() {
 
     setAdding(true);
     try {
-      const response = await fetch('http://localhost:3001/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          handle: newHandle.trim(),
-          displayName: newDisplayName.trim() || undefined,
-        }),
+      const response = await api.post('/api/admin/users', {
+        handle: newHandle.trim(),
+        displayName: newDisplayName.trim() || undefined,
       });
 
       if (response.status === 401) {
@@ -153,11 +147,8 @@ export default function AdminUsers() {
 
   const handleToggleActive = async (user: TrackedUser) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/users/${user.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ isActive: !user.isActive }),
+      const response = await api.put(`/api/admin/users/${user.id}`, {
+        isActive: !user.isActive,
       });
 
       if (response.status === 401) {
@@ -187,10 +178,7 @@ export default function AdminUsers() {
     setDeletingUserId(userId);
 
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
+      const response = await api.delete(`/api/admin/users/${userId}`);
 
       if (response.status === 401) {
         navigate('/admin/login');

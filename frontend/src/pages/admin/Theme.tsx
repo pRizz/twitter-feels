@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/useToast';
+import { api } from '@/lib/api';
 
 // Types
 interface EmotionConfig {
@@ -58,9 +59,7 @@ export default function AdminTheme() {
 
   const fetchThemeSettings = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/admin/theme', {
-        credentials: 'include',
-      });
+      const response = await api.get('/api/admin/theme');
 
       if (response.status === 401) {
         navigate('/admin/login');
@@ -110,12 +109,7 @@ export default function AdminTheme() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/theme', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ emotions }),
-      });
+      const response = await api.put('/api/admin/theme', { emotions });
 
       if (response.status === 401) {
         navigate('/admin/login');
@@ -139,12 +133,7 @@ export default function AdminTheme() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/theme', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ gauges }),
-      });
+      const response = await api.put('/api/admin/theme', { gauges });
 
       if (response.status === 401) {
         navigate('/admin/login');

@@ -1,6 +1,7 @@
 // Admin Login page
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api, fetchCsrfToken } from '@/lib/api';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -8,6 +9,11 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Fetch CSRF token on page load
+  useEffect(() => {
+    fetchCsrfToken();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,12 +32,7 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ username, password }),
-      });
+      const response = await api.post('/api/admin/login', { username, password });
 
       if (!response.ok) {
         const data = await response.json();

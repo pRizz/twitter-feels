@@ -12,6 +12,7 @@ import {
   Clock,
   AlertCircle,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 interface InstalledModel {
   id: number;
@@ -127,10 +128,7 @@ export default function AdminModels() {
         if (progress.status === 'complete') continue;
 
         try {
-          const response = await fetch(
-            `http://localhost:3001/api/admin/models/download/progress/${modelId}`,
-            { credentials: 'include' }
-          );
+          const response = await api.get(`/api/admin/models/download/progress/${modelId}`);
 
           if (response.ok) {
             const data = await response.json();
@@ -176,9 +174,7 @@ export default function AdminModels() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('http://localhost:3001/api/admin/models', {
-        credentials: 'include',
-      });
+      const response = await api.get('/api/admin/models');
 
       if (!response.ok) {
         throw new Error('Failed to fetch models');
@@ -197,11 +193,8 @@ export default function AdminModels() {
     setDownloadingModels((prev) => new Set(prev).add(huggingfaceId));
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/models/download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ modelId: huggingfaceId }),
+      const response = await api.post('/api/admin/models/download', {
+        modelId: huggingfaceId,
       });
 
       if (!response.ok) {
@@ -239,11 +232,8 @@ export default function AdminModels() {
 
   const handleToggleEnabled = async (modelId: number, currentEnabled: boolean) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/models/${modelId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ enabled: !currentEnabled }),
+      const response = await api.put(`/api/admin/models/${modelId}`, {
+        enabled: !currentEnabled,
       });
 
       if (!response.ok) {

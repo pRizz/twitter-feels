@@ -14,6 +14,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
+import { api, fetchCsrfToken } from '@/lib/api';
 
 // Authentication hook that checks session with backend
 const useAuth = () => {
@@ -23,9 +24,10 @@ const useAuth = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/admin/me', {
-          credentials: 'include',
-        });
+        // Fetch CSRF token first to ensure we have one for authenticated requests
+        await fetchCsrfToken();
+
+        const response = await api.get('/api/admin/me');
         if (response.ok) {
           setIsAuthenticated(true);
         } else {
@@ -80,10 +82,7 @@ export default function AdminLayout() {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:3001/api/admin/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
+      await api.post('/api/admin/logout');
     } catch {
       // Ignore errors, still redirect to login
     }

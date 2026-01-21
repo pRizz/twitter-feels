@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
+import { api } from '@/lib/api';
 
 interface CrawlerSettings {
   intervalHours: number;
@@ -115,9 +116,7 @@ function BackupOperations({ onBackupComplete }: { onBackupComplete: () => void }
   // Fetch backup status
   const fetchBackupStatus = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/admin/backup/status', {
-        credentials: 'include',
-      });
+      const response = await api.get('/api/admin/backup/status');
 
       if (response.status === 401) {
         navigate('/admin/login');
@@ -153,10 +152,7 @@ function BackupOperations({ onBackupComplete }: { onBackupComplete: () => void }
   const handleTriggerBackup = async () => {
     setTriggering(true);
     try {
-      const response = await fetch('http://localhost:3001/api/admin/backup/trigger', {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const response = await api.post('/api/admin/backup/trigger');
 
       if (response.status === 401) {
         navigate('/admin/login');
@@ -185,11 +181,8 @@ function BackupOperations({ onBackupComplete }: { onBackupComplete: () => void }
 
     setRestoring(true);
     try {
-      const response = await fetch('http://localhost:3001/api/admin/backup/restore', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ backupId: selectedBackupId }),
+      const response = await api.post('/api/admin/backup/restore', {
+        backupId: selectedBackupId,
       });
 
       if (response.status === 401) {
@@ -497,9 +490,7 @@ export default function AdminSettings() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/admin/settings', {
-        credentials: 'include',
-      });
+      const response = await api.get('/api/admin/settings');
 
       if (response.status === 401) {
         navigate('/admin/login');
@@ -724,12 +715,7 @@ export default function AdminSettings() {
     setPasswordSaving(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/change-password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(passwordForm),
-      });
+      const response = await api.put('/api/admin/change-password', passwordForm);
 
       if (response.status === 401) {
         navigate('/admin/login');
@@ -770,12 +756,7 @@ export default function AdminSettings() {
     setSaving(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ crawler: crawlerForm }),
-      });
+      const response = await api.put('/api/admin/settings', { crawler: crawlerForm });
 
       if (response.status === 401) {
         navigate('/admin/login');
@@ -822,12 +803,7 @@ export default function AdminSettings() {
         },
       };
 
-      const response = await fetch('http://localhost:3001/api/admin/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
+      const response = await api.put('/api/admin/settings', payload);
 
       if (response.status === 401) {
         navigate('/admin/login');
@@ -1392,9 +1368,7 @@ export default function AdminSettings() {
             <button
               onClick={async () => {
                 try {
-                  const response = await fetch('http://localhost:3001/api/admin/config/export', {
-                    credentials: 'include',
-                  });
+                  const response = await api.get('/api/admin/config/export');
 
                   if (response.status === 401) {
                     navigate('/admin/login');
@@ -1459,12 +1433,7 @@ export default function AdminSettings() {
                     }
 
                     // Send to backend
-                    const response = await fetch('http://localhost:3001/api/admin/config/import', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      credentials: 'include',
-                      body: JSON.stringify(configData),
-                    });
+                    const response = await api.post('/api/admin/config/import', configData);
 
                     if (response.status === 401) {
                       navigate('/admin/login');
