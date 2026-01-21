@@ -13,6 +13,8 @@ export default function AdminLogin() {
 
   // Get the return URL from query params (set by AdminLayout when redirecting to login)
   const returnTo = searchParams.get('returnTo');
+  // Check if session expired (set by AdminLayout when session times out)
+  const sessionExpired = searchParams.get('sessionExpired') === 'true';
 
   // Fetch CSRF token on page load
   useEffect(() => {
@@ -65,6 +67,11 @@ export default function AdminLogin() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {sessionExpired && (
+            <div role="alert" className="p-3 bg-warning/10 text-warning border border-warning/20 rounded-md text-sm">
+              Your session has expired. Please log in again.
+            </div>
+          )}
           {error && (
             <div role="alert" className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
               {error}

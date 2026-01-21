@@ -62,14 +62,46 @@ declare module 'express-session' {
   interface SessionData {
     adminId?: number;
     adminUsername?: string;
+    sessionCreatedAt?: string; // ISO timestamp when session was created
   }
 }
+
+// Helper to get session timeout in milliseconds
+// Supports SESSION_TIMEOUT_SECONDS for testing (takes priority) or SESSION_TIMEOUT_HOURS for production
+const getSessionTimeoutMs = (): number => {
+  // For testing: allow seconds-based timeout
+  if (process.env.SESSION_TIMEOUT_SECONDS) {
+    return parseInt(process.env.SESSION_TIMEOUT_SECONDS, 10) * 1000;
+  }
+  // Default: hours-based timeout
+  const sessionTimeoutHours = parseInt(process.env.SESSION_TIMEOUT_HOURS || '24', 10);
+  return sessionTimeoutHours * 60 * 60 * 1000;
+};
 
 // Authentication middleware
 const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   if (!req.session.adminId) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return res.status(401).json({ error: 'Authentication required', sessionExpired: false });
   }
+
+  // Check if session has expired
+  const sessionTimeoutMs = getSessionTimeoutMs();
+  const sessionCreatedAt = req.session.sessionCreatedAt ? new Date(req.session.sessionCreatedAt) : null;
+
+  if (sessionCreatedAt) {
+    const sessionAgeMs = Date.now() - sessionCreatedAt.getTime();
+
+    if (sessionAgeMs > sessionTimeoutMs) {
+      // Session has expired
+      req.session.destroy(() => {});
+      return res.status(401).json({
+        error: 'Session expired',
+        sessionExpired: true,
+        message: 'Your session has expired. Please log in again.'
+      });
+    }
+  }
+
   next();
 };
 
@@ -111,6 +143,7 @@ router.post('/login', (req, res) => {
     // Authentication successful
     req.session.adminId = admin.id;
     req.session.adminUsername = admin.username;
+    req.session.sessionCreatedAt = new Date().toISOString(); // Track session creation time
 
     // Update last login timestamp
     db.prepare('UPDATE admin_users SET last_login_at = datetime(\'now\') WHERE id = ?').run(admin.id);
@@ -135,12 +168,31 @@ router.post('/logout', (req, res) => {
 // GET /api/admin/me - Check authentication status (no auth required)
 router.get('/me', (req, res) => {
   if (req.session.adminId) {
+    // Check if session has expired
+    const sessionTimeoutMs = getSessionTimeoutMs();
+    const sessionCreatedAt = req.session.sessionCreatedAt ? new Date(req.session.sessionCreatedAt) : null;
+
+    if (sessionCreatedAt) {
+      const sessionAgeMs = Date.now() - sessionCreatedAt.getTime();
+
+      if (sessionAgeMs > sessionTimeoutMs) {
+        // Session has expired
+        req.session.destroy(() => {});
+        return res.status(401).json({
+          authenticated: false,
+          sessionExpired: true,
+          message: 'Your session has expired. Please log in again.'
+        });
+      }
+    }
+
     res.json({
       authenticated: true,
       username: req.session.adminUsername,
+      sessionCreatedAt: req.session.sessionCreatedAt,
     });
   } else {
-    res.status(401).json({ authenticated: false });
+    res.status(401).json({ authenticated: false, sessionExpired: false });
   }
 });
 

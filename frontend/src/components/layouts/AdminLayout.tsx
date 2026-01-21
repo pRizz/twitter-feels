@@ -20,6 +20,7 @@ import { api, fetchCsrfToken } from '@/lib/api';
 const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -30,7 +31,11 @@ const useAuth = () => {
         const response = await api.get('/api/admin/me');
         if (response.ok) {
           setIsAuthenticated(true);
+          setSessionExpired(false);
         } else {
+          // Check if session expired
+          const data = await response.json();
+          setSessionExpired(data.sessionExpired === true);
           setIsAuthenticated(false);
         }
       } catch {
@@ -43,7 +48,7 @@ const useAuth = () => {
     checkAuth();
   }, []);
 
-  return { isAuthenticated, isLoading };
+  return { isAuthenticated, isLoading, sessionExpired };
 };
 
 const navItems = [
@@ -56,7 +61,7 @@ const navItems = [
 ];
 
 export default function AdminLayout() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, sessionExpired } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -79,7 +84,9 @@ export default function AdminLayout() {
   if (!isAuthenticated) {
     // Encode the current path so user can be redirected back after login
     const returnTo = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/admin/login?returnTo=${returnTo}`} replace />;
+    // Add sessionExpired query param if session has expired
+    const expiredParam = sessionExpired ? '&sessionExpired=true' : '';
+    return <Navigate to={`/admin/login?returnTo=${returnTo}${expiredParam}`} replace />;
   }
 
   const handleLogout = async () => {
