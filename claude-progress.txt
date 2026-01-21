@@ -14004,3 +14004,103 @@ Only Vite dev server HMR/WebSocket errors (dev server issues, not application er
 - Feature #231 marked as passing
 
 [Testing] Session complete - verified feature #231 (Crawler completion notification) - PASSING
+
+
+---
+
+## Testing Session - Feature #134 Regression Test - 2026-01-21
+
+### Feature #134: Reset button returns to defaults (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: K-Defaults
+- **Description**: Reset functionality restores default values
+
+### Verification Steps Completed:
+
+1. **Navigate to admin settings** ✅
+   - Logged in to admin panel at /admin/login
+   - Navigated to Settings page at /admin/settings
+
+2. **Change some values** ✅
+   - Changed Crawl Interval: 6 → 24
+   - Changed History Depth: 180 → 365
+   - Changed Rate Limit: 450 → 100
+
+3. **Click reset button** ✅
+   - Clicked 'Reset to Defaults' button for Crawler Settings
+
+4. **Verify values return to defaults** ✅
+   - Crawl Interval: 24 → 1 (matches default)
+   - History Depth: 365 → 90 (matches default)
+   - Rate Limit: 100 → 450 (matches default)
+
+### Default Values Confirmed (from code):
+- Crawl Interval: 1 hour
+- History Depth: 90 days
+- Rate Limit: 450 per 15 min
+
+### Screenshots:
+- .playwright-mcp/feature134-settings-initial.png - Initial settings
+- .playwright-mcp/feature134-values-changed.png - After changing values
+- .playwright-mcp/feature134-after-reset.png - After clicking Reset to Defaults
+
+### Console Errors: Only Vite HMR connection errors (development-only, unrelated)
+
+### Result:
+- No regression detected
+- Feature #134 still working correctly
+- Reset button correctly restores default values
+
+[Testing] Session complete - verified feature #134 (Reset button returns to defaults) - still passing
+
+
+---
+
+## Session - Feature #232 - 2026-01-21
+
+### Feature #232: All-time filter shows all data (COMPLETED)
+- **Status**: PASSING
+- **Category**: Q-Temporal
+- **Description**: All-time option shows complete history
+
+### Verification Steps Completed:
+
+1. **Select all-time filter** ✅
+   - Clicked "All Time" button on dashboard
+   - Button becomes active (highlighted in cyan)
+   - URL changes to `?period=all_time`
+
+2. **Verify no date restrictions** ✅
+   - All Time filter shows NO date range displayed
+   - Weekly filter shows "(Jan 14, 2026 - Jan 21, 2026)" for comparison
+   - API confirms `timeCutoff: null` for all_time (no cutoff)
+
+3. **Verify all historical data included** ✅
+   - Created verification script (verify-all-time-filter.js)
+   - API verification shows:
+     - All Time: `filteredAnalysisCount: 804` / `totalAnalyses: 804` (100%)
+     - Weekly: `filteredAnalysisCount: 204` / `totalAnalyses: 804` (25%)
+     - Monthly: `filteredAnalysisCount: 798` / `totalAnalyses: 804` (99%)
+   - All Time includes all data without any time-based filtering
+
+### Technical Details:
+- Backend implementation in `/backend/src/routes/public.ts`
+- `getTimeBucketCutoff()` function returns `null` for all_time
+- Query parameter: `timeBucket` (not `period` - UI uses period in URL)
+- No SQL WHERE clause applied when `timeCutoff` is null
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature232-all-time-filter.png - All Time selected
+- .playwright-mcp/.playwright-mcp/feature232-all-time-no-date-restriction.png - Full page showing no date range
+- .playwright-mcp/.playwright-mcp/feature232-weekly-with-date-restriction.png - Weekly with date range for comparison
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 172/235 (~73.2%)
+- Feature #232 marked as passing
+
+[Testing] Session complete - verified feature #232 (All-time filter shows all data) - PASSING
+
