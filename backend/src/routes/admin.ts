@@ -332,6 +332,8 @@ function generateMockTweetsForUser(userId: number, username: string): number {
     `Dealing with some frustrating issues today. Tech problems never end! 😤`,
     `Grateful for this incredible journey. Here's to the next chapter!`,
     `Big announcement coming soon. Stay tuned! 🎉`,
+    // XSS test content - should be displayed escaped, not executed
+    `Check out this cool trick! <script>alert('XSS_TEST_FEATURE_213')</script> Pretty amazing right? <img src=x onerror="alert('XSS2')"> Also try <a href="javascript:alert('XSS3')">click here</a>`,
   ];
 
   const insertTweet = db.prepare(`
@@ -352,8 +354,12 @@ function generateMockTweetsForUser(userId: number, username: string): number {
   let tweetsCreated = 0;
   const numTweets = Math.floor(Math.random() * 5) + 3; // 3-7 tweets per user
 
+  // XSS test content - index 10 in the array
+  const xssTestIndex = 10;
+
   for (let i = 0; i < numTweets; i++) {
-    const tweetContent = sampleTweetContents[Math.floor(Math.random() * sampleTweetContents.length)];
+    // Always include the XSS test tweet as the first tweet for testing purposes
+    const tweetContent = i === 0 ? sampleTweetContents[xssTestIndex] : sampleTweetContents[Math.floor(Math.random() * sampleTweetContents.length)];
     const tweetId = `mock_${username}_${Date.now()}_${i}`;
     const daysAgo = Math.floor(Math.random() * 30);
     const tweetTimestamp = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString();
