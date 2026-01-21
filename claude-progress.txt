@@ -17070,3 +17070,175 @@ Added confirmation dialog to the Force Re-Analyze functionality in the admin das
 - Feature #21 marked as passing
 
 [Testing] Session complete - verified feature #21 (Rate limiting protects public API) - PASSING
+
+
+---
+
+## Session - Feature #131 Regression Test - 2026-01-21
+
+### Feature #131: Disabling model preserves data (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: J-Cleanup
+- **Description**: Disabling LLM model keeps historical analyses
+
+### Verification Steps Completed:
+
+1. **Disable an LLM model** ✅
+   - Navigated to Admin > LLM Models
+   - Clicked 'Enabled' button on BERTweet Sentiment Analysis
+   - Button changed to 'Disabled'
+   - Screenshot: feature131-models-after-disable.png
+
+2. **Query database for analyses by that model** ✅
+   - Before disable: Model #12 had 68 analyses
+   - After disable: Model #12 still has 68 analyses
+   - Used check-models.cjs script to verify
+
+3. **Verify analyses still exist** ✅
+   - Analysis count remained 68 throughout disable/enable cycle
+   - No data was deleted when model was disabled
+   - Foreign key constraint without CASCADE preserved data
+
+4. **Verify model just hidden from new analysis** ✅
+   - Navigated to public dashboard
+   - Opened Model dropdown
+   - Confirmed 'BERTweet Sentiment Analysis' NOT in dropdown
+   - Other enabled models all visible in dropdown
+   - Screenshot: feature131-model-hidden-from-dropdown.png
+
+### Screenshots:
+- .playwright-mcp/feature131-models-before-disable.png - All models enabled
+- .playwright-mcp/feature131-models-after-disable.png - BERTweet disabled
+- .playwright-mcp/feature131-model-hidden-from-dropdown.png - Model hidden from dropdown
+
+### Console Errors: 401 on login attempt (expected for auth testing)
+
+### Code Changes: NONE (regression test only - feature working correctly)
+
+### Current Progress:
+- Features passing: 200/235 (~85.1%)
+- Feature #131 confirmed still PASSING
+
+[Testing] Session complete - verified feature #131 (Disabling model preserves data) - PASSING
+
+
+---
+
+## Session - Feature #115 Regression Test - 2026-01-21
+
+### Feature #115: Unsaved admin form shows warning (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: G-State
+- **Description**: Navigating away from dirty form warns user
+
+### Verification Steps Completed:
+
+1. **Log in as admin** ✅
+   - Logged in with username "admin" at /admin/login
+   - Successfully redirected to Admin Dashboard
+
+2. **Navigate to settings** ✅
+   - Clicked "Settings" link in sidebar
+   - Settings page loaded with Crawler Settings, S3 Backup Settings, etc.
+
+3. **Make changes to a field** ✅
+   - Changed "Crawl Interval (hours)" from 1 to 2
+   - Form entered "dirty" state (unsaved changes)
+
+4. **Attempt to navigate away** ✅
+   - Clicked "Dashboard" link in sidebar
+   - Navigation was intercepted
+
+5. **Verify warning dialog appears** ✅
+   - Modal dialog appeared with title "Unsaved Changes"
+   - Message: "You have unsaved changes to your settings. If you leave this page, your changes will be lost."
+   - Two buttons: "Stay on Page" and "Leave Page"
+
+### Additional Verification:
+- **Stay on Page button**: Closes dialog, keeps user on settings page with changes intact
+- **Leave Page button**: Shows browser beforeunload confirmation, then navigates away
+- Dialog has warning icon and proper styling
+
+### Screenshots:
+- .playwright-mcp/feature115-unsaved-warning-dialog.png - Warning dialog visible
+
+### Console Errors: Only 401 from initial failed login attempt (expected - wrong password tested first)
+
+### Code Changes: NONE (regression test only - feature working correctly)
+
+### Current Progress:
+- Features passing: 202/235 (~86.0%)
+- Feature #115 confirmed still PASSING
+
+[Testing] Session complete - verified feature #115 (Unsaved admin form shows warning) - PASSING
+
+
+---
+
+## Session - Feature #18 - 2026-01-21
+
+### Feature #18: Invalid login credentials are rejected (FIXED AND VERIFIED)
+- **Status**: PASSING
+- **Category**: A-Security
+- **Description**: Login fails with incorrect credentials
+
+### Problem Found:
+The admin login endpoint had a placeholder implementation that accepted ANY username/password combination without validation. This was a critical security issue.
+
+### Fix Implemented:
+Updated backend/src/routes/admin.ts to properly validate credentials:
+1. Look up admin user by username in admin_users table
+2. Validate password hash matches stored hash
+3. Return 401 with generic error message for failed attempts
+4. Prevent username enumeration with consistent error message
+5. Update last_login_at on successful login
+
+### Verification Steps Completed:
+
+1. Navigate to /admin login page - PASSED
+   - Navigated to http://localhost:5173/admin/login
+   - Login form displayed correctly
+
+2. Enter invalid username or password - PASSED
+   - Tested with wronguser/wrongpassword
+   - Tested with admin/wrongpassword (correct username, wrong password)
+   - Tested with hacker/password123
+
+3. Click login button - PASSED
+   - Clicked Log In button for each test case
+
+4. Verify error message is displayed - PASSED
+   - Error alert Invalid username or password displayed
+   - Generic message prevents username enumeration
+
+5. Verify no session is created - PASSED
+   - After failed login, navigating to /admin redirects to /admin/login
+   - No admin content visible without authentication
+
+6. Verify user remains on login page - PASSED
+   - URL remains at /admin/login after failed attempts
+   - Form fields retain entered values
+
+### Also Verified:
+- Valid credentials (admin/admin) still work correctly
+- User is redirected to admin dashboard after successful login
+- Logout works properly
+
+### Screenshots:
+- .playwright-mcp/feature18-step1-fresh-login-page.png
+- .playwright-mcp/feature18-step2-invalid-creds-entered.png
+- .playwright-mcp/feature18-step3-error-message-displayed.png
+- .playwright-mcp/feature18-step4-correct-username-wrong-password.png
+- .playwright-mcp/feature18-step5-valid-login-success.png
+- .playwright-mcp/feature18-final-verification.png
+
+### Code Changes:
+- backend/src/routes/admin.ts - Fixed login endpoint to validate credentials
+
+### Console Errors: NONE (401 responses are expected for invalid credentials)
+
+### Current Progress:
+- Features passing: 200/235 (about 85%)
+- Feature #18 marked as passing
+
+Session complete - implemented and verified feature #18 - PASSING
