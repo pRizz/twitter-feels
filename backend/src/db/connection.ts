@@ -20,4 +20,19 @@ const db: Database.Database = new Database(DB_PATH);
 db.pragma('foreign_keys = ON');
 db.pragma('journal_mode = WAL');
 
+// Run migrations
+function runMigrations() {
+  // Migration: Add download_progress column to llm_models
+  const columns = db
+    .prepare("PRAGMA table_info(llm_models)")
+    .all() as Array<{ name: string }>;
+  const hasDownloadProgress = columns.some((col) => col.name === 'download_progress');
+  if (!hasDownloadProgress) {
+    db.prepare("ALTER TABLE llm_models ADD COLUMN download_progress INTEGER DEFAULT 0").run();
+    console.log('Migration: Added download_progress column to llm_models');
+  }
+}
+
+runMigrations();
+
 export default db;

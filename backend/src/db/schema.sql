@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS llm_models (
     is_local INTEGER DEFAULT 1,
     is_enabled INTEGER DEFAULT 0,
     download_status TEXT DEFAULT 'not_downloaded', -- not_downloaded, downloading, ready, error
+    download_progress INTEGER DEFAULT 0, -- 0-100 percentage
     disk_size_bytes INTEGER,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))

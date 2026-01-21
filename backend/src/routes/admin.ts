@@ -30,6 +30,20 @@ interface LLMModel {
   updated_at: string;
 }
 
+// In-memory store for download progress (keyed by model ID)
+interface DownloadProgress {
+  modelId: number;
+  huggingfaceId: string;
+  progress: number; // 0-100
+  bytesDownloaded: number;
+  totalBytes: number;
+  status: 'downloading' | 'complete' | 'error';
+  startedAt: Date;
+  error?: string;
+}
+
+const downloadProgressStore = new Map<number, DownloadProgress>();
+
 interface AvailableModel {
   id: string;
   name: string;
@@ -847,6 +861,55 @@ router.get('/models', (_req, res) => {
   res.json({
     installed,
     available: availableFiltered,
+  });
+});
+
+// GET /api/admin/models/download/progress/:id - Get download progress for a model
+router.get('/models/download/progress/:id', (req, res) => {
+  const modelId = parseInt(req.params.id, 10);
+
+  if (isNaN(modelId)) {
+    return res.status(400).json({ error: 'Invalid model ID' });
+  }
+
+  const progress = downloadProgressStore.get(modelId);
+
+  if (!progress) {
+    // Check if model exists and is ready
+    const model = db.prepare('SELECT id, download_status FROM llm_models WHERE id = ?').get(modelId) as { id: number; download_status: string } | undefined;
+
+    if (!model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+
+    if (model.download_status === 'ready') {
+      return res.json({
+        modelId,
+        progress: 100,
+        status: 'complete',
+        bytesDownloaded: 0,
+        totalBytes: 0,
+      });
+    }
+
+    return res.json({
+      modelId,
+      progress: 0,
+      status: model.download_status,
+      bytesDownloaded: 0,
+      totalBytes: 0,
+    });
+  }
+
+  res.json({
+    modelId: progress.modelId,
+    huggingfaceId: progress.huggingfaceId,
+    progress: progress.progress,
+    bytesDownloaded: progress.bytesDownloaded,
+    totalBytes: progress.totalBytes,
+    status: progress.status,
+    startedAt: progress.startedAt.toISOString(),
+    error: progress.error,
   });
 });
 
