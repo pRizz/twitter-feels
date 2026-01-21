@@ -7887,3 +7887,72 @@ Note: Users.tsx already had `role="alert"` from a previous commit (704bb46)
 - All date formatting uses JavaScript's locale-aware Date methods with 'en-US' locale
 - Consistent 12-hour time format throughout the application
 - Relative times ("X hours ago") provide additional context in admin pages
+
+---
+
+## Regression Test Session - Feature #2 - 2026-01-21
+
+### Feature #2: API server responds to health check (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: Foundation
+- **Description**: Backend API server is running and responds to requests
+
+### Verification Steps Completed:
+
+1. **Send GET request to /api/health or root endpoint** ✅
+   - Sent GET request to http://localhost:3001/api/health
+   - Response received successfully
+
+2. **Verify response status is 200** ✅
+   - HTTP status code: 200
+
+3. **Verify response contains expected data structure** ✅
+   - Response: {"status":"ok","timestamp":"2026-01-21T13:34:10.095Z"}
+   - Contains status field with value "ok"
+   - Contains timestamp field with ISO 8601 formatted date
+
+### Additional Verification:
+- Frontend application loads successfully and communicates with API
+- Dashboard displays real data from the API (users, tweets, sentiment analyses)
+- No console errors detected
+
+### Screenshot:
+- .playwright-mcp/feature2-api-health-check.png - Dashboard showing successful API communication
+
+### Result:
+- No regression detected - Feature #2 still working correctly
+
+[Testing] Session complete - verified feature #2 (API server responds to health check) - still passing
+
+
+---
+
+## Feature #172 - Color Contrast Meets Standards (COMPLETED)
+**Date**: 2026-01-21 07:35
+**Status**: PASSING
+
+### Description
+Ensure all text has sufficient contrast ratio meeting WCAG AA standards (4.5:1 minimum).
+
+### Changes Made
+1. **Light Mode Primary Color**: Changed `--primary` from `187 100% 42%` to `187 100% 28%` (darker teal)
+2. **Success Color**: Made theme-aware via CSS variable
+   - Light mode: `142 76% 30%` (darker green, 4.61:1 contrast)
+   - Dark mode: `142 71% 45%` (brighter green for dark backgrounds)
+3. **Primary Violet Color**: Made theme-aware via CSS variable
+   - Light mode: `263 70% 58%` (violet-600, 5.70:1 contrast on white)
+   - Dark mode: `263 70% 76%` (violet-400, 6.57:1+ contrast on dark)
+
+### Files Modified
+- `frontend/src/index.css` - Added CSS variables for success and primary-violet colors
+- `frontend/tailwind.config.js` - Updated to use CSS variables instead of hardcoded colors
+
+### Verification
+- Tested all pages in both light and dark themes
+- Used automated contrast ratio calculation (relative luminance formula)
+- All text elements now meet WCAG AA 4.5:1 minimum contrast ratio
+
+### Screenshots
+- `.playwright-mcp/contrast-light-mode.png` - Light theme verification
+- `.playwright-mcp/contrast-dark-mode.png` - Dark theme verification
+
