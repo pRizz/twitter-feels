@@ -14476,3 +14476,120 @@ This session was assigned to work on Feature #221, but the feature was already m
 [Testing] Session complete - Feature #221 (Time series data for charts accurate) - already PASSING, regression test confirmed
 
 
+---
+
+## Testing Session - Feature #161 Regression Test - 2026-01-21
+
+### Feature #161: Notifications don't overlap (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: N-Feedback
+- **Description**: Multiple notifications stack properly
+
+### Verification Steps Completed:
+
+1. **Trigger multiple success actions quickly** ✅
+   - Used JavaScript to programmatically click 3 buttons simultaneously:
+     - Save Crawler Settings
+     - Save Backup Settings
+     - Export Configuration
+   - All 3 buttons clicked in synchronous sequence
+
+2. **Verify notifications don't overlap** ✅
+   - Measured actual pixel positions using getBoundingClientRect():
+     - Toast 0: top=16px, bottom=78px (height: 62px)
+     - Toast 1: top=86px, bottom=148px (height: 62px) - 8px gap
+     - Toast 2: top=156px, bottom=218px (height: 62px) - 8px gap
+   - Zero overlaps detected (gap between each toast = 8px)
+
+3. **Verify all are readable** ✅
+   - Each toast has 62px height (well above 40px minimum for readability)
+   - Text content clearly visible:
+     - "S3 backup settings saved successfully!"
+     - "Crawler settings saved successfully!"
+     - "Configuration exported successfully!"
+
+### Technical Verification:
+- Toast container uses flex-col layout with proper stacking
+- Each ToastItem has marginBottom: 8px for spacing
+- Toasts are added to beginning of array (newest first)
+- Auto-dismiss after 5 seconds (configurable)
+
+### Screenshots:
+- .playwright-mcp/feature161-stacked-toasts-verified.png - Settings page
+
+### Console Errors:
+- Only 401 errors from initial page load before login (unrelated to feature)
+
+### Result:
+- No regression detected
+- Feature #161 still working correctly
+- Notifications stack vertically without overlapping
+
+[Testing] Session complete - verified feature #161 (Notifications don't overlap) - still passing
+
+
+
+
+---
+
+## Session - Feature #3 Regression Test - 2026-01-21
+
+### Feature #3: Database connection works (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: Foundation
+- **Description**: SQLite database is accessible and properly initialized
+
+### Verification Steps Completed:
+
+1. **Verify database file exists** ✅
+   - Path: /Users/peterryszkiewicz/Repos/twitter-feels/backend/data/twitter_feels.db
+   - Size: 401,408 bytes
+   - WAL file present with active writes
+
+2. **Verify all required tables are created** ✅
+   - Found 11 tables:
+     - admin_users (1 row)
+     - api_errors (9 rows)
+     - configurations (4 rows)
+     - crawler_runs (38 rows)
+     - global_aggregations (0 rows)
+     - llm_models (8 rows)
+     - sentiment_analyses (804 rows)
+     - sqlite_sequence (8 rows)
+     - tweets (319 rows)
+     - twitter_users (5 rows)
+     - user_aggregations (0 rows)
+
+3. **Verify indexes are properly set up** ✅
+   - Found 9 indexes:
+     - idx_api_errors_time (on api_errors)
+     - idx_api_errors_type (on api_errors)
+     - idx_global_agg_bucket (on global_aggregations)
+     - idx_sentiment_model (on sentiment_analyses)
+     - idx_sentiment_tweet (on sentiment_analyses)
+     - idx_tweets_timestamp (on tweets)
+     - idx_tweets_user_id (on tweets)
+     - idx_user_agg_bucket (on user_aggregations)
+     - idx_user_agg_user (on user_aggregations)
+
+### Additional Verifications:
+- API Health Check: GET /api/health returns 200 OK
+- API Users: GET /api/users returns 5 users with profile data
+- API Models: GET /api/models returns 8 LLM models
+- Dashboard UI: Loads correctly with data from database
+- Stats shown: 5 users, 319 tweets, 804 analyses
+- Emotion gauges populated with real sentiment values
+
+### Screenshot:
+- .playwright-mcp/feature3-database-verification.png - Dashboard showing database data
+
+### Console Errors: NONE
+
+### Code Changes: NONE (regression test only)
+
+### Current Progress:
+- Features passing: 178/235 (~75.7%)
+- Feature #3 confirmed still PASSING
+
+[Testing] Session complete - verified feature #3 (Database connection works) - PASSING
+

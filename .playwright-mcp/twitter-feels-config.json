@@ -1,14 +1,14 @@
 {
-  "exportedAt": "2026-01-21T14:05:15.002Z",
+  "exportedAt": "2026-01-21T15:16:17.394Z",
   "version": "1.0",
   "crawler": {
-    "intervalHours": 6,
-    "historyDepthDays": 180,
+    "intervalHours": 1,
+    "historyDepthDays": 90,
     "rateLimitPer15Min": 450
   },
   "emotions": {
     "happy": {
-      "color": "#00ff00"
+      "color": "#ffd700"
     },
     "sad": {
       "color": "#4169E1"
@@ -26,7 +26,7 @@
       "color": "#32CD32"
     },
     "excited": {
-      "color": "#ff6b35"
+      "color": "#FF6B35"
     },
     "hopeful": {
       "color": "#00CED1"
