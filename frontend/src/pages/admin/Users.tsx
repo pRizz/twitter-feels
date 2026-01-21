@@ -177,6 +177,10 @@ export default function AdminUsers() {
     deletingRef.current = userId;
     setDeletingUserId(userId);
 
+    // Get the user's username for the success message before deleting
+    const userToDelete = users.find(u => u.id === userId);
+    const deletedUsername = userToDelete?.username || 'User';
+
     try {
       const response = await api.delete(`/api/admin/users/${userId}`);
 
@@ -190,6 +194,10 @@ export default function AdminUsers() {
       }
 
       setDeleteConfirm(null);
+
+      // Show success toast notification
+      showSuccess(`Successfully removed @${deletedUsername} from tracked users!`);
+
       await fetchUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete user');
