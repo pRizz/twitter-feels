@@ -27,6 +27,14 @@ interface InstalledModel {
   updatedAt: string;
 }
 
+interface DownloadProgress {
+  modelId: number;
+  progress: number;
+  bytesDownloaded: number;
+  totalBytes: number;
+  status: 'downloading' | 'complete' | 'error';
+}
+
 interface AvailableModel {
   id: string;
   name: string;
@@ -63,7 +71,7 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, progress?: number) {
   switch (status) {
     case 'ready':
       return (
@@ -76,7 +84,7 @@ function getStatusBadge(status: string) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-500/20 text-blue-400">
           <Loader2 className="h-3 w-3 animate-spin" />
-          Downloading
+          Downloading{progress !== undefined ? ` ${progress}%` : ''}
         </span>
       );
     case 'error':
@@ -101,10 +109,68 @@ export default function AdminModels() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloadingModels, setDownloadingModels] = useState<Set<string>>(new Set());
+  const [downloadProgress, setDownloadProgress] = useState<Map<number, DownloadProgress>>(new Map());
 
   useEffect(() => {
     fetchModels();
   }, []);
+
+  // Poll for download progress
+  useEffect(() => {
+    if (downloadProgress.size === 0) return;
+
+    const pollProgress = async () => {
+      const newProgress = new Map(downloadProgress);
+      let hasChanges = false;
+
+      for (const [modelId, progress] of downloadProgress.entries()) {
+        if (progress.status === 'complete') continue;
+
+        try {
+          const response = await fetch(
+            `http://localhost:3001/api/admin/models/download/progress/${modelId}`,
+            { credentials: 'include' }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            newProgress.set(modelId, {
+              modelId: data.modelId,
+              progress: data.progress,
+              bytesDownloaded: data.bytesDownloaded,
+              totalBytes: data.totalBytes,
+              status: data.status,
+            });
+            hasChanges = true;
+
+            // If download completed, refresh models list
+            if (data.status === 'complete') {
+              fetchModels();
+              // Remove from downloadingModels set
+              setDownloadingModels((prev) => {
+                const next = new Set(prev);
+                // Find the huggingface ID for this model
+                const model = models?.installed.find((m) => m.id === modelId);
+                if (model?.huggingfaceModelId) {
+                  next.delete(model.huggingfaceModelId);
+                }
+                return next;
+              });
+            }
+          }
+        } catch (err) {
+          console.error('Error polling progress:', err);
+        }
+      }
+
+      if (hasChanges) {
+        setDownloadProgress(newProgress);
+      }
+    };
+
+    const interval = setInterval(pollProgress, 500);
+    return () => clearInterval(interval);
+  }, [downloadProgress, models]);
 
   const fetchModels = async () => {
     try {
@@ -127,32 +193,48 @@ export default function AdminModels() {
     }
   };
 
-  const handleDownload = async (modelId: string) => {
-    setDownloadingModels((prev) => new Set(prev).add(modelId));
+  const handleDownload = async (huggingfaceId: string) => {
+    setDownloadingModels((prev) => new Set(prev).add(huggingfaceId));
 
     try {
       const response = await fetch('http://localhost:3001/api/admin/models/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ modelId }),
+        body: JSON.stringify({ modelId: huggingfaceId }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to start download');
       }
 
+      const data = await response.json();
+      const dbModelId = data.modelId;
+
+      // Start tracking progress for this model
+      setDownloadProgress((prev) => {
+        const next = new Map(prev);
+        next.set(dbModelId, {
+          modelId: dbModelId,
+          progress: 0,
+          bytesDownloaded: 0,
+          totalBytes: 0,
+          status: 'downloading',
+        });
+        return next;
+      });
+
       // Refresh models list after download starts
       await fetchModels();
     } catch (err) {
       console.error('Download failed:', err);
-    } finally {
       setDownloadingModels((prev) => {
         const next = new Set(prev);
-        next.delete(modelId);
+        next.delete(huggingfaceId);
         return next;
       });
     }
+    // Note: We don't remove from downloadingModels here - that happens when progress reaches complete
   };
 
   const handleToggleEnabled = async (modelId: number, currentEnabled: boolean) => {
@@ -222,62 +304,89 @@ export default function AdminModels() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {models?.installed.map((model) => (
-              <div
-                key={model.id}
-                className="p-4 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-lg">{model.name}</h3>
-                      <span className="text-sm text-muted-foreground">
-                        v{model.version}
-                      </span>
-                      {getStatusBadge(model.downloadStatus)}
-                    </div>
+            {models?.installed.map((model) => {
+              const progress = downloadProgress.get(model.id);
+              const isDownloading = model.downloadStatus === 'downloading' || progress?.status === 'downloading';
+              const progressPercent = progress?.progress ?? 0;
 
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <span className="capitalize">{model.provider}</span>
-                      </span>
-                      {model.diskSizeBytes && (
-                        <span className="flex items-center gap-1">
-                          <HardDrive className="h-4 w-4" />
-                          {formatBytes(model.diskSizeBytes)}
+              return (
+                <div
+                  key={model.id}
+                  className="p-4 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-lg">{model.name}</h3>
+                        <span className="text-sm text-muted-foreground">
+                          v{model.version}
                         </span>
+                        {getStatusBadge(model.downloadStatus, isDownloading ? progressPercent : undefined)}
+                      </div>
+
+                      {/* Progress bar for downloading models */}
+                      {isDownloading && (
+                        <div className="mb-3">
+                          <div className="flex justify-between text-sm text-muted-foreground mb-1">
+                            <span>Downloading...</span>
+                            <span>{progressPercent}%</span>
+                          </div>
+                          <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                            <div
+                              className="bg-blue-500 h-2.5 rounded-full transition-all duration-300 ease-out"
+                              style={{ width: `${progressPercent}%` }}
+                            />
+                          </div>
+                          {progress && progress.totalBytes > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {formatBytes(progress.bytesDownloaded)} / {formatBytes(progress.totalBytes)}
+                            </div>
+                          )}
+                        </div>
                       )}
-                      {model.huggingfaceModelId && (
-                        <a
-                          href={`https://huggingface.co/${model.huggingfaceModelId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-primary hover:underline"
+
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <span className="capitalize">{model.provider}</span>
+                        </span>
+                        {model.diskSizeBytes && (
+                          <span className="flex items-center gap-1">
+                            <HardDrive className="h-4 w-4" />
+                            {formatBytes(model.diskSizeBytes)}
+                          </span>
+                        )}
+                        {model.huggingfaceModelId && (
+                          <a
+                            href={`https://huggingface.co/${model.huggingfaceModelId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-primary hover:underline"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            View on Hugging Face
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {model.downloadStatus === 'ready' && (
+                        <button
+                          onClick={() => handleToggleEnabled(model.id, model.isEnabled)}
+                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                            model.isEnabled
+                              ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                              : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
+                          }`}
                         >
-                          <ExternalLink className="h-4 w-4" />
-                          View on Hugging Face
-                        </a>
+                          {model.isEnabled ? 'Enabled' : 'Disabled'}
+                        </button>
                       )}
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {model.downloadStatus === 'ready' && (
-                      <button
-                        onClick={() => handleToggleEnabled(model.id, model.isEnabled)}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                          model.isEnabled
-                            ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                            : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
-                        }`}
-                      >
-                        {model.isEnabled ? 'Enabled' : 'Disabled'}
-                      </button>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

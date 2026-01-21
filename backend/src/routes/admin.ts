@@ -864,6 +864,51 @@ router.get('/models', (_req, res) => {
   });
 });
 
+// Helper function to simulate download progress
+function simulateDownloadProgress(dbModelId: number, totalBytes: number) {
+  const downloadDuration = 8000; // 8 seconds total download time (longer for better visibility)
+  const updateInterval = 500; // Update every 500ms
+  const totalUpdates = downloadDuration / updateInterval;
+  let currentUpdate = 0;
+
+  const progressInterval = setInterval(() => {
+    currentUpdate++;
+    const progressPercent = Math.min((currentUpdate / totalUpdates) * 100, 100);
+    const bytesDownloaded = Math.floor((progressPercent / 100) * totalBytes);
+
+    const currentProgress = downloadProgressStore.get(dbModelId);
+    if (currentProgress) {
+      currentProgress.progress = Math.round(progressPercent);
+      currentProgress.bytesDownloaded = bytesDownloaded;
+    }
+
+    // Complete download when we reach 100%
+    if (currentUpdate >= totalUpdates) {
+      clearInterval(progressInterval);
+
+      // Update database to mark as ready
+      db.prepare(`
+        UPDATE llm_models
+        SET download_status = 'ready', is_enabled = 1, updated_at = datetime('now')
+        WHERE id = ?
+      `).run(dbModelId);
+
+      // Update progress store to complete
+      const finalProgress = downloadProgressStore.get(dbModelId);
+      if (finalProgress) {
+        finalProgress.progress = 100;
+        finalProgress.bytesDownloaded = totalBytes;
+        finalProgress.status = 'complete';
+      }
+
+      // Clean up progress store after a short delay (so client can see 100%)
+      setTimeout(() => {
+        downloadProgressStore.delete(dbModelId);
+      }, 5000);
+    }
+  }, updateInterval);
+}
+
 // GET /api/admin/models/download/progress/:id - Get download progress for a model
 router.get('/models/download/progress/:id', (req, res) => {
   const modelId = parseInt(req.params.id, 10);
@@ -954,14 +999,20 @@ router.post('/models/download', (req, res) => {
         WHERE id = ?
       `).run(existingModel.id);
 
-      // Simulate download completion after 3 seconds
-      setTimeout(() => {
-        db.prepare(`
-          UPDATE llm_models
-          SET download_status = 'ready', is_enabled = 1, updated_at = datetime('now')
-          WHERE id = ?
-        `).run(existingModel.id);
-      }, 3000);
+      // Initialize progress tracking
+      const totalBytes = modelInfo.estimatedSize;
+      downloadProgressStore.set(existingModel.id, {
+        modelId: existingModel.id,
+        huggingfaceId: modelId,
+        progress: 0,
+        bytesDownloaded: 0,
+        totalBytes,
+        status: 'downloading',
+        startedAt: new Date(),
+      });
+
+      // Simulate download progress updates (in production, this would be actual download)
+      simulateDownloadProgress(existingModel.id, totalBytes);
 
       return res.json({
         success: true,
@@ -976,16 +1027,22 @@ router.post('/models/download', (req, res) => {
       VALUES (?, ?, 'huggingface', ?, 0, 0, 'downloading', ?)
     `).run(modelInfo.name, modelInfo.version, modelId, modelInfo.estimatedSize);
 
-    const newModelId = result.lastInsertRowid;
+    const newModelId = Number(result.lastInsertRowid);
 
-    // Simulate download completion after 3 seconds (in production, this would be actual download)
-    setTimeout(() => {
-      db.prepare(`
-        UPDATE llm_models
-        SET download_status = 'ready', is_enabled = 1, updated_at = datetime('now')
-        WHERE id = ?
-      `).run(newModelId);
-    }, 3000);
+    // Initialize progress tracking
+    const totalBytes = modelInfo.estimatedSize;
+    downloadProgressStore.set(newModelId, {
+      modelId: newModelId,
+      huggingfaceId: modelId,
+      progress: 0,
+      bytesDownloaded: 0,
+      totalBytes,
+      status: 'downloading',
+      startedAt: new Date(),
+    });
+
+    // Simulate download progress updates (in production, this would be actual download)
+    simulateDownloadProgress(newModelId, totalBytes);
 
     res.json({
       success: true,
@@ -995,6 +1052,34 @@ router.post('/models/download', (req, res) => {
   } catch (error) {
     console.error('Error starting model download:', error);
     res.status(500).json({ error: 'Failed to start model download' });
+  }
+});
+
+// DELETE /api/admin/models/:id - Delete a model (for admin use)
+router.delete('/models/:id', (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Check if model exists
+    const model = db.prepare('SELECT id, name FROM llm_models WHERE id = ?').get(id) as { id: number; name: string } | undefined;
+
+    if (!model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+
+    // Delete the model
+    db.prepare('DELETE FROM llm_models WHERE id = ?').run(id);
+
+    // Clean up any progress tracking
+    downloadProgressStore.delete(Number(id));
+
+    res.json({
+      success: true,
+      message: `Model "${model.name}" deleted`,
+    });
+  } catch (error) {
+    console.error('Error deleting model:', error);
+    res.status(500).json({ error: 'Failed to delete model' });
   }
 });
 
