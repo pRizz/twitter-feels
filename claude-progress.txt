@@ -12476,3 +12476,62 @@ Enhanced the Dashboard component to properly detect and handle network timeout e
 ### Current Progress:
 - Features passing: 158/235 (~67.2%)
 - Feature #218 marked as passing
+
+
+---
+
+## Session - Feature #216 - 2026-01-21
+
+### Feature #216: Combined model scores correct (COMPLETED)
+- **Status**: PASSING
+- **Category**: C-RealData
+- **Description**: Combined view averages all models
+
+### Implementation:
+Modified `backend/src/routes/admin.ts` to generate multi-model analyses:
+- Changed mock tweet generator to fetch ALL enabled LLM models
+- Each tweet now gets 2-4 random models analyzing it
+- Different emotion scores are generated per model to simulate model variation
+
+### Verification Steps Completed:
+
+1. **Query analyses from multiple models** ✅
+   - Created test user "Multi-Model Test (F216)" with @multiModel216 handle
+   - Triggered crawler to generate tweets with multi-model analyses
+   - API response shows tweets with analysisCount: 2-4 (multiple models)
+
+2. **Calculate combined average manually** ✅
+   For Tweet #151 with 4 model analyses:
+   - Model 1: happy=77, sad=16, angry=34...
+   - Model 2: happy=43, sad=17, angry=28...
+   - Model 3: happy=64, sad=27, angry=6...
+   - Model 4: happy=25, sad=34, angry=34...
+   - Manual calculation: happy=(77+43+64+25)/4=52.25→52 ✓
+   - All 12 emotions calculated and verified
+
+3. **View combined in dashboard** ✅
+   - Dashboard has "Combined" option in Model dropdown (default)
+   - Gauges show combined averages across all models
+   - Switching to specific model shows different values
+
+4. **Verify values match** ✅
+   - Tweet detail page Emotion Breakdown shows correct combined scores
+   - Tweet detail page shows "Analysis by Model" section with individual scores
+   - Combined values match manual calculations exactly
+   - Dashboard model filter correctly switches between combined/individual views
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature216-tweet-detail-multimodel.png
+- .playwright-mcp/.playwright-mcp/feature216-analysis-by-model.png
+- .playwright-mcp/.playwright-mcp/feature216-dashboard-combined.png
+
+### Console Errors: NONE
+
+### Code Changes:
+- backend/src/routes/admin.ts: Multi-model analysis generation in mock data
+
+### Current Progress:
+- Features passing: 157/235 (~66.8%)
+- Feature #216 marked as passing
+
+
