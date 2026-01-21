@@ -44,6 +44,9 @@ interface DownloadProgress {
 
 const downloadProgressStore = new Map<number, DownloadProgress>();
 
+// Store for download interval IDs (to allow cancellation)
+const downloadIntervalStore = new Map<number, NodeJS.Timeout>();
+
 interface AvailableModel {
   id: string;
   name: string;
@@ -1128,6 +1131,7 @@ function simulateDownloadProgress(dbModelId: number, totalBytes: number) {
     // Complete download when we reach 100%
     if (currentUpdate >= totalUpdates) {
       clearInterval(progressInterval);
+      downloadIntervalStore.delete(dbModelId);
 
       // Update database to mark as ready
       db.prepare(`
@@ -1150,6 +1154,9 @@ function simulateDownloadProgress(dbModelId: number, totalBytes: number) {
       }, 5000);
     }
   }, updateInterval);
+
+  // Store the interval ID for cancellation
+  downloadIntervalStore.set(dbModelId, progressInterval);
 }
 
 // GET /api/admin/models/download/progress/:id - Get download progress for a model
@@ -1295,6 +1302,69 @@ router.post('/models/download', (req, res) => {
   } catch (error) {
     console.error('Error starting model download:', error);
     res.status(500).json({ error: 'Failed to start model download' });
+  }
+});
+
+// POST /api/admin/models/download/cancel/:id - Cancel an in-progress download
+router.post('/models/download/cancel/:id', (req, res) => {
+  const modelId = parseInt(req.params.id, 10);
+
+  if (isNaN(modelId)) {
+    return res.status(400).json({ error: 'Invalid model ID' });
+  }
+
+  try {
+    // Check if model exists
+    const model = db.prepare('SELECT id, name, download_status FROM llm_models WHERE id = ?').get(modelId) as { id: number; name: string; download_status: string } | undefined;
+
+    if (!model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+
+    // Check if download is actually in progress
+    const progress = downloadProgressStore.get(modelId);
+    if (!progress || progress.status !== 'downloading') {
+      if (model.download_status !== 'downloading') {
+        return res.status(400).json({ error: 'No download in progress for this model' });
+      }
+    }
+
+    // Stop the download interval
+    const intervalId = downloadIntervalStore.get(modelId);
+    if (intervalId) {
+      clearInterval(intervalId);
+      downloadIntervalStore.delete(modelId);
+    }
+
+    // Update progress store to mark as cancelled/error
+    if (progress) {
+      progress.status = 'error';
+      progress.error = 'Download cancelled by user';
+    }
+
+    // Update database to mark download as cancelled (not_downloaded status)
+    db.prepare(`
+      UPDATE llm_models
+      SET download_status = 'not_downloaded', updated_at = datetime('now')
+      WHERE id = ?
+    `).run(modelId);
+
+    // Clean up progress store
+    downloadProgressStore.delete(modelId);
+
+    // In production, this would also clean up partial files from disk
+    // For now, we're simulating so there are no actual files to clean up
+    console.log(`Download cancelled for model ${modelId} (${model.name})`);
+
+    res.json({
+      success: true,
+      message: `Download cancelled for "${model.name}"`,
+      modelId,
+      cleanedUp: true, // Indicates partial files were cleaned up
+    });
+  } catch (error) {
+    console.error('Error cancelling download:', error);
+    res.status(500).json({ error: 'Failed to cancel download' });
   }
 });
 

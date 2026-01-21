@@ -11,6 +11,7 @@ import {
   Heart,
   Clock,
   AlertCircle,
+  Ban,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -247,6 +248,48 @@ export default function AdminModels() {
     }
   };
 
+  const [cancellingModels, setCancellingModels] = useState<Set<number>>(new Set());
+
+  const handleCancelDownload = async (modelId: number, huggingfaceId: string | null) => {
+    setCancellingModels((prev) => new Set(prev).add(modelId));
+
+    try {
+      const response = await api.post(`/api/admin/models/download/cancel/${modelId}`);
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to cancel download');
+      }
+
+      // Remove from progress tracking
+      setDownloadProgress((prev) => {
+        const next = new Map(prev);
+        next.delete(modelId);
+        return next;
+      });
+
+      // Remove from downloadingModels set
+      if (huggingfaceId) {
+        setDownloadingModels((prev) => {
+          const next = new Set(prev);
+          next.delete(huggingfaceId);
+          return next;
+        });
+      }
+
+      // Refresh models list
+      await fetchModels();
+    } catch (err) {
+      console.error('Cancel download failed:', err);
+    } finally {
+      setCancellingModels((prev) => {
+        const next = new Set(prev);
+        next.delete(modelId);
+        return next;
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -370,6 +413,26 @@ export default function AdminModels() {
                           }`}
                         >
                           {model.isEnabled ? 'Enabled' : 'Disabled'}
+                        </button>
+                      )}
+                      {/* Cancel button for in-progress downloads */}
+                      {isDownloading && (
+                        <button
+                          onClick={() => handleCancelDownload(model.id, model.huggingfaceModelId)}
+                          disabled={cancellingModels.has(model.id)}
+                          className="px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          {cancellingModels.has(model.id) ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Cancelling...
+                            </>
+                          ) : (
+                            <>
+                              <Ban className="h-4 w-4" />
+                              Cancel
+                            </>
+                          )}
                         </button>
                       )}
                       {(model.downloadStatus === 'error' || model.downloadStatus === 'not_downloaded') && model.huggingfaceModelId && (
