@@ -14229,3 +14229,72 @@ Only Vite dev server HMR/WebSocket errors (dev server issues, not application er
 - Feature #234 marked as passing
 
 [Testing] Session complete - verified feature #234 (Config export includes all settings) - PASSING
+
+
+---
+
+## Session - Feature #233 - 2026-01-21
+
+### Feature #233: Stale responses ignored (COMPLETED)
+- **Status**: PASSING
+- **Category**: R-Concurrency
+- **Description**: Old API responses don't override newer data
+
+### Problem:
+When users rapidly switch between filters, race conditions could occur where:
+1. User selects filter A → request A starts
+2. User quickly switches to filter B → request B starts  
+3. Request A finishes AFTER request B → stale data from A overwrites correct data from B
+
+### Solution:
+Implemented request versioning using useRef counters:
+- Each new request increments a counter
+- Response handlers check if their request ID matches the current counter
+- Stale responses are logged and ignored
+
+### Code Changes:
+1. **Dashboard.tsx**:
+   - Added `requestCounterRef` to track request versions
+   - Modified `fetchDashboardData` to ignore stale responses
+   - Added console logs for debugging when stale responses are ignored
+
+2. **UserDetail.tsx**:
+   - Added `tweetRequestCounterRef` for tweet fetching
+   - Added `userRequestCounterRef` for user data fetching  
+   - Added `requestCounterRef` in EmotionTrends component
+   - All fetch functions now check for staleness before updating state
+
+### Verification Steps Completed:
+
+1. **Navigate quickly between filters** ✅
+   - Clicked All Time → Monthly → Weekly rapidly on Dashboard
+   - Final state correctly showed Weekly data (Jan 14-21, 2026)
+   - Console showed: "Ignoring stale dashboard response (request 1, current 2)"
+
+2. **Verify displayed data matches current filter** ✅
+   - Weekly filter: Shows correct date range and gauge values
+   - User detail page: Tweet counts change correctly with filter (18 weekly, 67 monthly)
+
+3. **No stale data from previous requests** ✅
+   - Stale responses logged to console but ignored
+   - State only updated with data from latest request
+   - No visual flicker from old data overwriting new
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature233-initial-weekly-state.png - Initial weekly view
+- .playwright-mcp/.playwright-mcp/feature233-weekly-after-rapid-navigation.png - Weekly after rapid filter changes
+- .playwright-mcp/.playwright-mcp/feature233-user-detail-monthly-filter.png - User detail with monthly filter
+
+### Console Logs:
+- "Ignoring stale dashboard response (request 1, current 2)" - Proves stale handling works
+- "Ignoring stale user response (request 1, current 2)" - User detail page
+- "Ignoring stale trends response (request 1, current 2)" - Trends chart
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 174/235 (~74.0%)
+- Feature #233 marked as passing
+
+[Testing] Session complete - verified feature #233 (Stale responses ignored) - PASSING
+
