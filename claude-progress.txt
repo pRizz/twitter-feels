@@ -13296,3 +13296,106 @@ Only Vite dev server HMR/WebSocket errors (dev server issues, not application er
 - Feature #226 marked as passing
 
 [Testing] Session complete - verified feature #226 (Default gauges configured) - PASSING
+
+
+---
+
+## Testing Session - Feature #221 Regression Test - 2026-01-21
+
+### Feature #221: Time series data for charts accurate (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: F-UIBackend
+- **Description**: Chart data matches time bucket values
+
+### Verification Steps Completed:
+
+1. **Query time series aggregations** ✅
+   - Queried /api/users/4/trends?timeBucket=daily - returned 27 data points
+   - Queried /api/users/4/trends?timeBucket=weekly - returned 8 data points
+   - Queried /api/users/4/trends?timeBucket=monthly - returned 2 data points
+
+2. **View trend chart** ✅
+   - Daily view shows dates from Dec 5 to Jan 21
+   - Weekly view shows weeks from Nov 30 to Jan 18
+   - Monthly view shows Dec 2025 and Jan 2026
+
+3. **Compare data points** ✅
+   - API data structure matches chart display
+   - Time bucket switching works correctly (Daily/Weekly/Monthly)
+   - Chart X-axis labels match API timestamps
+
+4. **Verify values match** ✅
+   - Emotion values from API correspond to chart line positions
+   - Multiple emotions displayed simultaneously (happy, thankful, excited, inspirational)
+   - Color coding matches emotion configuration
+
+### Screenshots:
+- .playwright-mcp/feature221-emotion-trends-chart.png - Daily view
+- .playwright-mcp/feature221-weekly-trends.png - Weekly view  
+- .playwright-mcp/feature221-monthly-trends.png - Monthly view
+- .playwright-mcp/feature221-final-verification.png - Final verification
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected
+- Feature #221 still working correctly
+- Time series data renders accurately for all time buckets
+
+[Testing] Session complete - verified feature #221 (Time series data for charts accurate) - still passing
+
+
+---
+
+## Session - Feature #225 - 2026-01-21
+
+### Feature #225: Default emotions configured (COMPLETED)
+- **Status**: PASSING
+- **Category**: K-Defaults
+- **Description**: All 12 default emotions present on fresh install
+
+### Verification Steps Completed:
+
+1. **Check configuration for emotions** - PASSED
+   - Database configurations table has emotions key with all 12 emotions
+   - API endpoint returns emotion data correctly in dashboard response
+   - Admin Theme Settings page loads all emotions correctly
+
+2. **Verify all 12 defaults present** - PASSED
+   All 12 emotions confirmed in database and UI:
+   happy, sad, angry, fearful, hatred, thankful, excited, hopeful, frustrated, sarcastic, inspirational, anxious
+
+3. **Verify each has default color** - PASSED
+   All colors match the defaults specified in app_spec.txt:
+   - happy: #FFD700 (Gold)
+   - sad: #4169E1 (Royal Blue)
+   - angry: #FF4444 (Red)
+   - fearful: #9932CC (Dark Orchid)
+   - hatred: #8B0000 (Dark Red)
+   - thankful: #32CD32 (Lime Green)
+   - excited: #FF6B35 (Orange-Red)
+   - hopeful: #00CED1 (Dark Turquoise)
+   - frustrated: #FF8C00 (Dark Orange)
+   - sarcastic: #BA55D3 (Medium Orchid)
+   - inspirational: #FFD700 (Gold)
+   - anxious: #708090 (Slate Gray)
+
+### Technical Details:
+- Default configuration defined in backend/src/db/schema.sql line 144
+- Uses INSERT OR IGNORE to preserve existing config on restart
+- Admin theme page shows all 12 emotions with color pickers and preview swatches
+- Dashboard API returns emotionAverages with all 12 emotions
+
+### Screenshots:
+- .playwright-mcp/feature225-emotions-config.png - Theme Settings showing all 12 emotions with colors
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - defaults already correctly configured)
+
+### Current Progress:
+- Features passing: 166/235 (70.6%)
+- Feature #225 marked as passing
+
+[Testing] Session complete - verified feature #225 (Default emotions configured) - PASSING
+
