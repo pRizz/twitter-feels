@@ -358,23 +358,85 @@ router.post('/crawler/trigger', (_req, res) => {
     // Simulate crawler completion after 5 seconds (for demo purposes)
     // In production, the Rust crawler would update this
     setTimeout(() => {
-      db.prepare(`
-        UPDATE crawler_runs
-        SET status = 'completed',
-            completed_at = datetime('now'),
-            tweets_fetched = ?,
-            tweets_analyzed = ?
-        WHERE id = ?
-      `).run(
-        Math.floor(Math.random() * 50) + 10,
-        Math.floor(Math.random() * 40) + 5,
-        newRun.id
-      );
-      console.log(`Crawler run ${newRun.id} completed (simulated)`);
+      // Only update if the run is still in 'running' status
+      // This prevents overwriting a 'failed' status from network interruption
+      const currentRun = db.prepare('SELECT status FROM crawler_runs WHERE id = ?').get(newRun.id) as { status: string } | undefined;
+      if (currentRun && currentRun.status === 'running') {
+        db.prepare(`
+          UPDATE crawler_runs
+          SET status = 'completed',
+              completed_at = datetime('now'),
+              tweets_fetched = ?,
+              tweets_analyzed = ?
+          WHERE id = ?
+        `).run(
+          Math.floor(Math.random() * 50) + 10,
+          Math.floor(Math.random() * 40) + 5,
+          newRun.id
+        );
+        console.log(`Crawler run ${newRun.id} completed (simulated)`);
+      } else {
+        console.log(`Crawler run ${newRun.id} was already stopped or failed, skipping completion`);
+      }
     }, 5000);
   } catch (error) {
     console.error('Error triggering crawler:', error);
     res.status(500).json({ error: 'Failed to trigger crawler' });
+  }
+});
+
+// POST /api/admin/crawler/stop - Stop a running crawler (simulate network interruption)
+router.post('/crawler/stop', (_req, res) => {
+  try {
+    // Find running crawler
+    const runningCrawler = db.prepare(`
+      SELECT * FROM crawler_runs
+      WHERE status = 'running'
+      ORDER BY started_at DESC
+      LIMIT 1
+    `).get() as CrawlerRun | undefined;
+
+    if (!runningCrawler) {
+      return res.status(404).json({
+        success: false,
+        error: 'No crawler is currently running',
+      });
+    }
+
+    // Mark crawler as failed (simulating network interruption)
+    db.prepare(`
+      UPDATE crawler_runs
+      SET status = 'failed',
+          completed_at = datetime('now'),
+          errors_count = errors_count + 1,
+          error_details = ?
+      WHERE id = ?
+    `).run(
+      JSON.stringify([{
+        type: 'network',
+        message: 'Network connection interrupted',
+        timestamp: new Date().toISOString(),
+      }]),
+      runningCrawler.id
+    );
+
+    // Log the error to api_errors table for tracking
+    db.prepare(`
+      INSERT INTO api_errors (error_type, error_message, error_code, endpoint, resolved)
+      VALUES ('network', 'Crawler network connection interrupted', 'NETWORK_INTERRUPTED', '/crawler', 0)
+    `).run();
+
+    console.log(`Crawler run ${runningCrawler.id} stopped due to network interruption (simulated)`);
+
+    res.json({
+      success: true,
+      message: 'Crawler stopped due to network interruption',
+      runId: runningCrawler.id,
+      status: 'failed',
+    });
+  } catch (error) {
+    console.error('Error stopping crawler:', error);
+    res.status(500).json({ error: 'Failed to stop crawler' });
   }
 });
 
@@ -1440,6 +1502,77 @@ router.put('/theme', (req, res) => {
   } catch (error) {
     console.error('Error updating theme settings:', error);
     res.status(500).json({ error: 'Failed to update theme settings' });
+  }
+});
+
+// GET /api/admin/config/export - Export all configuration data
+router.get('/config/export', (_req, res) => {
+  try {
+    // Fetch all configurations from the database
+    const configurationsRows = db.prepare(`
+      SELECT key, value, updated_at FROM configurations
+    `).all() as Array<{ key: string; value: string; updated_at: string }>;
+
+    // Build configuration object
+    const configurations: Record<string, unknown> = {};
+    configurationsRows.forEach((row) => {
+      try {
+        configurations[row.key] = JSON.parse(row.value);
+      } catch {
+        configurations[row.key] = row.value;
+      }
+    });
+
+    // Get default values for any missing configurations
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      version: '1.0',
+      crawler: configurations.crawler ?? {
+        intervalHours: 1,
+        historyDepthDays: 90,
+        rateLimitPer15Min: 450,
+      },
+      emotions: configurations.emotions ?? {
+        happy: { color: '#FFD700' },
+        sad: { color: '#4169E1' },
+        angry: { color: '#FF4444' },
+        fearful: { color: '#9932CC' },
+        hatred: { color: '#8B0000' },
+        thankful: { color: '#32CD32' },
+        excited: { color: '#FF6B35' },
+        hopeful: { color: '#00CED1' },
+        frustrated: { color: '#FF8C00' },
+        sarcastic: { color: '#BA55D3' },
+        inspirational: { color: '#FFD700' },
+        anxious: { color: '#708090' },
+      },
+      gauges: configurations.gauges ?? [
+        { name: 'Anger Gauge', lowLabel: 'Chill', highLabel: 'Angry', emotions: ['angry', 'frustrated', 'hatred'] },
+        { name: 'Inspiration Gauge', lowLabel: 'Doomer', highLabel: 'Kurzweilian', emotions: ['inspirational', 'hopeful', 'excited'] },
+        { name: 'Gratitude Gauge', lowLabel: 'Entitled', highLabel: 'Thankful', emotions: ['thankful'] },
+        { name: 'Mood Gauge', lowLabel: 'Gloomy', highLabel: 'Joyful', emotions: ['happy'], invertedEmotions: ['sad'] },
+        { name: 'Intensity Gauge', lowLabel: 'Zen', highLabel: 'Heated', emotions: ['angry', 'excited', 'anxious', 'frustrated'] },
+        { name: 'Playfulness Gauge', lowLabel: 'Serious', highLabel: 'Comedian', emotions: ['sarcastic', 'happy', 'excited'] },
+      ],
+      // Note: S3 backup settings are excluded as they contain sensitive credentials
+      // Only include non-sensitive backup settings
+      backup: {
+        enabled: (configurations.s3_backup as Record<string, unknown>)?.enabled ?? false,
+        schedule: (configurations.s3_backup as Record<string, unknown>)?.schedule ?? 'daily',
+        retentionDays: (configurations.s3_backup as Record<string, unknown>)?.retentionDays ?? 30,
+        // Exclude bucketName, region, accessKeyId, secretAccessKey for security
+      },
+    };
+
+    // Set headers to trigger file download
+    const filename = `twitter-feels-config-${new Date().toISOString().split('T')[0]}.json`;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    res.send(JSON.stringify(exportData, null, 2));
+  } catch (error) {
+    console.error('Error exporting configuration:', error);
+    res.status(500).json({ error: 'Failed to export configuration' });
   }
 });
 

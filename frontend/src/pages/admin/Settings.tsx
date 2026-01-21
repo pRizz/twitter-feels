@@ -1036,6 +1036,76 @@ export default function AdminSettings() {
         </form>
       </div>
 
+      {/* Export/Import Configuration Section */}
+      <div className="bg-card border border-border rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+            <span className="text-xl">📦</span>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Configuration Export</h2>
+            <p className="text-sm text-muted-foreground">
+              Export your configuration settings for backup or migration
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Export all your configuration settings including crawler settings, emotion colors, and gauge configurations.
+            Sensitive data like AWS credentials are excluded from the export for security.
+          </p>
+
+          <button
+            onClick={async () => {
+              try {
+                const response = await fetch('http://localhost:3001/api/admin/config/export', {
+                  credentials: 'include',
+                });
+
+                if (response.status === 401) {
+                  navigate('/admin/login');
+                  return;
+                }
+
+                if (!response.ok) {
+                  throw new Error('Failed to export configuration');
+                }
+
+                // Get the filename from Content-Disposition header or use default
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'twitter-feels-config.json';
+                if (contentDisposition) {
+                  const match = contentDisposition.match(/filename="(.+)"/);
+                  if (match) {
+                    filename = match[1];
+                  }
+                }
+
+                // Create blob and download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showSuccess('Configuration exported successfully!');
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to export configuration');
+              }
+            }}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+          >
+            <span>📥</span>
+            Export Configuration
+          </button>
+        </div>
+      </div>
+
       {/* Help Section */}
       <div className="bg-card border border-border rounded-lg p-6">
         <h3 className="font-semibold mb-3">Need Help?</h3>
