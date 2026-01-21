@@ -18362,3 +18362,130 @@ Updated the database configurations table to set the correct lowLabel for Anger 
 
 [Testing] Session complete - verified feature #32 (Intensity gauge displays with labels) - PASSING
 
+
+---
+
+## Session - Feature #149 Regression Test - 2026-01-21
+
+
+---
+
+## Session - Feature #20 - 2026-01-21
+
+### Feature #20: Session expires after timeout (IMPLEMENTED AND VERIFIED)
+- **Status**: PASSING
+- **Category**: A-Security
+- **Description**: Admin session expires after configured inactivity period
+
+### Implementation Details:
+
+#### Backend Changes (backend/src/routes/admin.ts):
+1. Added `sessionCreatedAt` tracking to admin sessions
+2. Created `getSessionTimeoutMs()` helper for configurable timeout
+3. Supports both `SESSION_TIMEOUT_HOURS` (default 24h) and `SESSION_TIMEOUT_SECONDS` (for testing)
+4. Updated `requireAuth` middleware to check session age and destroy expired sessions
+5. Updated `/api/admin/me` endpoint to return `sessionExpired: true` when session has expired
+6. Returns appropriate error messages distinguishing "session expired" from "not authenticated"
+
+#### Frontend Changes:
+1. **AdminLayout.tsx**: Updated `useAuth` hook to detect `sessionExpired` flag from API response
+2. **AdminLayout.tsx**: Added `sessionExpired=true` query parameter when redirecting to login
+3. **Login.tsx**: Display amber/warning-colored "session expired" message when `sessionExpired=true`
+
+### Verification Steps Completed:
+
+1. **Log in as admin** ✅
+   - Navigated to http://localhost:5173/admin/login
+   - Entered credentials: admin/admin
+   - Successfully logged in and redirected to admin dashboard
+   - Screenshot: feature20-step1-logged-in-admin.png
+
+2. **Note session creation time** ✅
+   - Session created with `sessionCreatedAt` timestamp stored in session data
+   - For testing, set `SESSION_TIMEOUT_SECONDS=10` in .env
+
+3. **Wait for session timeout period** ✅
+   - Waited 12 seconds (longer than 10s timeout)
+
+4. **Attempt to access admin page** ✅
+   - Navigated to http://localhost:5173/admin/settings
+
+5. **Verify redirect to login with session expired message** ✅
+   - Redirected to http://localhost:5173/admin/login?returnTo=%2Fadmin%2Fsettings&sessionExpired=true
+   - Warning message displayed: "Your session has expired. Please log in again."
+   - Screenshot: feature20-step5-session-expired-message.png
+
+### Additional Verification:
+- After logging in again, user is redirected back to /admin/settings (returnTo works)
+- Screenshot: feature20-step6-logged-back-in.png
+
+### Console Errors:
+- 401 Unauthorized errors are EXPECTED (security feature working correctly)
+
+### Code Changes:
+- backend/src/routes/admin.ts - Session timeout tracking and expiration checking
+- frontend/src/components/layouts/AdminLayout.tsx - Detect sessionExpired flag
+- frontend/src/pages/admin/Login.tsx - Display session expired message
+
+### Current Progress:
+- Features passing: 211/235 (~89.8%)
+- Feature #20 marked as passing
+
+[Testing] Session complete - implemented and verified feature #20 (Session expires after timeout) - PASSING
+
+
+
+---
+
+## Session - Feature #33 - 2026-01-21
+
+### Feature #33: Playfulness gauge displays with labels (VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Playfulness gauge shows with Serious/Comedian labels
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173
+   - Dashboard loaded successfully with all gauges
+
+2. **Locate Playfulness Gauge** ✅
+   - Found in "⚡ Average Twitter Feel" section
+   - Sixth gauge in the grid (last row, third position)
+
+3. **Verify gauge is visible with value** ✅
+   - Gauge displays with value 38
+   - Purple/magenta progress bar (#BA55D3) shows fill level
+   - Numeric value displayed in center of bar
+   - Animates smoothly from 0 to final value on load
+
+4. **Verify 'Serious' label on low end** ✅
+   - "Serious" text displayed on left side of gauge
+   - Correct positioning below the progress bar
+
+5. **Verify 'Comedian' label on high end** ✅
+   - "Comedian" text displayed on right side of gauge
+   - Correct positioning below the progress bar
+
+### API Verification:
+- GET /api/dashboard confirms Playfulness Gauge config:
+  - name: "Playfulness Gauge"
+  - value: 38
+  - lowLabel: "Serious"
+  - highLabel: "Comedian"
+  - color: "#BA55D3" (purple/magenta)
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature33-playfulness-gauge-dashboard.png - Dashboard showing Playfulness Gauge with Serious/Comedian labels
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 215/235 (~91.5%)
+- Feature #33 marked as passing
+
+[Testing] Session complete - verified feature #33 (Playfulness gauge displays with labels) - PASSING
+
