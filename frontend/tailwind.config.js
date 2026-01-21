@@ -16,7 +16,7 @@ export default {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
           cyan: '#00d4ff',
-          violet: '#7c3aed',
+          violet: 'hsl(var(--primary-violet))',
           teal: '#0891b2',
         },
         // Emotion colors (configurable defaults)
@@ -35,7 +35,7 @@ export default {
           anxious: '#708090',
         },
         // Status colors
-        success: '#22c55e',
+        success: 'hsl(var(--success))',
         warning: '#f59e0b',
         error: '#ef4444',
         // shadcn/ui colors
