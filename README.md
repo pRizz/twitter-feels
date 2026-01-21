@@ -184,6 +184,29 @@ All emotions can be customized, added, or disabled via the admin dashboard.
 # Admin:    http://localhost:5173/admin
 ```
 
+## Playwright Tests
+
+API-focused Playwright tests live under `frontend/tests/e2e/api`. The Playwright
+config starts the backend and frontend dev servers automatically (via `webServer`),
+and uses:
+- `API_BASE_URL` for API tests (default `http://localhost:3001`)
+- `UI_BASE_URL` for UI tests (default `http://localhost:5173`)
+
+```bash
+# Run Playwright tests from the repo root
+just test-e2e
+
+# Or from the frontend package
+cd frontend
+npm run test:e2e
+```
+
+Admin-only checks require credentials:
+```bash
+export ADMIN_USERNAME=admin
+export ADMIN_PASSWORD=your-plaintext-password
+```
+
 ## Production Deployment
 
 ### Docker Compose

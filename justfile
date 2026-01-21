@@ -20,6 +20,12 @@ test:
 	@echo "frontend: no test script configured"
 	(cd crawler && cargo test)
 
+test-e2e:
+	(cd frontend && npm run test:e2e)
+
+test-e2e-ui:
+	(cd frontend && npm run test:e2e:ui)
+
 lint:
 	(cd backend && npm run lint)
 	(cd frontend && npm run lint)
