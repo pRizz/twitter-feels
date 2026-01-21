@@ -19102,3 +19102,54 @@ Updated the database configurations table to set the correct lowLabel for Anger 
 
 [Testing] Session complete - verified feature #47 (Tweet detail shows metadata) - PASSING
 
+
+---
+
+## Session - Feature #50 - 2026-01-21
+
+### Feature #50: Tweet detail links to original tweet (VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Link back to original tweet on Twitter is provided
+
+### Verification Steps Completed:
+
+1. **Navigate to tweet detail page** ✅
+   - Navigated to http://localhost:5173/tweets/294
+   - Tweet detail page loaded successfully (Sam Altman's tweet)
+
+2. **Locate 'View on Twitter' link** ✅
+   - Found "View on Twitter" link in the tweet metadata section
+   - Link positioned at the right side of the metadata bar
+   - Link has an external link icon (arrow pointing out of box)
+
+3. **Verify link URL points to twitter.com** ✅
+   - Link URL: https://twitter.com/sama/status/mock_sama_1769007885274_1
+   - URL format correctly uses username and tweetId
+   - Twitter redirects to x.com (expected behavior)
+
+4. **Verify link opens in new tab** ✅
+   - Clicked the "View on Twitter" link
+   - New tab (tab 1) opened with x.com URL
+   - Original tab remained on tweet detail page
+   - Implementation uses target="_blank" with rel="noopener noreferrer" for security
+
+### Code Implementation (TweetDetail.tsx lines 368-383):
+- Uses anchor tag with proper attributes
+- URL constructed as: https://twitter.com/{username}/status/{tweetId}
+- target="_blank" ensures new tab
+- rel="noopener noreferrer" prevents security vulnerabilities
+
+### Screenshots:
+- .playwright-mcp/feature50-tweet-detail-view-on-twitter.png - Tweet detail with "View on Twitter" link visible
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 221/235 (~94.0%)
+- Feature #50 marked as passing
+
+[Testing] Session complete - verified feature #50 (Tweet detail links to original tweet) - PASSING
+
