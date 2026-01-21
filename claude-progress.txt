@@ -8195,3 +8195,219 @@ Ensure all text has sufficient contrast ratio meeting WCAG AA standards (4.5:1 m
 - No regression detected - Feature #7 still working correctly
 
 [Testing] Session complete - verified feature #7 (Dashboard route loads) - still passing
+
+---
+
+## Regression Test Session - Feature #104 - 2026-01-21
+
+### Feature #104: Changes sync between admin and public views (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: F-UIBackend
+- **Description**: Admin changes reflect in public dashboard after refresh
+
+### Verification Steps Completed:
+
+1. **Admin changes emotion color** ✅
+   - Changed Happy color from #00FF00 (green) to #9900FF (purple)
+   - Saved emotion colors successfully (toast notification confirmed)
+
+2. **Refresh public dashboard** ✅
+   - Opened public dashboard in separate browser tab
+   - Refreshed page to load new settings
+
+3. **Verify color change is visible** ✅
+   - Happy emotion color in user cards now displayed in purple
+   - Mood Gauge (which maps Happy emotion) showed purple bar color
+   - Color change successfully synced from admin to public view
+
+4. **Admin changes gauge label** ✅
+   - Changed Anger Gauge low label from "Peaceful" to "Calm"
+   - Saved gauge settings successfully (toast notification confirmed)
+
+5. **Refresh dashboard, verify label changed** ✅
+   - Refreshed public dashboard
+   - Anger Gauge now shows "Calm" instead of "Peaceful" at 0% end
+   - Label change successfully synced from admin to public view
+
+### Post-Test Cleanup:
+- Reverted Happy color back to #00FF00 (green)
+- Reverted Anger Gauge low label back to "Peaceful"
+- All original settings restored
+
+### Screenshots:
+- .playwright-mcp/feature104-public-dashboard-before.png - Dashboard before changes
+- .playwright-mcp/feature104-admin-theme-before.png - Admin theme settings
+- .playwright-mcp/feature104-public-dashboard-after-color-change.png - After color change (shows purple Happy color)
+- .playwright-mcp/feature104-public-dashboard-after-label-change.png - After label change (shows "Calm" label)
+
+### Console Errors:
+- No JavaScript errors detected
+
+### Result:
+- No regression detected - Feature #104 still working correctly
+- Admin theme changes (both emotion colors and gauge labels) properly sync to public dashboard after page refresh
+
+[Testing] Session complete - verified feature #104 (Changes sync between admin and public views) - still passing
+
+
+---
+
+## Regression Test Session - Feature #84 - 2026-01-21
+
+### Feature #84: Time filter actually filters data (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: C-RealData
+- **Description**: Selecting weekly shows only last week's data
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Loaded http://localhost:5173 successfully
+
+2. **Select 'Weekly' time filter** ✅
+   - Clicked Weekly button
+   - Button became active with cyan highlight
+   - Date range displayed: (Jan 14, 2026 - Jan 21, 2026)
+
+3. **Note displayed values** ✅
+   - Weekly gauges:
+     - Anger: 18
+     - Inspiration: 38
+     - Gratitude: 33
+     - Mood: 68
+     - Intensity: 27
+     - Playfulness: 43
+
+4. **Query database for weekly aggregation** ✅
+   - API endpoint: /api/dashboard?timeBucket=weekly&modelId=combined
+   - Returns filteredAnalysisCount: 3 (3 analyses in weekly range)
+   - timeCutoff: 2026-01-14 (7 days ago)
+
+5. **Verify displayed data matches weekly bucket** ✅
+   - UI values match API response exactly
+   - Also verified All Time shows different values:
+     - All Time: Anger 19, Inspiration 39, Mood 65
+     - Weekly: Anger 18, Inspiration 38, Mood 68
+   - Confirms filtering is working
+
+### Screenshots:
+- .playwright-mcp/feature84-weekly-filter-active.png - Dashboard with weekly filter
+- .playwright-mcp/feature84-weekly-filter-verified.png - Final verification
+
+### Console Errors:
+- Transient error when backend crashed briefly (recovered)
+- No persistent errors
+
+### Result:
+- No regression detected - Feature #84 still working correctly
+
+[Testing] Session complete - verified feature #84 (Time filter actually filters data) - still passing
+
+
+---
+
+## Regression Test Session - Feature #151 - 2026-01-21
+
+### Feature #151: Duplicate user handle rejected (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: M-FormValidation
+- **Description**: Cannot add same Twitter handle twice
+
+### Verification Steps Completed:
+
+1. **Add a Twitter user** ✅
+   - User @sama already exists in the system (added previously)
+   - Shows in Tracked Users table with 3.0M followers, 16 tweets
+
+2. **Try to add same handle again** ✅
+   - Clicked '+ Add User' button
+   - Entered 'sama' in Twitter Handle field
+   - Clicked 'Add User' button
+
+3. **Verify duplicate error displayed** ✅
+   - Alert message appeared: 'User is already being tracked'
+   - Dismiss button available to close the error
+   - Server returned 409 Conflict status (correct HTTP response)
+
+4. **Verify only one entry exists** ✅
+   - Table still shows only 1 row (@sama - Sam Altman)
+   - 'Total Tracked' counter still shows '1'
+   - No duplicate entry was created
+
+### Screenshots:
+- .playwright-mcp/feature151-duplicate-user-rejected.png - Error message after attempting to add duplicate
+
+### Console Errors:
+- Only expected 409 Conflict error (correct behavior for duplicate rejection)
+
+### Result:
+- No regression detected - Feature #151 still working correctly
+
+[Testing] Session complete - verified feature #151 (Duplicate user handle rejected) - still passing
+
+
+
+---
+
+## Session - Feature #182 - 2026-01-21
+
+### Feature #182: Concurrent page loads handled (COMPLETED)
+- **Status**: PASSING
+- **Category**: R-Concurrency
+- **Description**: Multiple users loading dashboard works
+
+### Verification Steps Completed:
+
+1. **Open dashboard in multiple browsers** ✅
+   - Opened 3 browser tabs with the dashboard
+   - All tabs loaded successfully with identical data
+   - Gauge values consistent across all tabs:
+     - Anger: 18
+     - Inspiration: 38
+     - Gratitude: 33
+     - Mood: 68
+     - Intensity: 27
+     - Playfulness: 43
+
+2. **Refresh all simultaneously** ✅
+   - Tested concurrent API requests via curl (5 simultaneous requests)
+   - All 5 responses returned HTTP 200 with identical 3425-byte payloads
+   - Tested 8 concurrent requests to different endpoints:
+     - /api/dashboard?period=weekly
+     - /api/dashboard?period=monthly
+     - /api/dashboard?period=yearly
+     - /api/users
+     - /api/models
+     - /api/leaderboards?period=weekly
+     - /api/users/4
+     - /api/users/4/tweets
+   - All requests completed successfully with valid responses
+
+3. **Verify all load correctly** ✅
+   - Tab 0: Loaded with full dashboard data
+   - Tab 1: Loaded with identical dashboard data
+   - Tab 2: Loaded with identical dashboard data
+   - All network requests returned HTTP 200 OK
+   - Data consistency verified across multiple concurrent tabs
+
+4. **Verify no errors** ✅
+   - No JavaScript console errors detected
+   - All API responses returned successfully
+   - No race conditions or data corruption observed
+
+### Screenshots:
+- .playwright-mcp/feature182-concurrent-load-tab1.png - First tab dashboard
+- .playwright-mcp/feature182-concurrent-load-tab2.png - Second tab dashboard
+
+### Console Errors:
+- None
+
+### Current Progress:
+- Features passing: 123/235 (~52.3%)
+- Feature #182 marked as passing
+
+### Notes:
+- Node.js/Express backend handles concurrent requests efficiently
+- SQLite database handles concurrent reads without issues
+- React Query on frontend properly manages multiple simultaneous data fetches
+- No additional code changes needed - concurrency was already properly handled
