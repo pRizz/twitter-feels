@@ -12535,3 +12535,56 @@ Modified `backend/src/routes/admin.ts` to generate multi-model analyses:
 - Feature #216 marked as passing
 
 
+---
+
+## Session - Feature #217 - 2026-01-21
+
+### Feature #217: Median calculations correct (COMPLETED)
+- **Status**: PASSING
+- **Category**: C-RealData
+- **Description**: Median values computed correctly
+
+### Implementation:
+1. Added `calculateMedian()` helper function to `backend/src/routes/public.ts`
+2. Modified `/api/users/:id` endpoint to return `emotionMedians` alongside `emotionAverages`
+3. Updated `UserDetail.tsx` frontend component with Average/Median toggle UI
+4. Added `emotionMedians` to UserData interface
+
+### Verification Steps Completed:
+
+1. **Query raw emotion scores** ✅
+   - Queried `/api/users/4/tweets?limit=100` for Sam Altman's 33 tweets
+   - Each tweet has `combinedEmotions` with all 12 emotion scores
+
+2. **Calculate median manually** ✅
+   - Created verification script `verify-medians-api.js`
+   - Extracted all emotion values for each emotion type
+   - Calculated median using proper algorithm (sorted values, middle index)
+   - Example for 'happy': sorted 33 values, took index 16 = 40
+
+3. **Compare to displayed median** ✅
+   - API returns: `emotionMedians: {"happy":40,"sad":25,"angry":23,...}`
+   - UI shows "Emotion Medians" when Median toggle is active
+   - Values displayed match API response exactly
+
+4. **Verify exact match** ✅
+   - happy: manual=40, api=40 ✓ EXACT MATCH
+   - sad: manual=25, api=25 ✓ EXACT MATCH
+   - excited: manual=52, api=52 ✓ EXACT MATCH
+   - All key emotions verified
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature217-step1-averages-view.png - Averages view with toggle
+- .playwright-mcp/.playwright-mcp/feature217-step2-medians-view.png - Medians view after toggle
+- .playwright-mcp/.playwright-mcp/feature217-step3-back-to-averages.png - Toggle back to averages
+
+### Console Errors: NONE
+
+### Code Changes:
+- backend/src/routes/public.ts: Added calculateMedian(), emotionValues collection, emotionMedians calculation and response
+- frontend/src/pages/UserDetail.tsx: Added emotionMedians to interface, Average/Median toggle UI
+
+### Current Progress:
+- Features passing: 159/235 (~67.7%)
+- Feature #217 marked as passing
+
