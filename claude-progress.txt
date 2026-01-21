@@ -7415,3 +7415,62 @@ Added "Clear Filters" functionality to the Dashboard page:
 ### Result:
 - No regression detected - Feature #140 still working correctly
 [Testing] Session complete - regression fixed for feature #154 (Whitespace-only rejected for required)
+
+---
+
+## Session - Feature #174 - 2026-01-21
+
+### Feature #174: Images have alt text (COMPLETED)
+- **Status**: PASSING
+- **Category**: P-Accessibility
+- **Description**: User avatars have alt text
+
+### Verification Steps Completed:
+
+1. **Inspect avatar images** ✅
+   - Searched codebase for all img elements using Grep
+   - Found 6 avatar image locations across 4 files:
+     - Dashboard.tsx (3 images): leaderboard highest, leaderboard lowest, user card
+     - UserDetail.tsx (1 image): profile header - already had alt text
+     - TweetDetail.tsx (1 image): author avatar - already had alt text
+     - admin/Users.tsx (1 image): user table - already had alt text
+
+2. **Verify alt attribute present** ✅
+   - Fixed Dashboard.tsx: Changed 3 instances of `alt=""` to descriptive alt text
+   - All images now have `alt` attribute with descriptive content
+
+3. **Verify alt describes image content** ✅
+   - All avatar images now use format: `{displayName || username}'s avatar`
+   - Screen readers will announce: "Sam Altman's avatar"
+   - Alt text is meaningful and describes the image content
+
+### Code Changes Made:
+- Dashboard.tsx line 104: `alt=""` → `alt={\`${entry.displayName || entry.username}'s avatar\`}`
+- Dashboard.tsx line 129: `alt=""` → `alt={\`${entry.displayName || entry.username}'s avatar\`}`
+- Dashboard.tsx line 160: `alt=""` → `alt={\`${user.displayName || user.username}'s avatar\`}`
+
+### Pages Verified:
+- **Dashboard (/)**: Leaderboard avatars and user card avatars - all have proper alt text
+- **User Detail (/users/4)**: Profile avatar - already had proper alt text
+- **Tweet Detail (/tweets/37)**: Author avatar - already had proper alt text
+- **Admin Users (/admin/users)**: User table avatars - already had proper alt text
+
+### Screenshots:
+- .playwright-mcp/feature174-dashboard-avatars-with-alt.png - Dashboard with fixed avatars
+- .playwright-mcp/feature174-tweet-detail-avatar-with-alt.png - Tweet detail page
+- .playwright-mcp/feature174-admin-users-avatar-with-alt.png - Admin users table
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 114/235 (~48.5%)
+- Feature #174 marked as passing
+
+### Commit:
+- fc71f97 - feat: Add alt text to user avatar images for accessibility (#174)
+
+### Notes:
+- WCAG 2.1 Success Criterion 1.1.1 (Non-text Content) requires all images to have alt text
+- The alt text format "{name}'s avatar" provides clear context for screen reader users
+- All avatar images across the application now pass accessibility requirements
