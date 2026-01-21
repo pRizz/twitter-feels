@@ -35,11 +35,16 @@ interface UserSummary {
   topEmotionScore: number;
 }
 
+interface SectionError {
+  error: string;
+  message: string;
+}
+
 interface DashboardData {
   lastUpdated: string;
-  gauges: GaugeData[];
-  leaderboards: LeaderboardData[];
-  users: UserSummary[];
+  gauges: GaugeData[] | null;
+  leaderboards: LeaderboardData[] | null;
+  users: UserSummary[] | null;
   stats: {
     totalUsers: number;
     totalTweets: number;
@@ -48,6 +53,8 @@ interface DashboardData {
   filteredAnalysisCount?: number;
   timeBucket?: string;
   timeCutoff?: string;
+  partialFailure?: boolean;
+  sectionErrors?: Record<string, SectionError>;
 }
 
 // Helper function to adjust color brightness
@@ -377,6 +384,54 @@ function SortSelector({
   );
 }
 
+// Section error indicator component
+function SectionErrorIndicator({
+  sectionName,
+  error,
+  onRetry,
+}: {
+  sectionName: string;
+  error: SectionError;
+  onRetry?: () => void;
+}) {
+  return (
+    <div
+      role="alert"
+      className="bg-card rounded-lg p-6 shadow-card border border-error/30"
+      data-section-error={sectionName}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center">
+            <svg className="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-medium text-foreground">
+              Failed to load {sectionName}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {error.message}
+            </p>
+          </div>
+        </div>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="px-3 py-1.5 text-sm bg-error/10 hover:bg-error/20 text-error rounded-md transition-colors flex items-center gap-1"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Retry
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Valid values for filters
 const VALID_TIME_PERIODS = ['weekly', 'monthly', 'yearly', 'all_time'];
 const VALID_SORT_BY = ['followers', 'name', 'score'];
@@ -575,8 +630,11 @@ export default function Dashboard() {
       // Check URL for delay param (used for testing loading states)
       const testDelay = urlParams.get('testDelay') || '';
       const delayParam = testDelay ? `&delay=${testDelay}` : '';
+      // Check URL for failSection param (used for testing partial failure handling)
+      const failSection = urlParams.get('failSection') || '';
+      const failSectionParam = failSection ? `&failSection=${failSection}` : '';
       const response = await fetch(
-        `http://localhost:3001/api/dashboard?timeBucket=${timePeriod}&modelId=${modelFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}${delayParam}`,
+        `http://localhost:3001/api/dashboard?timeBucket=${timePeriod}&modelId=${modelFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}${delayParam}${failSectionParam}`,
         { signal: controller.signal }
       );
 
@@ -619,9 +677,21 @@ export default function Dashboard() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  const gauges = data?.gauges?.length ? data.gauges : DEFAULT_GAUGES;
-  const leaderboards = data?.leaderboards || [];
-  const users = data?.users || [];
+  // Determine if we have section-level errors (partial failure)
+  const sectionErrors = data?.sectionErrors;
+  const hasPartialFailure = data?.partialFailure === true;
+
+  // Handle gauges: null means failed to load, undefined/empty means no data
+  const gaugesError = sectionErrors?.gauges;
+  const gauges = data?.gauges === null ? null : (data?.gauges?.length ? data.gauges : DEFAULT_GAUGES);
+
+  // Handle leaderboards: null means failed to load
+  const leaderboardsError = sectionErrors?.leaderboards;
+  const leaderboards = data?.leaderboards === null ? null : (data?.leaderboards || []);
+
+  // Handle users: null means failed to load
+  const usersError = sectionErrors?.users;
+  const users = data?.users === null ? null : (data?.users || []);
 
   return (
     <div className="container mx-auto py-8 px-4 animate-fade-in">
@@ -700,6 +770,34 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Partial failure banner - shown when some sections loaded but others failed */}
+      {hasPartialFailure && !error && (
+        <div role="alert" className="mb-6 p-4 bg-warning/10 border border-warning/30 rounded-lg" data-testid="partial-failure-banner">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span className="text-warning font-medium">Some sections failed to load</span>
+            </div>
+            <button
+              onClick={() => {
+                fetchDashboardData();
+              }}
+              className="px-3 py-1.5 text-sm bg-warning/20 hover:bg-warning/30 text-warning rounded-md transition-colors flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Retry All
+            </button>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The dashboard is showing partial data. Some sections could not be loaded. You can still use the sections that loaded successfully.
+          </p>
+        </div>
+      )}
+
       {/* Loading state */}
       {isLoading && (
         <div className="flex items-center justify-center py-12" role="status" aria-label="Loading dashboard data">
@@ -742,11 +840,19 @@ export default function Dashboard() {
               <span className="text-primary">⚡</span>
               Average Twitter Feel
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {gauges.map((gauge) => (
-                <Gauge key={gauge.name} {...gauge} />
-              ))}
-            </div>
+            {gaugesError ? (
+              <SectionErrorIndicator
+                sectionName="gauge data"
+                error={gaugesError}
+                onRetry={fetchDashboardData}
+              />
+            ) : gauges ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {gauges.map((gauge) => (
+                  <Gauge key={gauge.name} {...gauge} />
+                ))}
+              </div>
+            ) : null}
           </section>
 
           {/* Leaderboards Section */}
@@ -755,7 +861,13 @@ export default function Dashboard() {
               <span className="text-primary-violet">🏆</span>
               Emotion Leaderboards
             </h2>
-            {leaderboards.length > 0 ? (
+            {leaderboardsError ? (
+              <SectionErrorIndicator
+                sectionName="leaderboard data"
+                error={leaderboardsError}
+                onRetry={fetchDashboardData}
+              />
+            ) : leaderboards && leaderboards.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {leaderboards.map((board) => (
                   <Leaderboard key={board.emotion} data={board} />
@@ -777,79 +889,89 @@ export default function Dashboard() {
                 <span className="text-primary">👥</span>
                 Tracked Influencers
               </h2>
-              {/* User search input */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={userSearchQuery}
-                  onChange={(e) => setUserSearchQuery(e.target.value)}
-                  maxLength={200}
-                  className="w-full sm:w-64 px-4 py-2 pl-10 bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-cyan/50 focus:border-primary-cyan"
-                  aria-label="Search users by name or handle"
-                />
-                <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              {/* User search input - only show if users loaded successfully */}
+              {!usersError && users && (
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={userSearchQuery}
+                    onChange={(e) => setUserSearchQuery(e.target.value)}
+                    maxLength={200}
+                    className="w-full sm:w-64 px-4 py-2 pl-10 bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-cyan/50 focus:border-primary-cyan"
+                    aria-label="Search users by name or handle"
                   />
-                </svg>
-              </div>
-            </div>
-            {(() => {
-              // Filter users based on search query (case-insensitive)
-              const searchLower = userSearchQuery.toLowerCase().trim();
-              const filteredUsers = users.filter((user) => {
-                if (!searchLower) return true;
-                const displayNameMatch = user.displayName?.toLowerCase().includes(searchLower);
-                const usernameMatch = user.username?.toLowerCase().includes(searchLower);
-                const handleMatch = `@${user.username}`.toLowerCase().includes(searchLower);
-                return displayNameMatch || usernameMatch || handleMatch;
-              });
-
-              if (users.length === 0) {
-                return (
-                  <div className="bg-card rounded-lg p-8 border border-border text-center">
-                    <p className="text-muted-foreground">
-                      No Twitter users are being tracked yet. Visit the{' '}
-                      <Link to="/admin/login" className="text-primary hover:underline">
-                        admin dashboard
-                      </Link>{' '}
-                      to add users.
-                    </p>
-                  </div>
-                );
-              }
-
-              if (filteredUsers.length === 0) {
-                // Truncate very long search queries in the display message
-                const displayQuery = userSearchQuery.length > 50
-                  ? userSearchQuery.substring(0, 50) + '...'
-                  : userSearchQuery;
-                return (
-                  <div className="bg-card rounded-lg p-8 border border-border text-center">
-                    <p className="text-muted-foreground break-words">
-                      No users found matching "{displayQuery}". Try a different search term.
-                    </p>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredUsers.map((user) => (
-                    <UserCard key={user.id} user={user} />
-                  ))}
+                  <svg
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
                 </div>
-              );
-            })()}
+              )}
+            </div>
+            {usersError ? (
+              <SectionErrorIndicator
+                sectionName="user data"
+                error={usersError}
+                onRetry={fetchDashboardData}
+              />
+            ) : users ? (
+              (() => {
+                // Filter users based on search query (case-insensitive)
+                const searchLower = userSearchQuery.toLowerCase().trim();
+                const filteredUsers = users.filter((user) => {
+                  if (!searchLower) return true;
+                  const displayNameMatch = user.displayName?.toLowerCase().includes(searchLower);
+                  const usernameMatch = user.username?.toLowerCase().includes(searchLower);
+                  const handleMatch = `@${user.username}`.toLowerCase().includes(searchLower);
+                  return displayNameMatch || usernameMatch || handleMatch;
+                });
+
+                if (users.length === 0) {
+                  return (
+                    <div className="bg-card rounded-lg p-8 border border-border text-center">
+                      <p className="text-muted-foreground">
+                        No Twitter users are being tracked yet. Visit the{' '}
+                        <Link to="/admin/login" className="text-primary hover:underline">
+                          admin dashboard
+                        </Link>{' '}
+                        to add users.
+                      </p>
+                    </div>
+                  );
+                }
+
+                if (filteredUsers.length === 0) {
+                  // Truncate very long search queries in the display message
+                  const displayQuery = userSearchQuery.length > 50
+                    ? userSearchQuery.substring(0, 50) + '...'
+                    : userSearchQuery;
+                  return (
+                    <div className="bg-card rounded-lg p-8 border border-border text-center">
+                      <p className="text-muted-foreground break-words">
+                        No users found matching "{displayQuery}". Try a different search term.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredUsers.map((user) => (
+                      <UserCard key={user.id} user={user} />
+                    ))}
+                  </div>
+                );
+              })()
+            ) : null}
           </section>
 
           {/* Stats footer */}

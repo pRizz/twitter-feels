@@ -72,6 +72,9 @@ router.get('/dashboard', (req, res) => {
     const sortOrder = (req.query.sortOrder as string) || 'desc'; // asc, desc
     const timeCutoff = getTimeBucketCutoff(timeBucket);
 
+    // Test parameter for simulating partial failures (for testing error handling)
+    const failSection = req.query.failSection as string;
+
     // Get stats from database
     const userCount = db.prepare('SELECT COUNT(*) as count FROM twitter_users WHERE is_active = 1').get() as { count: number };
     const tweetCount = db.prepare('SELECT COUNT(*) as count FROM tweets').get() as { count: number };
@@ -309,11 +312,12 @@ router.get('/dashboard', (req, res) => {
     // Count analyses in the filtered time period
     const filteredAnalysisCount = analyses.length;
 
-    res.json({
+    // Build response with partial failure support for testing
+    // If failSection is specified, omit that section and include error metadata
+    const sectionErrors: Record<string, { error: string; message: string }> = {};
+
+    const response: Record<string, unknown> = {
       lastUpdated,
-      gauges,
-      leaderboards,
-      users: sortedUsers,
       stats: {
         totalUsers: userCount.count,
         totalTweets: tweetCount.count,
@@ -325,7 +329,39 @@ router.get('/dashboard', (req, res) => {
       filteredAnalysisCount, // How many analyses matched the time filter
       sortBy, // Return the sort field used
       sortOrder, // Return the sort direction used
-    });
+    };
+
+    // Handle partial failure simulation for testing
+    const failedSections = failSection ? failSection.split(',') : [];
+
+    if (failedSections.includes('gauges')) {
+      sectionErrors.gauges = { error: 'gauge_load_failed', message: 'Failed to load gauge data' };
+      response.gauges = null;
+    } else {
+      response.gauges = gauges;
+    }
+
+    if (failedSections.includes('leaderboards')) {
+      sectionErrors.leaderboards = { error: 'leaderboard_load_failed', message: 'Failed to load leaderboard data' };
+      response.leaderboards = null;
+    } else {
+      response.leaderboards = leaderboards;
+    }
+
+    if (failedSections.includes('users')) {
+      sectionErrors.users = { error: 'users_load_failed', message: 'Failed to load user data' };
+      response.users = null;
+    } else {
+      response.users = sortedUsers;
+    }
+
+    // Include section errors metadata if any sections failed
+    if (Object.keys(sectionErrors).length > 0) {
+      response.sectionErrors = sectionErrors;
+      response.partialFailure = true;
+    }
+
+    res.json(response);
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard data' });
