@@ -17010,3 +17010,63 @@ Added confirmation dialog to the Force Re-Analyze functionality in the admin das
 
 [Testing] Session complete - verified feature #35 (Leaderboard displays for emotions) - PASSING
 
+---
+
+## Session - Feature #21 - 2026-01-21
+
+### Feature #21: Rate limiting protects public API (VERIFIED)
+- **Status**: PASSING
+- **Category**: A-Security
+- **Description**: Public API endpoints are rate limited to prevent abuse
+
+### Verification Steps Completed:
+
+1. **Send many rapid requests to /api/dashboard**
+   - Used test script to send 8 rapid requests
+   - Requests 1-5: HTTP 200 (within rate limit)
+   - Requests 6-8: HTTP 429 (rate limited)
+   - Error response: {"error":"Too many requests, please try again later."}
+
+2. **Verify rate limit response (429) after threshold**
+   - After 5 requests, subsequent requests return 429 Too Many Requests
+   - Response includes proper error message in JSON format
+   - Rate limit headers returned:
+     - RateLimit-Policy: 5;w=10 (test config: 5 requests per 10 seconds)
+     - RateLimit-Limit: 5
+     - RateLimit-Remaining: X
+     - RateLimit-Reset: X
+
+3. **Wait for rate limit window to reset**
+   - Waited 11 seconds (window was 10 seconds for test)
+   - Rate limit counter reset
+
+4. **Verify requests succeed again**
+   - After waiting, request returned HTTP 200
+   - Dashboard loaded successfully with all data
+   - Browser UI shows Retry button when rate limited, works after reset
+
+### Code Changes:
+- Enhanced rate limiter configuration in backend/src/index.ts
+- Added RATE_LIMIT_WINDOW_MS environment variable (default: 15 minutes)
+- Added RATE_LIMIT_MAX_REQUESTS environment variable (default: 100 prod, 1000 dev)
+- Enabled standardHeaders for RateLimit-* response headers
+- Disabled legacyHeaders (X-RateLimit-*)
+
+### Browser Verification:
+- Navigated to dashboard while rate limited
+- UI showed "Failed to load dashboard data. Please try again." error
+- Retry button displayed
+- After window reset, clicked Retry successfully loaded all data
+
+### Screenshots:
+- .playwright-mcp/feature21-rate-limited-state.png - Error state when rate limited
+- .playwright-mcp/feature21-after-rate-limit-reset.png - Successful load after reset
+- .playwright-mcp/feature21-normal-operation-verified.png - Normal dashboard operation
+
+### Console Errors: 429 errors during rate limit testing (expected behavior)
+
+### Current Progress:
+- Features passing: 202/235 (~86.0%)
+- Feature #21 marked as passing
+
+[Testing] Session complete - verified feature #21 (Rate limiting protects public API) - PASSING
