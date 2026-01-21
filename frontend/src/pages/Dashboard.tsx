@@ -189,7 +189,7 @@ function UserCard({ user }: { user: UserSummary }) {
   return (
     <Link
       to={`/users/${user.id}`}
-      className="bg-card rounded-lg p-4 shadow-md border border-border hover:border-primary-cyan/50 hover:shadow-glow-sm transition-all duration-200 block"
+      className="bg-card rounded-lg p-4 shadow-card border border-border hover:border-primary-cyan/50 hover:shadow-card-hover transition-all duration-200 block"
     >
       <div className="flex items-start gap-3">
         <div className="w-12 h-12 rounded-full bg-muted overflow-hidden flex-shrink-0">

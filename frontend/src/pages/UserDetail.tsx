@@ -111,7 +111,7 @@ function ProfileSkeleton() {
 // User profile header component
 function UserProfileHeader({ user }: { user: UserData }) {
   return (
-    <div className="bg-card rounded-lg p-6 border border-border shadow-md mb-8">
+    <div className="bg-card rounded-lg p-6 border border-border shadow-card mb-8">
       <div className="flex flex-col md:flex-row items-start gap-6">
         {/* Avatar */}
         <div className="w-24 h-24 rounded-full bg-muted overflow-hidden flex-shrink-0 ring-4 ring-primary-cyan/20">
@@ -192,7 +192,7 @@ function EmotionAverages({
 
   if (!hasData) {
     return (
-      <div className="bg-card rounded-lg p-6 border border-border shadow-md">
+      <div className="bg-card rounded-lg p-6 border border-border shadow-card">
         <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
           <span className="text-primary-violet">📊</span>
           Emotion Averages
@@ -232,7 +232,7 @@ function EmotionAverages({
   };
 
   return (
-    <div className="bg-card rounded-lg p-6 border border-border shadow-md">
+    <div className="bg-card rounded-lg p-6 border border-border shadow-card">
       <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
         <span className="text-primary-violet">📊</span>
         Emotion Averages
@@ -498,7 +498,7 @@ function EmotionTrends({ userId }: { userId: number }) {
 
   if (isLoading) {
     return (
-      <div className="bg-card rounded-lg p-6 border border-border shadow-md">
+      <div className="bg-card rounded-lg p-6 border border-border shadow-card">
         <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
           <span className="text-primary">📈</span>
           Emotion Trends
@@ -510,7 +510,7 @@ function EmotionTrends({ userId }: { userId: number }) {
 
   if (!trends || trends.dataPoints.length === 0) {
     return (
-      <div className="bg-card rounded-lg p-6 border border-border shadow-md">
+      <div className="bg-card rounded-lg p-6 border border-border shadow-card">
         <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
           <span className="text-primary">📈</span>
           Emotion Trends
@@ -529,7 +529,7 @@ function EmotionTrends({ userId }: { userId: number }) {
   }));
 
   return (
-    <div className="bg-card rounded-lg p-6 border border-border shadow-md">
+    <div className="bg-card rounded-lg p-6 border border-border shadow-card">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
           <span className="text-primary">📈</span>
@@ -756,7 +756,7 @@ export default function UserDetail() {
           </div>
 
           {/* Tweet List Section */}
-          <div className="mt-6 bg-card rounded-lg p-6 border border-border shadow-md">
+          <div className="mt-6 bg-card rounded-lg p-6 border border-border shadow-card">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
               <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                 <span className="text-primary-violet">💬</span>

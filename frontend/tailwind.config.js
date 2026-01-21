@@ -98,6 +98,10 @@ export default {
       boxShadow: {
         glow: '0 0 15px rgba(0, 212, 255, 0.3)',
         'glow-sm': '0 0 10px rgba(0, 212, 255, 0.2)',
+        // Card shadows with color tint (futuristic design system)
+        'card': '0 4px 6px -1px rgba(0, 212, 255, 0.1), 0 2px 4px -2px rgba(0, 212, 255, 0.1)',
+        'card-lg': '0 10px 15px -3px rgba(0, 212, 255, 0.15), 0 4px 6px -4px rgba(0, 212, 255, 0.1)',
+        'card-hover': '0 10px 20px -3px rgba(0, 212, 255, 0.2), 0 4px 6px -4px rgba(0, 212, 255, 0.15)',
       },
     },
   },

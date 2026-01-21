@@ -93,7 +93,21 @@
   box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
 }
 
-/* Card shadow with color tint - dark mode (cyan/teal tint) */
+/* Card shadow with color tint - light mode (teal tint) - default */
+.shadow-card {
+  box-shadow: 0 4px 6px -1px rgba(8, 145, 178, 0.1), 0 2px 4px -2px rgba(8, 145, 178, 0.08);
+}
+
+.shadow-card-lg {
+  box-shadow: 0 10px 15px -3px rgba(8, 145, 178, 0.12), 0 4px 6px -4px rgba(8, 145, 178, 0.08);
+}
+
+.shadow-card-hover:hover,
+.hover\:shadow-card-hover:hover {
+  box-shadow: 0 10px 20px -3px rgba(8, 145, 178, 0.15), 0 4px 6px -4px rgba(8, 145, 178, 0.1);
+}
+
+/* Card shadow with color tint - dark mode (cyan/teal tint) - overrides light */
 .dark .shadow-card {
   box-shadow: 0 4px 6px -1px rgba(0, 212, 255, 0.1), 0 2px 4px -2px rgba(0, 212, 255, 0.1);
 }
@@ -102,23 +116,45 @@
   box-shadow: 0 10px 15px -3px rgba(0, 212, 255, 0.15), 0 4px 6px -4px rgba(0, 212, 255, 0.1);
 }
 
-.dark .shadow-card:hover,
+.dark .shadow-card-hover:hover,
 .dark .hover\:shadow-card-hover:hover {
   box-shadow: 0 10px 20px -3px rgba(0, 212, 255, 0.2), 0 4px 6px -4px rgba(0, 212, 255, 0.15);
 }
 
-/* Card shadow with color tint - light mode (teal tint) */
-:root .shadow-card {
-  box-shadow: 0 4px 6px -1px rgba(8, 145, 178, 0.1), 0 2px 4px -2px rgba(8, 145, 178, 0.08);
+/* Interactive element hover glow effects - Dark Mode */
+.dark button:hover:not(:disabled),
+.dark [role="button"]:hover:not(:disabled) {
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.3), 0 0 4px rgba(0, 212, 255, 0.2);
+  transition: box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
 }
 
-:root .shadow-card-lg {
-  box-shadow: 0 10px 15px -3px rgba(8, 145, 178, 0.12), 0 4px 6px -4px rgba(8, 145, 178, 0.08);
+/* Active/selected buttons keep a stronger glow in dark mode */
+.dark button[class*="bg-primary"]:hover,
+.dark [role="button"][class*="bg-primary"]:hover {
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.4), 0 0 6px rgba(0, 212, 255, 0.3);
 }
 
-:root .shadow-card:hover,
-:root .hover\:shadow-card-hover:hover {
-  box-shadow: 0 10px 20px -3px rgba(8, 145, 178, 0.15), 0 4px 6px -4px rgba(8, 145, 178, 0.1);
+/* Links - subtle text glow on hover in dark mode */
+.dark a:hover:not(.no-glow) {
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+  transition: text-shadow 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+/* Interactive element hover glow effects - Light Mode */
+button:hover:not(:disabled),
+[role="button"]:hover:not(:disabled) {
+  box-shadow: 0 0 12px rgba(8, 145, 178, 0.25), 0 0 4px rgba(8, 145, 178, 0.15);
+  transition: box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+
+button[class*="bg-primary"]:hover,
+[role="button"][class*="bg-primary"]:hover {
+  box-shadow: 0 0 16px rgba(8, 145, 178, 0.35), 0 0 6px rgba(8, 145, 178, 0.25);
+}
+
+a:hover:not(.no-glow) {
+  text-shadow: 0 0 8px rgba(8, 145, 178, 0.35);
+  transition: text-shadow 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
 /* Gauge animation */

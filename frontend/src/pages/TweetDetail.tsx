@@ -274,7 +274,7 @@ export default function TweetDetail() {
       </div>
 
       {/* Tweet Card */}
-      <div className="bg-card rounded-lg p-6 shadow-md border border-border mb-8 animate-slide-up">
+      <div className="bg-card rounded-lg p-6 shadow-card border border-border mb-8 animate-slide-up">
         {/* User info header */}
         <div className="flex items-start gap-4 mb-4">
           <Link
@@ -398,7 +398,7 @@ export default function TweetDetail() {
         </h2>
 
         {hasEmotions ? (
-          <div className="bg-card rounded-lg p-6 shadow-md border border-border">
+          <div className="bg-card rounded-lg p-6 shadow-card border border-border">
             <div className="space-y-3">
               {sortedEmotions.map(([emotion, score]) => (
                 <EmotionBar
