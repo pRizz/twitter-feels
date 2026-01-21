@@ -47,6 +47,7 @@ interface DashboardData {
   };
   filteredAnalysisCount?: number;
   timeBucket?: string;
+  timeCutoff?: string;
 }
 
 // Gauge component
@@ -184,13 +185,36 @@ function UserCard({ user }: { user: UserSummary }) {
   );
 }
 
+// Helper function to format date range based on time period
+function formatDateRange(timeCutoff: string | undefined, timeBucket: string | undefined): string | null {
+  if (!timeCutoff || timeBucket === 'all_time') {
+    return null;
+  }
+
+  const startDate = new Date(timeCutoff);
+  const endDate = new Date(); // Current date
+
+  const formatOptions: Intl.DateTimeFormatOptions = {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  };
+
+  const startStr = startDate.toLocaleDateString(undefined, formatOptions);
+  const endStr = endDate.toLocaleDateString(undefined, formatOptions);
+
+  return `${startStr} - ${endStr}`;
+}
+
 // Time period selector
 function TimePeriodSelector({
   value,
   onChange,
+  dateRange,
 }: {
   value: string;
   onChange: (value: string) => void;
+  dateRange?: string | null;
 }) {
   const periods = [
     { value: 'weekly', label: 'Weekly' },
@@ -217,6 +241,11 @@ function TimePeriodSelector({
           </button>
         ))}
       </div>
+      {dateRange && (
+        <span className="text-xs text-muted-foreground ml-1">
+          ({dateRange})
+        </span>
+      )}
     </div>
   );
 }
@@ -512,7 +541,11 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <h1 className="text-3xl font-bold text-foreground">Twitter Feels Dashboard</h1>
         <div className="flex flex-wrap items-center gap-4">
-          <TimePeriodSelector value={timePeriod} onChange={setTimePeriod} />
+          <TimePeriodSelector
+            value={timePeriod}
+            onChange={setTimePeriod}
+            dateRange={formatDateRange(data?.timeCutoff, data?.timeBucket)}
+          />
           <ModelFilter
             value={modelFilter}
             onChange={setModelFilter}
