@@ -12588,3 +12588,145 @@ Modified `backend/src/routes/admin.ts` to generate multi-model analyses:
 - Features passing: 159/235 (~67.7%)
 - Feature #217 marked as passing
 
+
+
+---
+
+## Testing Session - Feature #162 Regression Test - 2026-01-21
+
+### Feature #162: Notifications auto-dismiss (VERIFIED)
+- **Status**: STILL PASSING ✅
+- **Category**: N-Feedback
+- **Description**: Success notifications disappear after time
+
+### Verification Steps Completed:
+
+1. **Trigger success notification** ✅
+   - Added a new tracked user (@testF162 / Test User F162)
+   - Success notification appeared: "✓ Successfully added @testF162 to tracked users!"
+   - Notification had a dismiss button as expected
+
+2. **Wait for auto-dismiss timeout** ✅
+   - Waited 6 seconds for the auto-dismiss timeout
+
+3. **Verify notification disappears** ✅
+   - After the timeout, the notification element was gone from the DOM
+   - Page snapshot confirmed no notification component present
+   - Auto-dismiss functionality working correctly
+
+### Cleanup:
+- Deleted test user (@testF162) after verification
+
+### Console Errors: 
+- Only Vite HMR/WebSocket errors (dev server issues, unrelated to feature)
+- No application errors
+
+### Result:
+- No regression detected - Feature #162 still working correctly
+- Success notifications auto-dismiss after ~5 seconds as expected
+
+[Testing] Session complete - verified feature #162 (Notifications auto-dismiss) - still passing
+
+
+
+---
+
+## Testing Session - Feature #127 Regression Test - 2026-01-21
+
+### Feature #127: Delete user removes from search (VERIFIED)
+- **Status**: STILL PASSING ✅
+- **Category**: J-Cleanup
+- **Description**: Deleted user no longer appears in search results
+
+### Verification Steps Completed:
+
+1. **Admin deletes a user** ✅
+   - Logged into admin panel at http://localhost:5173/admin
+   - Navigated to Tracked Users page
+   - Identified test user: XSS Test User (Feature 213) / @xssTestUser213
+   - Clicked Delete button
+   - Confirmed deletion in confirmation dialog
+   - User was successfully removed from the users list (7 → 5 users)
+
+2. **Navigate to dashboard search** ✅
+   - Navigated to http://localhost:5173/
+   - Located the search box in 'Tracked Influencers' section
+
+3. **Search for deleted user** ✅
+   - Entered 'xssTestUser213' in the search box
+
+4. **Verify no results found** ✅
+   - Message displayed: 'No users found matching "xssTestUser213". Try a different search term.'
+   - Deleted user no longer appears in search results
+   - User also removed from all leaderboards
+
+### Screenshots:
+- .playwright-mcp/feature127-before-delete-search.png - Search showing user BEFORE deletion
+- .playwright-mcp/feature127-after-delete-search-no-results.png - Search showing NO results AFTER deletion
+- .playwright-mcp/feature127-search-no-results-focused.png - Focused view of 'No users found' message
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected - Feature #127 still working correctly
+- Delete functionality properly removes user from search results
+
+[Testing] Session complete - verified feature #127 (Delete user removes from search) - still passing
+
+
+
+---
+
+## Session - Feature #220 - 2026-01-21
+
+### Feature #220: Aggregation rollups update automatically (COMPLETED)
+- **Status**: PASSING
+- **Category**: F-UIBackend
+- **Description**: New data triggers aggregation updates
+
+### Verification Steps Completed:
+
+1. **Note current aggregations** ✅
+   - Dashboard API: totalTweets=116, totalAnalyses=168
+   - emotionAverages: happy=48, sad=24, angry=21
+   - Gauges: Anger=20, Inspiration=37, Gratitude=37, Mood=62, Intensity=29, Playfulness=38
+   - Sam Altman: analysisCount and tweetCount noted
+
+2. **Trigger crawler to fetch new tweets** ✅
+   - Logged into admin panel at /admin
+   - Clicked "Run Now" button
+   - Crawler started (status changed to "Running")
+
+3. **Wait for completion** ✅
+   - Crawler completed in ~5 seconds
+   - 32 new tweets fetched and analyzed
+
+4. **Query aggregation tables** ✅
+   - Dashboard API after: totalTweets=145 (+29), totalAnalyses=257 (+89)
+   - emotionAverages updated: happy=49, sad=23, angry=19, thankful=39
+   - Gauges updated: Anger=19 (-1), Gratitude=39 (+2), Mood=63 (+1), Intensity=28 (-1)
+
+5. **Verify rollups updated** ✅
+   - Dashboard UI shows updated stats and gauges
+   - User detail page shows updated analysis counts
+   - Leaderboards reflect new data
+   - All aggregations are calculated dynamically from sentiment_analyses table
+
+### Technical Details:
+The aggregation system in this app calculates values on-the-fly from the sentiment_analyses table:
+- Dashboard endpoint (/api/dashboard) queries all analyses and computes averages
+- User detail endpoint (/api/users/:id) calculates per-user averages and medians
+- No pre-computed aggregation tables are used - rollups update automatically
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature220-dashboard-after-crawler.png - Dashboard with updated gauges
+- .playwright-mcp/.playwright-mcp/feature220-user-detail-updated.png - Sam Altman page with 51 analyses
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - system already works correctly)
+
+### Current Progress:
+- Features passing: 160/235 (~68.1%)
+- Feature #220 marked as passing
+
