@@ -16468,3 +16468,115 @@ Added confirmation dialog to the Force Re-Analyze functionality in the admin das
 
 [Testing] Session complete - verified feature #23 (Theme toggle switches to light mode) - PASSING
 
+
+
+---
+
+## Session - Feature #10 Regression Test - 2026-01-21
+
+### Feature #10: Admin login route loads (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: B-Navigation
+- **Description**: Admin login page loads for unauthenticated users
+
+### Verification Steps Completed:
+
+1. **Navigate to /admin without authentication** ✅
+   - Navigated to http://localhost:5173/admin
+   - Automatically redirected to /admin/login?returnTo=%2Fadmin
+
+2. **Verify login form is displayed** ✅
+   - Login form container visible with card design
+   - "Admin Login" heading displayed
+   - "Twitter Feels Administration" subtitle shown
+
+3. **Verify username and password fields exist** ✅
+   - Username text field present and editable
+   - Password text field present with masking
+
+4. **Verify login button is present** ✅
+   - "Log In" button displayed with cyan styling
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature10-admin-login-page.png - Initial admin login page
+- .playwright-mcp/.playwright-mcp/feature10-form-filled.png - Form with test data entered
+
+### Console Errors: 401 on /api/admin/me (expected - auth check before redirect)
+
+### Code Changes: NONE (regression test only - feature working correctly)
+
+### Current Progress:
+- Features passing: 193/235 (~82.1%)
+- Feature #10 confirmed still PASSING
+
+[Testing] Session complete - verified feature #10 (Admin login route loads) - PASSING
+
+
+---
+
+## Session - Feature #86 - 2026-01-21
+
+### Feature #86: New analysis appears after crawler runs (VERIFIED)
+- **Status**: PASSING
+- **Category**: C-RealData
+- **Description**: Fresh tweets appear after crawl completes
+
+### Verification Steps Completed:
+
+1. **Note current tweet count for user** ✅
+   - Navigated to Sam Altman's user detail page (/users/4)
+   - Initial state: 78 tweets, 180 analyses
+   - Screenshot captured: feature86-step1-initial-user-state.png
+
+2. **Trigger crawler run** ✅
+   - Logged in as admin (admin/admin)
+   - Navigated to admin dashboard
+   - Clicked "Run Now" button
+   - Success toast: "Crawler started successfully"
+   - Status changed to "Running"
+   - Screenshot captured: feature86-step2-crawler-running.png
+
+3. **Wait for completion** ✅
+   - Waited 5 seconds
+   - Crawler status changed to "Idle" (completed)
+   - Last run: 1/21/2026, 3:41:39 PM - 5s - 15 tweets fetched - 15 analyzed
+   - Screenshot captured: feature86-step3-crawler-completed.png
+
+4. **Refresh user detail page** ✅
+   - Navigated back to /users/4 (Sam Altman)
+   - Page loaded with fresh data
+
+5. **Verify new tweets appear** ✅
+   - New state: 82 tweets (was 78, +4), 189 analyses (was 180, +9)
+   - "Last updated" timestamp matches crawler completion time
+   - Screenshot captured: feature86-step4-new-tweets-verified.png
+
+6. **Query database to confirm new records** ✅
+   - Ran database verification script
+   - Total tweets in database: 237
+   - Tweets for Sam Altman: 82 (matches UI)
+   - Total sentiment analyses: 587
+   - Analyses for Sam Altman: 189 (matches UI)
+   - Most recent records created at 2026-01-21 15:41:44 (crawler run time)
+
+### Summary:
+- Before crawler: 78 tweets, 180 analyses for Sam Altman
+- After crawler: 82 tweets, 189 analyses for Sam Altman
+- New tweets and analyses created with correct timestamps
+- UI updates immediately to reflect new data
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature86-step1-initial-user-state.png - Initial user state
+- .playwright-mcp/.playwright-mcp/feature86-step2-crawler-running.png - Crawler running
+- .playwright-mcp/.playwright-mcp/feature86-step3-crawler-completed.png - Crawler completed
+- .playwright-mcp/.playwright-mcp/feature86-step4-new-tweets-verified.png - New tweets verified
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 193/235 (~82.1%)
+- Feature #86 marked as passing
+
+[Testing] Session complete - verified feature #86 (New analysis appears after crawler runs) - PASSING
