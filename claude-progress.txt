@@ -8467,3 +8467,62 @@ Ensure all text has sufficient contrast ratio meeting WCAG AA standards (4.5:1 m
 - React Query properly manages data fetching and caching
 - No visible race conditions when rapidly switching filters
 - Data always reflects current filter/page state
+
+---
+
+## Session - Feature #181 - 2026-01-21
+
+### Feature #181: Last updated timestamp accurate (COMPLETED)
+- **Status**: PASSING
+- **Category**: Q-Temporal
+- **Description**: Last updated shows actual crawler finish time
+
+### Problem Identified:
+The dashboard's "Last updated" timestamp was using `MAX(analyzed_at)` from the `sentiment_analyses` table, which shows when individual tweet analyses were completed. This did not match the actual crawler completion time shown in the admin dashboard.
+
+### Solution Implemented:
+Changed the backend API (`/api/dashboard`) to get the `lastUpdated` value from the `crawler_runs` table instead:
+- Query: `SELECT completed_at FROM crawler_runs WHERE status = 'completed' AND completed_at IS NOT NULL ORDER BY completed_at DESC LIMIT 1`
+- This correctly shows when the crawler finished its run
+
+### Verification Steps Completed:
+
+1. **Note crawler completion time** ✅
+   - Viewed admin dashboard: Last Run shows "1/20/2026, 11:58:55 PM"
+   - After fix: Triggered new crawler run via "Run Now" button
+   - Crawler started: 1/21/2026, 1:41:37 PM
+   - Crawler completed: 1/21/2026, 1:41:42 PM (5 second duration)
+
+2. **Check dashboard last updated** ✅
+   - Before fix: Dashboard showed "1/21/2026, 1:11:35 PM" (from sentiment_analyses)
+   - After fix: Dashboard shows "1/21/2026, 1:41:42 PM" (from crawler_runs)
+
+3. **Verify times match** ✅
+   - Admin dashboard crawler completion: 1/21/2026, 1:41:42 PM
+   - Public dashboard "Last updated": 1/21/2026, 1:41:42 PM
+   - EXACT MATCH
+
+### Code Changes:
+- **backend/src/routes/public.ts** (lines 139-148):
+  - Changed from: `SELECT MAX(analyzed_at) as last_updated FROM sentiment_analyses`
+  - Changed to: `SELECT completed_at FROM crawler_runs WHERE status = 'completed' AND completed_at IS NOT NULL ORDER BY completed_at DESC LIMIT 1`
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature181-dashboard-last-updated.png - Dashboard with corrected timestamp
+- .playwright-mcp/.playwright-mcp/feature181-admin-crawler-time.png - Admin dashboard showing crawler completion time
+- .playwright-mcp/.playwright-mcp/feature181-dashboard-after-crawl.png - Dashboard after triggering new crawler run
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 122/235 (~51.9%)
+- Feature #181 marked as passing
+
+### Commit:
+- 2e6f425 - feat: Use crawler completion time for dashboard Last Updated (#181)
+
+### Notes:
+- The fix ensures users see when data was last collected (crawler completion) rather than
+  when individual analyses finished, which is more meaningful and accurate
+- Fallback to current timestamp if no completed crawler runs exist
