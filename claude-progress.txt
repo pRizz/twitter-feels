@@ -9710,3 +9710,175 @@ Changed the backend API (`/api/dashboard`) to get the `lastUpdated` value from t
 - All pages render correctly without JavaScript errors
 - User interactions (clicks, selections, navigation) do not trigger errors
 - Both public and admin pages verified clean
+
+
+---
+
+## Session - Feature #177 Regression Test - 2026-01-21
+
+### Feature #177: Timestamps formatted correctly (REGRESSION TEST)
+- **Status**: PASSING (verified)
+- **Category**: Q-Temporal
+- **Description**: Date/time formatting is consistent
+
+### Verification Steps Completed:
+
+1. **View various timestamps in app** ✅
+   - Dashboard: Header timestamp, date range filters
+   - User Detail: Tweet dates, chart axis dates
+   - Tweet Detail: Tweet timestamp, analysis date
+   - Admin Dashboard: Crawler run timestamps
+   - Error Logs: Relative times and full timestamps
+
+2. **Verify consistent format used** ✅
+   - Full datetime: M/D/YYYY, H:MM:SS AM/PM
+   - Date only: Mon DD, YYYY
+   - Abbreviated: Mon DD
+   - Relative: Just now, 19h ago, 1d ago
+   - Time only: HH:MM AM/PM
+
+3. **Verify format is readable** ✅
+   - Month abbreviations used (Jan, Dec)
+   - 12-hour format with AM/PM
+   - Relative times for recent events
+   - Full timestamps when precision needed
+
+### Screenshots:
+- .playwright-mcp/feature177-user-detail-timestamps.png
+- .playwright-mcp/feature177-tweet-detail-timestamps.png  
+- .playwright-mcp/feature177-admin-dashboard-timestamps.png
+- .playwright-mcp/feature177-error-logs-timestamps.png
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 135/235 (~57.4%)
+- Feature #177 regression test PASSED
+
+### Notes:
+- All timestamp formats are consistent within their context
+- Readable human-friendly formats used throughout
+- No formatting inconsistencies found
+
+
+
+---
+
+## Session - Feature #195 - 2026-01-21
+
+### Feature #195: Gauges have gradient effects (COMPLETED)
+- **Status**: PASSING
+- **Category**: style
+- **Description**: Gauge components show subtle gradient styling
+
+### Implementation:
+
+1. **Added adjustBrightness helper function**
+   - Parses hex color and adjusts RGB values
+   - Used to create lighter (+25%) and darker (-15%) variants of each gauge color
+
+2. **Applied horizontal gradient to gauge fills**
+   - Changed from solid backgroundColor to linear-gradient
+   - Pattern: lighter color (0%) → main color (50%) → darker color (100%)
+   - Creates smooth left-to-right gradient effect
+
+3. **Added 3D highlight overlay**
+   - Vertical gradient overlay for depth effect
+   - Top: rgba(255,255,255,0.15) - subtle highlight
+   - Bottom: rgba(0,0,0,0.1) - subtle shadow
+   - Creates a polished, three-dimensional appearance
+
+4. **Enhanced box-shadow**
+   - Outer glow: 0 0 12px with 50% opacity
+   - Inset highlight: 0 1px 1px with 40% opacity
+   - Provides additional depth and glow effect
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173
+
+2. **Inspect gauge components** ✅
+   - Used browser evaluation to inspect CSS styles
+   - All 6 gauges have gradient effects applied:
+     - Anger Gauge: linear-gradient(90deg, rgb(255, 132, 132) 0%, rgb(255, 68, 68) 50%, rgb(217, 30, 30) 100%)
+     - Inspiration Gauge: linear-gradient(90deg, rgb(255, 255, 64) 0%, rgb(255, 215, 0) 50%, rgb(217, 177, 0) 100%)
+     - Gratitude Gauge: linear-gradient(90deg, rgb(114, 255, 114) 0%, rgb(50, 205, 50) 50%, rgb(12, 167, 12) 100%)
+     - Mood Gauge: linear-gradient(90deg, rgb(64, 255, 64) 0%, rgb(0, 255, 0) 50%, rgb(0, 217, 0) 100%)
+     - Intensity Gauge: linear-gradient(90deg, rgb(255, 132, 132) 0%, rgb(255, 68, 68) 50%, rgb(217, 30, 30) 100%)
+     - Playfulness Gauge: linear-gradient(90deg, rgb(250, 149, 255) 0%, rgb(186, 85, 211) 50%, rgb(148, 47, 173) 100%)
+
+3. **Verify subtle gradient effects present** ✅
+   - Gradients visible in both dark and light modes
+   - Smooth color transitions from light to dark
+
+4. **Verify gradients match design system** ✅
+   - Design spec (app_spec.txt line 498): 'Subtle gradients on gauges'
+   - Implementation matches futuristic aesthetic with gentle glows
+
+### Screenshots:
+- .playwright-mcp/feature195-gauges-before.png - Gauges before changes (solid color)
+- .playwright-mcp/feature195-gauges-with-gradient.png - Gauges with gradient (dark mode)
+- .playwright-mcp/feature195-gauges-light-mode.png - Gauges with gradient (light mode)
+- .playwright-mcp/feature195-gauges-final-verification.png - Final verification
+
+### Console Errors:
+- None
+
+### Current Progress:
+- Features passing: 136/235 (~57.9%)
+- Feature #195 marked as passing
+
+### Code Changes:
+- frontend/src/pages/Dashboard.tsx: Added adjustBrightness() helper and updated Gauge component
+
+
+
+
+---
+
+## Session - Feature #151 - 2026-01-21
+
+### Feature #151: Duplicate user handle rejected (VERIFIED)
+- **Status**: PASSING
+- **Category**: M-FormValidation
+- **Description**: Cannot add same Twitter handle twice
+
+### Verification Steps Completed:
+
+1. **Add a Twitter user** ✅
+   - Added testuser151 via Admin > Tracked Users
+   - Success toast: 'Successfully added @testuser151 to tracked users!'
+   - Total Tracked count increased from 1 to 2
+
+2. **Try to add same handle again** ✅
+   - Clicked '+ Add User' button
+   - Entered 'testuser151' in Twitter Handle field
+   - Clicked 'Add User' submit button
+
+3. **Verify duplicate error displayed** ✅
+   - Error alert displayed: 'User is already being tracked'
+   - Server responded with HTTP 409 Conflict (correct behavior)
+   - Dismiss button available to close the error
+
+4. **Verify only one entry exists** ✅
+   - Total Tracked count remained at 2 (not 3)
+   - Table shows only one testuser151 entry
+   - No duplicate rows created
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature151-duplicate-rejected.png - Shows duplicate rejection error
+
+### Console Errors:
+- Only expected 409 Conflict response (correct duplicate rejection behavior)
+
+### Cleanup:
+- Deleted test user testuser151 after verification
+- User count back to 1
+
+### Result:
+- No regression detected - Feature #151 still working correctly
+- Duplicate user handle protection functioning as expected
+
+[Testing] Session complete - verified feature #151 (Duplicate user handle rejected) - still passing
+
