@@ -372,6 +372,25 @@ export default function AdminModels() {
                           {model.isEnabled ? 'Enabled' : 'Disabled'}
                         </button>
                       )}
+                      {(model.downloadStatus === 'error' || model.downloadStatus === 'not_downloaded') && model.huggingfaceModelId && (
+                        <button
+                          onClick={() => handleDownload(model.huggingfaceModelId!)}
+                          disabled={downloadingModels.has(model.huggingfaceModelId)}
+                          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          {downloadingModels.has(model.huggingfaceModelId) ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Downloading...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-4 w-4" />
+                              Retry Download
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
