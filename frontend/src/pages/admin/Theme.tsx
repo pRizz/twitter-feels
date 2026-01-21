@@ -4,6 +4,27 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/useToast';
 import { api } from '@/lib/api';
 
+// Hex color validation regex - matches #RGB, #RRGGBB (case insensitive)
+const HEX_COLOR_REGEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+
+// Validate hex color format
+function isValidHexColor(color: string): boolean {
+  return HEX_COLOR_REGEX.test(color);
+}
+
+// Normalize hex color to 6-digit format
+function normalizeHexColor(color: string): string {
+  if (!isValidHexColor(color)) return color;
+  // If 3-digit hex, expand to 6-digit
+  if (color.length === 4) {
+    const r = color[1];
+    const g = color[2];
+    const b = color[3];
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+  return color;
+}
+
 // Types
 interface EmotionConfig {
   [emotion: string]: {
@@ -57,6 +78,10 @@ export default function AdminTheme() {
     gauges: true,
   });
 
+  // Track hex input values (for text input) and validation errors
+  const [hexInputValues, setHexInputValues] = useState<Record<string, string>>({});
+  const [hexErrors, setHexErrors] = useState<Record<string, string>>({});
+
   const fetchThemeSettings = async () => {
     try {
       const response = await api.get('/api/admin/theme');
@@ -90,6 +115,48 @@ export default function AdminTheme() {
       ...prev,
       [emotion]: { ...prev[emotion], color },
     }));
+    // Update hex input value and clear error when color picker is used
+    setHexInputValues((prev) => ({ ...prev, [emotion]: color }));
+    setHexErrors((prev) => {
+      const updated = { ...prev };
+      delete updated[emotion];
+      return updated;
+    });
+  };
+
+  const handleHexInputChange = (emotion: string, value: string) => {
+    // Always update the input value for user to see what they're typing
+    setHexInputValues((prev) => ({ ...prev, [emotion]: value }));
+
+    // Validate the input
+    if (value === '') {
+      // Empty is not valid
+      setHexErrors((prev) => ({ ...prev, [emotion]: 'Color is required' }));
+      return;
+    }
+
+    // Ensure it starts with #
+    const colorValue = value.startsWith('#') ? value : `#${value}`;
+
+    if (!isValidHexColor(colorValue)) {
+      setHexErrors((prev) => ({
+        ...prev,
+        [emotion]: 'Invalid hex color (e.g., #FF0000 or #F00)',
+      }));
+      return;
+    }
+
+    // Valid hex - clear error and update the color
+    setHexErrors((prev) => {
+      const updated = { ...prev };
+      delete updated[emotion];
+      return updated;
+    });
+    const normalizedColor = normalizeHexColor(colorValue);
+    setEmotions((prev) => ({
+      ...prev,
+      [emotion]: { ...prev[emotion], color: normalizedColor },
+    }));
   };
 
   const handleGaugeLabelChange = (
@@ -104,7 +171,16 @@ export default function AdminTheme() {
     });
   };
 
+  // Check if there are any hex validation errors
+  const hasHexErrors = Object.keys(hexErrors).length > 0;
+
   const handleSaveEmotions = async () => {
+    // Prevent saving if there are validation errors
+    if (hasHexErrors) {
+      setError('Please fix the invalid color values before saving');
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
@@ -179,7 +255,10 @@ export default function AdminTheme() {
 
       {/* Error Message */}
       {error && (
-        <div role="alert" className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
+        <div
+          role="alert"
+          className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive"
+        >
           {error}
           <button
             onClick={() => setError(null)}
@@ -219,48 +298,81 @@ export default function AdminTheme() {
 
         {expandedSections.emotions && (
           <div className="p-6 pt-0 border-t border-border">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-              {Object.entries(emotions).map(([emotion, config]) => (
-                <div
-                  key={emotion}
-                  className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg"
-                >
-                  <div className="relative">
-                    <label htmlFor={`emotion-color-${emotion}`} className="sr-only">
-                      Change {emotionDisplayNames[emotion] || emotion} color
-                    </label>
-                    <input
-                      id={`emotion-color-${emotion}`}
-                      type="color"
-                      value={config.color}
-                      onChange={(e) => handleEmotionColorChange(emotion, e.target.value)}
-                      className="w-10 h-10 rounded-lg cursor-pointer border-2 border-border"
-                      style={{ backgroundColor: config.color }}
-                      title={`Change ${emotionDisplayNames[emotion] || emotion} color`}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">
-                      {emotionDisplayNames[emotion] || emotion}
-                    </div>
-                    <div className="text-xs text-muted-foreground font-mono">
-                      {config.color.toUpperCase()}
-                    </div>
-                  </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              {Object.entries(emotions).map(([emotion, config]) => {
+                const hexError = hexErrors[emotion];
+                const hexInputValue = hexInputValues[emotion] ?? config.color;
+                return (
                   <div
-                    className="w-6 h-6 rounded-full shadow-inner"
-                    style={{ backgroundColor: config.color }}
-                    title={`Preview: ${config.color}`}
-                  />
-                </div>
-              ))}
+                    key={emotion}
+                    className={`p-3 bg-muted/30 rounded-lg ${hexError ? 'border border-destructive' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <label htmlFor={`emotion-color-${emotion}`} className="sr-only">
+                          Change {emotionDisplayNames[emotion] || emotion} color
+                        </label>
+                        <input
+                          id={`emotion-color-${emotion}`}
+                          type="color"
+                          value={config.color}
+                          onChange={(e) => handleEmotionColorChange(emotion, e.target.value)}
+                          className="w-10 h-10 rounded-lg cursor-pointer border-2 border-border"
+                          style={{ backgroundColor: config.color }}
+                          title={`Change ${emotionDisplayNames[emotion] || emotion} color`}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-sm mb-1">
+                          {emotionDisplayNames[emotion] || emotion}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label htmlFor={`emotion-hex-${emotion}`} className="sr-only">
+                            Hex color for {emotionDisplayNames[emotion] || emotion}
+                          </label>
+                          <input
+                            id={`emotion-hex-${emotion}`}
+                            type="text"
+                            value={hexInputValue}
+                            onChange={(e) => handleHexInputChange(emotion, e.target.value)}
+                            placeholder="#FF0000"
+                            maxLength={7}
+                            className={`w-24 px-2 py-1 text-xs font-mono bg-background border rounded focus:outline-none focus:ring-2 focus:ring-primary ${
+                              hexError ? 'border-destructive text-destructive' : 'border-border'
+                            }`}
+                            aria-invalid={!!hexError}
+                            aria-describedby={hexError ? `hex-error-${emotion}` : undefined}
+                          />
+                          <div
+                            className="w-6 h-6 rounded-full shadow-inner flex-shrink-0"
+                            style={{ backgroundColor: hexError ? '#808080' : config.color }}
+                            title={hexError ? 'Invalid color' : `Preview: ${config.color}`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    {hexError && (
+                      <div
+                        id={`hex-error-${emotion}`}
+                        className="mt-2 text-xs text-destructive"
+                        role="alert"
+                      >
+                        {hexError}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex items-center justify-end gap-4">
+              {hasHexErrors && (
+                <span className="text-sm text-destructive">Fix invalid colors to save</span>
+              )}
               <button
                 onClick={handleSaveEmotions}
-                disabled={saving}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                disabled={saving || hasHexErrors}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? 'Saving...' : 'Save Emotion Colors'}
               </button>
@@ -300,14 +412,14 @@ export default function AdminTheme() {
           <div className="p-6 pt-0 border-t border-border">
             <div className="space-y-4 mb-6">
               {gauges.map((gauge, index) => (
-                <div
-                  key={index}
-                  className="p-4 bg-muted/30 rounded-lg border border-border/50"
-                >
+                <div key={index} className="p-4 bg-muted/30 rounded-lg border border-border/50">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Gauge Name */}
                     <div>
-                      <label htmlFor={`gauge-name-${index}`} className="block text-sm font-medium mb-1">
+                      <label
+                        htmlFor={`gauge-name-${index}`}
+                        className="block text-sm font-medium mb-1"
+                      >
                         Gauge Name
                       </label>
                       <input
@@ -321,7 +433,10 @@ export default function AdminTheme() {
 
                     {/* Low Label */}
                     <div>
-                      <label htmlFor={`gauge-low-${index}`} className="block text-sm font-medium mb-1">
+                      <label
+                        htmlFor={`gauge-low-${index}`}
+                        className="block text-sm font-medium mb-1"
+                      >
                         Low Label (0%)
                       </label>
                       <input
@@ -336,7 +451,10 @@ export default function AdminTheme() {
 
                     {/* High Label */}
                     <div>
-                      <label htmlFor={`gauge-high-${index}`} className="block text-sm font-medium mb-1">
+                      <label
+                        htmlFor={`gauge-high-${index}`}
+                        className="block text-sm font-medium mb-1"
+                      >
                         High Label (100%)
                       </label>
                       <input
@@ -417,8 +535,8 @@ export default function AdminTheme() {
             <h4 className="font-medium text-foreground mb-2">Emotion Colors</h4>
             <p>
               Each emotion tracked by the system has a configurable color. These colors are used
-              throughout the dashboard in charts, gauges, and visualizations. Click on any color
-              box to open the color picker.
+              throughout the dashboard in charts, gauges, and visualizations. Click on any color box
+              to open the color picker, or type a hex code directly.
             </p>
           </div>
           <div>
@@ -433,7 +551,8 @@ export default function AdminTheme() {
         <div className="mt-4 p-4 bg-muted/30 rounded-lg">
           <p className="text-sm">
             <span className="font-medium text-primary">Note:</span> Changes take effect immediately
-            after saving. All users will see the updated colors and labels on their next page refresh.
+            after saving. All users will see the updated colors and labels on their next page
+            refresh.
           </p>
         </div>
       </div>
