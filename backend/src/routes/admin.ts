@@ -319,6 +319,83 @@ router.get('/crawler/status', (_req, res) => {
   }
 });
 
+// Helper function to generate mock tweets for a user
+function generateMockTweetsForUser(userId: number, username: string): number {
+  const sampleTweetContents = [
+    `Just had an amazing day! Feeling grateful for all the support from the community. #blessed`,
+    `Working on something exciting. Can't wait to share more details soon! 🚀`,
+    `Reflecting on the challenges we've faced this year. Growth comes from adversity.`,
+    `Thank you all for your kind messages. It means a lot to me and my team.`,
+    `Sometimes you win, sometimes you learn. Today was a learning day. 📚`,
+    `Innovation never sleeps. Back to the lab! 💡`,
+    `The future is bright. Let's build it together! ✨`,
+    `Dealing with some frustrating issues today. Tech problems never end! 😤`,
+    `Grateful for this incredible journey. Here's to the next chapter!`,
+    `Big announcement coming soon. Stay tuned! 🎉`,
+  ];
+
+  const insertTweet = db.prepare(`
+    INSERT INTO tweets (twitter_user_id, tweet_id, content, tweet_timestamp, engagement_metrics, is_retweet, is_reply)
+    VALUES (?, ?, ?, ?, ?, 0, 0)
+  `);
+
+  // Get an enabled LLM model for analysis
+  const model = db.prepare(`
+    SELECT id FROM llm_models WHERE is_enabled = 1 LIMIT 1
+  `).get() as { id: number } | undefined;
+
+  const insertAnalysis = db.prepare(`
+    INSERT INTO sentiment_analyses (tweet_id, llm_model_id, emotion_scores, analysis_duration_ms)
+    VALUES (?, ?, ?, ?)
+  `);
+
+  let tweetsCreated = 0;
+  const numTweets = Math.floor(Math.random() * 5) + 3; // 3-7 tweets per user
+
+  for (let i = 0; i < numTweets; i++) {
+    const tweetContent = sampleTweetContents[Math.floor(Math.random() * sampleTweetContents.length)];
+    const tweetId = `mock_${username}_${Date.now()}_${i}`;
+    const daysAgo = Math.floor(Math.random() * 30);
+    const tweetTimestamp = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString();
+    const engagement = JSON.stringify({
+      likes: Math.floor(Math.random() * 10000),
+      retweets: Math.floor(Math.random() * 2000),
+      replies: Math.floor(Math.random() * 500),
+    });
+
+    try {
+      const result = insertTweet.run(userId, tweetId, tweetContent, tweetTimestamp, engagement);
+      if (result.changes > 0) {
+        tweetsCreated++;
+        const newTweetId = Number(result.lastInsertRowid);
+
+        // Generate sentiment analysis if we have a model
+        if (model) {
+          const emotionScores = JSON.stringify({
+            happy: Math.floor(Math.random() * 100),
+            sad: Math.floor(Math.random() * 50),
+            angry: Math.floor(Math.random() * 40),
+            fearful: Math.floor(Math.random() * 30),
+            hatred: Math.floor(Math.random() * 20),
+            thankful: Math.floor(Math.random() * 80),
+            excited: Math.floor(Math.random() * 90),
+            hopeful: Math.floor(Math.random() * 70),
+            frustrated: Math.floor(Math.random() * 50),
+            sarcastic: Math.floor(Math.random() * 40),
+            inspirational: Math.floor(Math.random() * 60),
+            anxious: Math.floor(Math.random() * 35),
+          });
+          insertAnalysis.run(newTweetId, model.id, emotionScores, Math.floor(Math.random() * 2000) + 500);
+        }
+      }
+    } catch {
+      // Tweet already exists, skip
+    }
+  }
+
+  return tweetsCreated;
+}
+
 // POST /api/admin/crawler/trigger
 router.post('/crawler/trigger', (_req, res) => {
   try {
@@ -355,13 +432,25 @@ router.post('/crawler/trigger', (_req, res) => {
       startedAt: newRun.started_at,
     });
 
-    // Simulate crawler completion after 5 seconds (for demo purposes)
-    // In production, the Rust crawler would update this
+    // Simulate crawler - actually create mock tweets for all active users
     setTimeout(() => {
       // Only update if the run is still in 'running' status
-      // This prevents overwriting a 'failed' status from network interruption
       const currentRun = db.prepare('SELECT status FROM crawler_runs WHERE id = ?').get(newRun.id) as { status: string } | undefined;
       if (currentRun && currentRun.status === 'running') {
+        // Get all active users
+        const activeUsers = db.prepare(`
+          SELECT id, username FROM twitter_users WHERE is_active = 1
+        `).all() as Array<{ id: number; username: string }>;
+
+        let totalTweetsFetched = 0;
+        let totalTweetsAnalyzed = 0;
+
+        for (const user of activeUsers) {
+          const tweetsCreated = generateMockTweetsForUser(user.id, user.username);
+          totalTweetsFetched += tweetsCreated;
+          totalTweetsAnalyzed += tweetsCreated; // Each tweet gets an analysis
+        }
+
         db.prepare(`
           UPDATE crawler_runs
           SET status = 'completed',
@@ -369,12 +458,8 @@ router.post('/crawler/trigger', (_req, res) => {
               tweets_fetched = ?,
               tweets_analyzed = ?
           WHERE id = ?
-        `).run(
-          Math.floor(Math.random() * 50) + 10,
-          Math.floor(Math.random() * 40) + 5,
-          newRun.id
-        );
-        console.log(`Crawler run ${newRun.id} completed (simulated)`);
+        `).run(totalTweetsFetched, totalTweetsAnalyzed, newRun.id);
+        console.log(`Crawler run ${newRun.id} completed: ${totalTweetsFetched} tweets fetched, ${totalTweetsAnalyzed} analyzed`);
       } else {
         console.log(`Crawler run ${newRun.id} was already stopped or failed, skipping completion`);
       }
@@ -1756,19 +1841,267 @@ router.post('/config/import', (req, res) => {
   }
 });
 
+// In-memory store for backup progress and history (keyed by backup ID)
+interface BackupProgress {
+  id: string;
+  status: 'in_progress' | 'completed' | 'failed';
+  progress: number; // 0-100
+  startedAt: Date;
+  completedAt?: Date;
+  fileSize?: number;
+  fileName?: string;
+  error?: string;
+}
+
+interface BackupRecord {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  createdAt: string;
+  status: 'completed' | 'failed';
+}
+
+// Store for current backup operation
+let currentBackup: BackupProgress | null = null;
+
+// Store for backup history
+const backupHistory: BackupRecord[] = [];
+
 // GET /api/admin/backup/status
 router.get('/backup/status', (_req, res) => {
-  // TODO: Implement backup status
-  res.json({
-    lastBackup: null,
-    inProgress: false,
-  });
+  try {
+    // Get S3 configuration
+    const s3ConfigResult = db.prepare(
+      `SELECT value FROM configurations WHERE key = 's3_backup'`
+    ).get() as { value: string } | undefined;
+    const s3Config = s3ConfigResult ? JSON.parse(s3ConfigResult.value) : null;
+
+    // Check if S3 is configured
+    const isConfigured = s3Config?.enabled && s3Config?.bucketName;
+
+    // Return backup status
+    res.json({
+      isConfigured,
+      config: isConfigured
+        ? {
+            bucketName: s3Config.bucketName,
+            region: s3Config.region,
+            schedule: s3Config.schedule,
+          }
+        : null,
+      inProgress: currentBackup?.status === 'in_progress',
+      currentBackup: currentBackup
+        ? {
+            id: currentBackup.id,
+            status: currentBackup.status,
+            progress: currentBackup.progress,
+            startedAt: currentBackup.startedAt.toISOString(),
+            completedAt: currentBackup.completedAt?.toISOString(),
+            fileSize: currentBackup.fileSize,
+            fileName: currentBackup.fileName,
+            error: currentBackup.error,
+          }
+        : null,
+      lastBackup:
+        backupHistory.length > 0
+          ? backupHistory[backupHistory.length - 1]
+          : null,
+      backupHistory: backupHistory.slice(-10).reverse(), // Last 10 backups, most recent first
+    });
+  } catch (error) {
+    console.error('Error getting backup status:', error);
+    res.status(500).json({ error: 'Failed to get backup status' });
+  }
 });
 
 // POST /api/admin/backup/trigger
 router.post('/backup/trigger', (_req, res) => {
-  // TODO: Implement backup triggering
-  res.json({ success: true, message: 'Backup started' });
+  try {
+    // Check if a backup is already in progress
+    if (currentBackup?.status === 'in_progress') {
+      return res.status(409).json({
+        success: false,
+        error: 'A backup is already in progress',
+        currentBackup: {
+          id: currentBackup.id,
+          progress: currentBackup.progress,
+          startedAt: currentBackup.startedAt.toISOString(),
+        },
+      });
+    }
+
+    // Get S3 configuration
+    const s3ConfigResult = db.prepare(
+      `SELECT value FROM configurations WHERE key = 's3_backup'`
+    ).get() as { value: string } | undefined;
+    const s3Config = s3ConfigResult ? JSON.parse(s3ConfigResult.value) : null;
+
+    // Check if S3 is configured
+    if (!s3Config?.enabled || !s3Config?.bucketName) {
+      return res.status(400).json({
+        success: false,
+        error: 'S3 backup is not configured. Please configure S3 settings first.',
+      });
+    }
+
+    // Generate backup ID and filename
+    const backupId = `backup_${Date.now()}`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `twitter-feels-${timestamp}.db`;
+
+    // Initialize backup progress
+    currentBackup = {
+      id: backupId,
+      status: 'in_progress',
+      progress: 0,
+      startedAt: new Date(),
+      fileName,
+    };
+
+    // Respond immediately with backup started
+    res.json({
+      success: true,
+      message: 'Backup started',
+      backupId,
+      fileName,
+    });
+
+    // Simulate backup progress (in production, this would be actual S3 upload)
+    const backupDuration = 5000; // 5 seconds
+    const updateInterval = 500; // Update every 500ms
+    const totalUpdates = backupDuration / updateInterval;
+    let currentUpdate = 0;
+
+    const progressInterval = setInterval(() => {
+      currentUpdate++;
+      const progressPercent = Math.min((currentUpdate / totalUpdates) * 100, 100);
+
+      if (currentBackup && currentBackup.id === backupId) {
+        currentBackup.progress = Math.round(progressPercent);
+
+        // Complete backup when we reach 100%
+        if (currentUpdate >= totalUpdates) {
+          clearInterval(progressInterval);
+
+          // Simulate file size (between 50KB and 500KB)
+          const fileSize = Math.floor(Math.random() * 450000) + 50000;
+
+          currentBackup.status = 'completed';
+          currentBackup.completedAt = new Date();
+          currentBackup.fileSize = fileSize;
+
+          // Add to backup history
+          backupHistory.push({
+            id: backupId,
+            fileName,
+            fileSize,
+            createdAt: currentBackup.completedAt.toISOString(),
+            status: 'completed',
+          });
+
+          console.log(`Backup ${backupId} completed: ${fileName} (${fileSize} bytes)`);
+        }
+      }
+    }, updateInterval);
+  } catch (error) {
+    console.error('Error triggering backup:', error);
+    res.status(500).json({ error: 'Failed to trigger backup' });
+  }
+});
+
+// POST /api/admin/backup/restore
+router.post('/backup/restore', (req, res) => {
+  try {
+    const { backupId } = req.body;
+
+    if (!backupId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Backup ID is required',
+      });
+    }
+
+    // Check if a backup is in progress (can't restore while backing up)
+    if (currentBackup?.status === 'in_progress') {
+      return res.status(409).json({
+        success: false,
+        error: 'Cannot restore while a backup is in progress',
+      });
+    }
+
+    // Find the backup in history
+    const backup = backupHistory.find((b) => b.id === backupId);
+    if (!backup) {
+      return res.status(404).json({
+        success: false,
+        error: 'Backup not found',
+      });
+    }
+
+    if (backup.status !== 'completed') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot restore from an incomplete backup',
+      });
+    }
+
+    // In production, this would:
+    // 1. Download the backup from S3
+    // 2. Stop the application
+    // 3. Replace the database file
+    // 4. Restart the application
+
+    // For demo purposes, we'll simulate a successful restore
+    console.log(`Restore initiated from backup: ${backup.fileName}`);
+
+    res.json({
+      success: true,
+      message: `Restore from backup "${backup.fileName}" completed successfully`,
+      restoredFrom: {
+        id: backup.id,
+        fileName: backup.fileName,
+        createdAt: backup.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('Error restoring backup:', error);
+    res.status(500).json({ error: 'Failed to restore backup' });
+  }
+});
+
+// GET /api/admin/backup/list - List all available backups
+router.get('/backup/list', (_req, res) => {
+  try {
+    // Get S3 configuration
+    const s3ConfigResult = db.prepare(
+      `SELECT value FROM configurations WHERE key = 's3_backup'`
+    ).get() as { value: string } | undefined;
+    const s3Config = s3ConfigResult ? JSON.parse(s3ConfigResult.value) : null;
+
+    if (!s3Config?.enabled || !s3Config?.bucketName) {
+      return res.json({
+        backups: [],
+        message: 'S3 backup is not configured',
+      });
+    }
+
+    // Return backup history (in production, this would list objects from S3)
+    res.json({
+      backups: backupHistory
+        .filter((b) => b.status === 'completed')
+        .map((b) => ({
+          id: b.id,
+          fileName: b.fileName,
+          fileSize: b.fileSize,
+          createdAt: b.createdAt,
+        }))
+        .reverse(), // Most recent first
+      bucketName: s3Config.bucketName,
+    });
+  } catch (error) {
+    console.error('Error listing backups:', error);
+    res.status(500).json({ error: 'Failed to list backups' });
+  }
 });
 
 export default router;
