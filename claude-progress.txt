@@ -18107,3 +18107,104 @@ Updated the database configurations table to set the correct lowLabel for Anger 
 
 [Testing] Session complete - verified feature #29 (Inspiration gauge displays with labels) - PASSING
 
+
+---
+
+## Session - Feature #44 Regression Test - 2026-01-21
+
+### Feature #44: User detail shows recent tweets (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: functional
+- **Description**: List of recent tweets with sentiment scores is displayed
+
+### Verification Steps Completed:
+
+1. **Navigate to user detail page** ✅
+   - Navigated to /users/4 (Sam Altman)
+   - Page loaded successfully with user information
+
+2. **Locate recent tweets section** ✅
+   - Found '💬 Recent Tweets (96 tweets)' section
+   - Time filter buttons available: Weekly, Monthly, Yearly, All Time
+
+3. **Verify tweets are listed** ✅
+   - 10 tweets displayed per page
+   - Pagination shows 'Page 1 of 10' (96 total tweets)
+   - Tweets are clickable links to detail view
+
+4. **Verify each tweet shows content preview** ✅
+   - Tweet date displayed (e.g., Jan 22, 2026)
+   - Tweet text content shown (truncated for long tweets with '...')
+   - Engagement metrics visible: ❤️ likes, 🔁 retweets, 💬 comments
+
+5. **Verify sentiment scores are visible** ✅
+   - Each tweet displays top sentiment emotion and score
+   - Examples: 'excited (60)', 'frustrated (47)', 'happy (67)'
+   - Sentiment displayed as colored badge
+
+### Screenshots:
+- .playwright-mcp/feature44-recent-tweets-section.png - User detail page overview
+- .playwright-mcp/feature44-recent-tweets-list.png - Recent tweets section detail
+
+### Console Errors:
+- Vite HMR WebSocket errors (dev-time only, not application errors)
+- No actual application errors detected
+
+### Code Changes: NONE (regression test only - feature working correctly)
+
+[Testing] Session complete - verified feature #44 (User detail shows recent tweets) - PASSING
+
+
+
+---
+
+## Session - Feature #30 - 2026-01-21
+
+### Feature #30: Gratitude gauge displays with labels (VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Gratitude gauge shows with Entitled/Thankful labels
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173/
+   - Dashboard loaded successfully with all gauges
+
+2. **Locate Gratitude Gauge** ✅
+   - Found in "⚡ Average Twitter Feel" section
+   - Third gauge in the row (after Anger and Inspiration)
+
+3. **Verify gauge is visible with value** ✅
+   - Gauge displays with value 41
+   - Green progress bar (#32CD32) shows fill level
+   - Numeric value displayed in center of bar
+
+4. **Verify 'Entitled' label on low end** ✅
+   - "Entitled" text displayed on left side of gauge
+   - Correct positioning below the progress bar
+
+5. **Verify 'Thankful' label on high end** ✅
+   - "Thankful" text displayed on right side of gauge
+   - Correct positioning below the progress bar
+
+### API Verification:
+- GET /api/dashboard confirms Gratitude Gauge config:
+  - name: "Gratitude Gauge"
+  - value: 40
+  - lowLabel: "Entitled"
+  - highLabel: "Thankful"
+  - color: "#32CD32" (green)
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature30-gratitude-gauge.png - Dashboard showing Gratitude Gauge with Entitled/Thankful labels
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 213/235 (~90.6%)
+- Feature #30 marked as passing
+
+[Testing] Session complete - verified feature #30 (Gratitude gauge displays with labels) - PASSING
