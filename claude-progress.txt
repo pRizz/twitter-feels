@@ -6506,3 +6506,67 @@ Added "Clear Filters" functionality to the Dashboard page:
   - Dashboard.tsx: setError() for crawler operations
 - All error messages are dismissible with a "Dismiss" button
 
+[Testing] 2026-01-21 - Feature #121 regression test PASSED - Very long URL handled:
+- Tested URLs with 5000+ character query strings
+- Dashboard (/) loaded correctly with very long URL
+- User Detail (/users/4) loaded correctly with very long URL
+- Admin Login (/admin/login) loaded correctly with very long URL
+- All pages rendered properly without breaking navigation
+- No JavaScript console errors
+- Screenshots: feature121-long-url-dashboard.png, feature121-long-url-user-detail.png, feature121-long-url-admin-login.png
+[Testing] Session complete - verified feature #121 (Very long URL handled) - still passing
+
+---
+
+## Session - Feature #162 - 2026-01-21
+
+### Feature #162: Notifications auto-dismiss (COMPLETED)
+- **Status**: PASSING
+- **Category**: N-Feedback
+- **Description**: Success notifications disappear after time
+
+### Verification Steps Completed:
+
+1. **Trigger success notification** ✅
+   - Added new user "testautodismiss" on /admin/users
+   - Success toast appeared: "Successfully added @testautodismiss to tracked users!"
+   - Toast displayed with green styling and checkmark icon
+
+2. **Wait for auto-dismiss timeout** ✅
+   - Toast remained visible initially
+   - Default timeout is 5000ms (5 seconds) as implemented in useToast.ts
+
+3. **Verify notification disappears** ✅
+   - Toast container removed from DOM after timeout
+   - Page snapshot confirmed toast element no longer present
+   - Additional test: Saved crawler settings, toast auto-dismissed correctly
+
+### Additional Testing:
+- Tested on Settings page: "Crawler settings saved successfully!" - auto-dismissed after ~3 seconds
+- Toast notifications use the global `useToast` hook with automatic timeout
+- All toasts are dismissible both manually (dismiss button) and automatically (setTimeout)
+
+### Implementation Details:
+- `useToast.ts` (lines 39-45): Auto-dismiss via setTimeout with default 5000ms duration
+- `toaster.tsx`: Renders toasts in fixed position top-right corner
+- Toast types supported: success, error, warning, info (each with distinct styling)
+
+### Screenshots:
+- `.playwright-mcp/feature162-toast-notification-visible.png` - Page during toast
+- `.playwright-mcp/feature162-toast-fullpage.png` - Full page capture
+- `.playwright-mcp/feature162-toast-visible-before-dismiss.png` - Toast appearing
+- `.playwright-mcp/feature162-toast-after-autodismiss.png` - Page after toast dismissed
+- `.playwright-mcp/feature162-final-state.png` - Clean state after all tests
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 102/235 (~43.4%)
+- Feature #162 marked as passing
+
+### Notes:
+- No code changes required - auto-dismiss was already properly implemented
+- The toast system was implemented in Feature #161 (stacked notifications)
+- Auto-dismiss is a core feature of the useToast hook
+- Timeout can be customized per-toast by passing a duration parameter
