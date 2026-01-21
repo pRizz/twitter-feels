@@ -1,15 +1,12 @@
 //! Twitter API v2 client
 
-use std::time::Instant;
-
 use chrono::{DateTime, Utc};
+use governor::clock::{Clock, DefaultClock};
 use reqwest::{Client, StatusCode};
 use serde::de::DeserializeOwned;
 
 use crate::error::CrawlerError;
-use crate::models::{
-    TwitterApiError, TwitterApiTweet, TwitterApiUser, TwitterUserTweetsResponse, TwitterUsersResponse,
-};
+use crate::models::{TwitterApiError, TwitterApiTweet, TwitterUserTweetsResponse, TwitterUsersResponse};
 use crate::rate_limit::SharedRateLimiter;
 
 const BASE_URL: &str = "https://api.twitter.com/2";
@@ -164,7 +161,7 @@ impl TwitterApiClient {
             match self.rate_limiter.check() {
                 Ok(_) => return Ok(()),
                 Err(negative) => {
-                    let wait = negative.wait_time_from(Instant::now());
+                    let wait = negative.wait_time_from(DefaultClock::default().now());
                     tokio::time::sleep(wait).await;
                 }
             }

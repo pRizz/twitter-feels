@@ -4,10 +4,13 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct TrackedUser {
     pub id: i64,
+    #[allow(dead_code)]
     pub twitter_id: String,
     pub username: String,
+    #[allow(dead_code)]
     pub display_name: String,
 }
 
@@ -57,14 +60,18 @@ pub struct TwitterTweetMetrics {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct TwitterReferencedTweet {
     #[serde(rename = "type")]
     pub reference_type: String,
+    #[allow(dead_code)]
     pub id: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct TwitterTweetsMeta {
+    #[allow(dead_code)]
     pub result_count: Option<u32>,
     pub next_token: Option<String>,
 }

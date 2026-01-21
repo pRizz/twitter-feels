@@ -3,6 +3,7 @@
 use std::env;
 
 /// Crawler configuration loaded from environment variables
+#[allow(dead_code)]
 pub struct Config {
     /// Path to SQLite database
     pub database_url: String,
@@ -20,9 +21,11 @@ pub struct Config {
     pub rate_limit_per_15min: u32,
 
     /// Default LLM model to use
+    #[allow(dead_code)]
     pub default_model: String,
 
     /// Hugging Face API token (optional)
+    #[allow(dead_code)]
     pub huggingface_token: Option<String>,
 }
 

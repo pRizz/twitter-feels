@@ -153,12 +153,12 @@ async fn run_crawl_cycle(config: &Config, shutdown: &AtomicBool) -> anyhow::Resu
     )
     .await;
 
-    if let Err(error) = cycle_result {
+    if let Err(error) = &cycle_result {
         status = "failed";
         record_error(
             &database,
             &mut error_details,
-            error_kind(&error),
+            error_kind(error),
             format!("Crawler cycle error: {error}"),
             None,
             None,
@@ -350,19 +350,15 @@ fn process_reanalysis_requests(
 
         let enqueue_result = match request.request_type.as_str() {
             "tweet" => {
-                let Some(tweet_id) = request.tweet_id else {
-                    Err(CrawlerError::Config(
-                        "Missing tweet_id for reanalysis request".to_string(),
-                    ))
-                }?;
+                let tweet_id = request.tweet_id.ok_or_else(|| {
+                    CrawlerError::Config("Missing tweet_id for reanalysis request".to_string())
+                })?;
                 database.enqueue_reanalysis_for_tweet(tweet_id, enabled_models)
             }
             "user" => {
-                let Some(user_id) = request.twitter_user_id else {
-                    Err(CrawlerError::Config(
-                        "Missing twitter_user_id for reanalysis request".to_string(),
-                    ))
-                }?;
+                let user_id = request.twitter_user_id.ok_or_else(|| {
+                    CrawlerError::Config("Missing twitter_user_id for reanalysis request".to_string())
+                })?;
                 database.enqueue_reanalysis_for_user(user_id, enabled_models)
             }
             "all" => database.enqueue_reanalysis_for_all(enabled_models),

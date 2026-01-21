@@ -4,6 +4,7 @@ use thiserror::Error;
 
 /// Crawler error types
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum CrawlerError {
     #[error("Twitter API error: {0}")]
     TwitterApi(String),
@@ -18,6 +19,7 @@ pub enum CrawlerError {
     Database(#[from] rusqlite::Error),
 
     #[error("LLM inference error: {0}")]
+    #[allow(dead_code)]
     LlmInference(String),
 
     #[error("Configuration error: {0}")]
