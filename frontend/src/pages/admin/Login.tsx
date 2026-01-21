@@ -1,6 +1,6 @@
 // Admin Login page
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api, fetchCsrfToken } from '@/lib/api';
 
 export default function AdminLogin() {
@@ -9,6 +9,10 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Get the return URL from query params (set by AdminLayout when redirecting to login)
+  const returnTo = searchParams.get('returnTo');
 
   // Fetch CSRF token on page load
   useEffect(() => {
@@ -39,8 +43,12 @@ export default function AdminLogin() {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Successful login - navigate to admin dashboard
-      navigate('/admin');
+      // Successful login - navigate to original destination or admin dashboard
+      // Validate returnTo to ensure it's an admin route (security)
+      const destination = returnTo && returnTo.startsWith('/admin')
+        ? decodeURIComponent(returnTo)
+        : '/admin';
+      navigate(destination);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid credentials');
     } finally {

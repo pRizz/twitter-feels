@@ -75,9 +75,11 @@ export default function AdminLayout() {
     );
   }
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated, preserving the original URL
   if (!isAuthenticated) {
-    return <Navigate to="/admin/login" replace />;
+    // Encode the current path so user can be redirected back after login
+    const returnTo = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/admin/login?returnTo=${returnTo}`} replace />;
   }
 
   const handleLogout = async () => {
