@@ -17920,3 +17920,102 @@ Updated the database configurations table to set the correct lowLabel for Anger 
 - Feature #19 marked as passing
 
 [Testing] Session complete - verified feature #19 (Admin can log out) - PASSING
+
+
+---
+
+## Session - Feature #167 Regression Test - 2026-01-21
+
+### Feature #167: Tables scroll on mobile (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: O-Responsive
+- **Description**: Data tables scroll horizontally on small screens
+
+### Verification Steps Completed:
+
+1. **Set viewport to mobile** ✅
+   - Resized browser to 375x667 (iPhone SE/small mobile size)
+
+2. **Navigate to admin user table** ✅
+   - Logged in as admin (admin/admin)
+   - Navigated to /admin/users
+
+3. **Verify table scrolls horizontally** ✅
+   - Tracked Users table: scrollWidth (865) > clientWidth (333) = scrollable
+   - Successfully scrolled from User/Handle columns to Tweets/Added/Actions columns
+   - Recent Runs table on dashboard also scrollable: scrollWidth (512) > clientWidth (333)
+
+4. **Verify scroll indicators present** ✅
+   - '← Swipe to see more columns →' indicator displayed above the table
+   - Clear visual cue to users that horizontal scrolling is available
+
+### Screenshots:
+- .playwright-mcp/feature167-mobile-table-initial.png
+- .playwright-mcp/feature167-mobile-table-scrolled.png
+- .playwright-mcp/feature167-mobile-table-end.png
+- .playwright-mcp/feature167-admin-dashboard-table-mobile.png
+
+### Console Errors: NONE
+
+### Code Changes: NONE (regression test only - feature working correctly)
+
+[Testing] Session complete - verified feature #167 (Tables scroll on mobile) - PASSING
+
+
+---
+
+## Session - Feature #63 - 2026-01-21
+
+### Feature #63: Model download shows progress (VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Download progress is visible during model download
+
+### Verification Steps Completed:
+
+1. **Log in as admin** ✅
+   - Logged in with admin/admin credentials
+   - Redirected to admin dashboard
+
+2. **Navigate to /admin/models** ✅
+   - Clicked "LLM Models" in sidebar
+   - Models page loaded with installed models list
+
+3. **Initiate a model download** ✅
+   - Reset BERTweet Sentiment Analysis model to "not_downloaded" status
+   - Clicked "Retry Download" button on BERTweet model
+   - Download started immediately
+
+4. **Verify progress bar/percentage displays** ✅
+   - Status badge changed to "Downloading XX%"
+   - Progress bar visible with blue fill
+   - Text shows "Downloading..." with percentage
+   - Bytes downloaded displayed: "96.56 MB / 514.98 MB" → "418.42 MB / 514.98 MB"
+
+5. **Verify progress updates over time** ✅
+   - Progress updated from 19% → 81% → 100% (complete)
+   - Progress bar animated smoothly
+   - After completion, status changed to "Ready" with "Enabled" button
+
+### Technical Details:
+- Backend simulates download progress over 8 seconds with 500ms update intervals
+- Frontend polls `/api/admin/models/download/progress/:id` every 500ms
+- Progress stored in-memory in `downloadProgressStore` Map
+- Progress includes: percentage, bytesDownloaded, totalBytes, status
+
+### Screenshots:
+- .playwright-mcp/feature63-step1-models-page.png - Initial models page
+- .playwright-mcp/feature63-step2-model-not-downloaded.png - Model showing "Not Downloaded"
+- .playwright-mcp/feature63-step3-download-progress-visible.png - Progress bar at 81%
+- .playwright-mcp/feature63-step4-download-complete.png - Download complete, model "Ready"
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 209/235 (~88.9%)
+- Feature #63 marked as passing
+
+[Testing] Session complete - verified feature #63 (Model download shows progress) - PASSING
+
