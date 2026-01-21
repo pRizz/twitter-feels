@@ -502,6 +502,11 @@ mod tests {
     #[test]
     fn checkpoint_updates_with_latest_timestamp() -> Result<(), CrawlerError> {
         let db = setup_db()?;
+        db.conn.execute(
+            "INSERT INTO twitter_users (id, twitter_id, username, display_name, is_active)
+             VALUES (?, ?, ?, ?, 1)",
+            params![5, "user_5", "user5", "User Five"],
+        )?;
         let older = Utc::now() - Duration::days(2);
         let newer = Utc::now() - Duration::days(1);
 
