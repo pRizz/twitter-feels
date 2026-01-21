@@ -554,7 +554,10 @@ function EmotionTrends({ userId }: { userId: number }) {
       const date = new Date(parseInt(year), parseInt(month) - 1);
       return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     }
-    const date = new Date(timestamp);
+    // Parse YYYY-MM-DD as local date to avoid timezone shift
+    // new Date('2026-01-02') parses as UTC midnight, which becomes previous day in local time
+    const [year, month, day] = timestamp.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
