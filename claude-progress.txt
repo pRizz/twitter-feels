@@ -18019,3 +18019,91 @@ Updated the database configurations table to set the correct lowLabel for Anger 
 
 [Testing] Session complete - verified feature #63 (Model download shows progress) - PASSING
 
+
+---
+
+## Session - Feature #135 Regression Test - 2026-01-21
+
+### Feature #135: Clear filters resets all filters (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: K-Defaults
+- **Description**: Clear filters button resets to default view
+
+### Verification Steps Completed:
+
+1. **Apply multiple filters on dashboard** ✅
+   - Changed Time filter: Weekly → Monthly
+   - Changed Model filter: Combined → BERTweet Sentiment Analysis (base)
+   - Changed Sort filter: Followers → Name
+   - URL updated to: ?period=monthly&model=12&sortBy=name
+   - Clear Filters button appeared
+
+2. **Click clear filters** ✅
+   - Clicked the "Clear Filters" button
+   - Button disappeared after click (returns to default state)
+
+3. **Verify all filters reset to default** ✅
+   - URL reset to: http://localhost:5173/ (no query parameters)
+   - Time filter: Reset to Weekly (highlighted in cyan)
+   - Model filter: Reset to "Combined" [selected]
+   - Sort filter: Reset to "Followers" [selected]
+   - Date range: Shows "(Jan 14, 2026 - Jan 21, 2026)" (Weekly default)
+   - Clear Filters button: Hidden (only shows when filters differ from default)
+
+### Screenshots:
+- .playwright-mcp/feature135-step1-default-state.png - Initial default state
+- .playwright-mcp/feature135-step2-filters-applied.png - Multiple filters applied
+- .playwright-mcp/feature135-step3-filters-cleared.png - After clicking Clear Filters
+
+### Console Errors: NONE
+
+### Code Changes: NONE (regression test only - feature working correctly)
+
+[Testing] Session complete - verified feature #135 (Clear filters resets all filters) - PASSING
+
+
+---
+
+## Session - Feature #29 - 2026-01-21
+
+### Feature #29: Inspiration gauge displays with labels (COMPLETED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Inspiration gauge shows with Doomer/Kurzweilian labels
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173
+   - Dashboard loaded successfully
+
+2. **Locate Inspiration Gauge** ✅
+   - Found 'Inspiration Gauge' in the 'Average Twitter Feel' section
+   - Gauge is the second gauge in the grid (after Anger Gauge)
+
+3. **Verify gauge is visible with value** ✅
+   - Gauge displays with value 37
+   - Yellow/gold colored progress bar visible
+   - Value animates from 0 to final value on load
+
+4. **Verify 'Doomer' label on low end** ✅
+   - 'Doomer' label visible on the left side (0% position)
+   - Label styled consistently with other gauges
+
+5. **Verify 'Kurzweilian' label on high end** ✅
+   - 'Kurzweilian' label visible on the right side (100% position)
+   - Label styled consistently with other gauges
+
+### Screenshots:
+- .playwright-mcp/feature29-inspiration-gauge.png - Dashboard showing Inspiration Gauge with Doomer/Kurzweilian labels
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - gauge already correctly configured)
+
+### Current Progress:
+- Features passing: 211/235 (~89.8%)
+- Feature #29 marked as passing
+
+[Testing] Session complete - verified feature #29 (Inspiration gauge displays with labels) - PASSING
+
