@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { useToast } from '@/hooks/useToast';
 
 interface CrawlerSettings {
   intervalHours: number;
@@ -67,11 +68,11 @@ const DEFAULT_BACKUP_SETTINGS = {
 
 export default function AdminSettings() {
   const navigate = useNavigate();
+  const { success: showSuccess } = useToast();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Form state for S3 backup
   const [backupForm, setBackupForm] = useState({
@@ -431,7 +432,6 @@ export default function AdminSettings() {
   const handleSaveCrawler = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccessMessage(null);
 
     // Validate form before submitting
     if (!validateCrawlerForm()) {
@@ -460,8 +460,7 @@ export default function AdminSettings() {
 
       // Reset initial values to current values (form is now "clean")
       setInitialCrawlerForm({ ...crawlerForm });
-      setSuccessMessage('Crawler settings saved successfully!');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      showSuccess('Crawler settings saved successfully!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save settings');
     } finally {
@@ -472,7 +471,6 @@ export default function AdminSettings() {
   const handleSaveBackup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccessMessage(null);
 
     // Validate form before submitting
     if (!validateBackupForm()) {
@@ -511,10 +509,9 @@ export default function AdminSettings() {
         throw new Error('Failed to save backup settings');
       }
 
-      setSuccessMessage('S3 backup settings saved successfully!');
+      showSuccess('S3 backup settings saved successfully!');
       setBackupForm(prev => ({ ...prev, secretAccessKey: '' })); // Clear secret after save
       await fetchSettings(); // Refresh to get updated secretAccessKeySet status
-      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save settings');
     } finally {
@@ -527,7 +524,6 @@ export default function AdminSettings() {
     setCrawlerForm({ ...DEFAULT_CRAWLER_SETTINGS });
     setCrawlerErrors({});
     setError(null);
-    setSuccessMessage(null);
   };
 
   // Reset backup settings to defaults
@@ -535,7 +531,6 @@ export default function AdminSettings() {
     setBackupForm({ ...DEFAULT_BACKUP_SETTINGS });
     setBackupErrors({});
     setError(null);
-    setSuccessMessage(null);
   };
 
   if (loading) {
@@ -570,13 +565,6 @@ export default function AdminSettings() {
           Configure crawler behavior and S3 backup settings
         </p>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-500">
-          {successMessage}
-        </div>
-      )}
 
       {/* Error Message */}
       {error && (

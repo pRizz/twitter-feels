@@ -1,6 +1,7 @@
 // Admin Users - Manage tracked Twitter users
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/useToast';
 
 interface TrackedUser {
   id: number;
@@ -19,6 +20,7 @@ interface TrackedUser {
 
 export default function AdminUsers() {
   const navigate = useNavigate();
+  const { success: showSuccess } = useToast();
   const [users, setUsers] = useState<TrackedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,6 @@ export default function AdminUsers() {
   const [handleError, setHandleError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   // Ref for synchronous rapid-click prevention (state updates are async in React)
   const deletingRef = useRef<number | null>(null);
 
@@ -139,10 +140,8 @@ export default function AdminUsers() {
       setShowAddForm(false);
       setError(null);
 
-      // Show success message
-      setSuccessMessage(`Successfully added @${addedUsername} to tracked users!`);
-      // Auto-dismiss after 5 seconds
-      setTimeout(() => setSuccessMessage(null), 5000);
+      // Show success toast notification
+      showSuccess(`Successfully added @${addedUsername} to tracked users!`);
 
       await fetchUsers();
     } catch (err) {
@@ -252,20 +251,6 @@ export default function AdminUsers() {
           Add User
         </button>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-500">
-          <span className="mr-2">✓</span>
-          {successMessage}
-          <button
-            onClick={() => setSuccessMessage(null)}
-            className="ml-4 text-sm underline hover:no-underline"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
 
       {/* Error Message */}
       {error && (

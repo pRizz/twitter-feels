@@ -1,6 +1,7 @@
 // Admin Theme - Emotion colors and gauge label customization
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/useToast';
 
 // Types
 interface EmotionConfig {
@@ -40,10 +41,10 @@ const emotionDisplayNames: Record<string, string> = {
 
 export default function AdminTheme() {
   const navigate = useNavigate();
+  const { success: showSuccess } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Form state
   const [emotions, setEmotions] = useState<EmotionConfig>({});
@@ -107,7 +108,6 @@ export default function AdminTheme() {
   const handleSaveEmotions = async () => {
     setSaving(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
       const response = await fetch('http://localhost:3001/api/admin/theme', {
@@ -126,8 +126,7 @@ export default function AdminTheme() {
         throw new Error('Failed to save emotion colors');
       }
 
-      setSuccessMessage('Emotion colors saved successfully!');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      showSuccess('Emotion colors saved successfully!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save emotion colors');
     } finally {
@@ -138,7 +137,6 @@ export default function AdminTheme() {
   const handleSaveGauges = async () => {
     setSaving(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
       const response = await fetch('http://localhost:3001/api/admin/theme', {
@@ -157,8 +155,7 @@ export default function AdminTheme() {
         throw new Error('Failed to save gauge settings');
       }
 
-      setSuccessMessage('Gauge settings saved successfully!');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      showSuccess('Gauge settings saved successfully!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save gauge settings');
     } finally {
@@ -190,13 +187,6 @@ export default function AdminTheme() {
           Customize emotion colors and gauge labels displayed across the dashboard
         </p>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-500">
-          {successMessage}
-        </div>
-      )}
 
       {/* Error Message */}
       {error && (
