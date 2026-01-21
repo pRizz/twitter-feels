@@ -1,0 +1,114 @@
+{
+  "exportedAt": "2026-01-21T13:50:57.491Z",
+  "version": "1.0",
+  "crawler": {
+    "intervalHours": 6,
+    "historyDepthDays": 180,
+    "rateLimitPer15Min": 450
+  },
+  "emotions": {
+    "happy": {
+      "color": "#00ff00"
+    },
+    "sad": {
+      "color": "#4169E1"
+    },
+    "angry": {
+      "color": "#FF4444"
+    },
+    "fearful": {
+      "color": "#9932CC"
+    },
+    "hatred": {
+      "color": "#8B0000"
+    },
+    "thankful": {
+      "color": "#32CD32"
+    },
+    "excited": {
+      "color": "#ff6b35"
+    },
+    "hopeful": {
+      "color": "#00CED1"
+    },
+    "frustrated": {
+      "color": "#FF8C00"
+    },
+    "sarcastic": {
+      "color": "#BA55D3"
+    },
+    "inspirational": {
+      "color": "#FFD700"
+    },
+    "anxious": {
+      "color": "#708090"
+    }
+  },
+  "gauges": [
+    {
+      "name": "Anger Gauge",
+      "lowLabel": "Peaceful",
+      "highLabel": "Angry",
+      "emotions": [
+        "angry",
+        "frustrated",
+        "hatred"
+      ]
+    },
+    {
+      "name": "Inspiration Gauge",
+      "lowLabel": "Doomer",
+      "highLabel": "Kurzweilian",
+      "emotions": [
+        "inspirational",
+        "hopeful",
+        "excited"
+      ]
+    },
+    {
+      "name": "Gratitude Gauge",
+      "lowLabel": "Entitled",
+      "highLabel": "Thankful",
+      "emotions": [
+        "thankful"
+      ]
+    },
+    {
+      "name": "Mood Gauge",
+      "lowLabel": "Gloomy",
+      "highLabel": "Joyful",
+      "emotions": [
+        "happy"
+      ],
+      "invertedEmotions": [
+        "sad"
+      ]
+    },
+    {
+      "name": "Intensity Gauge",
+      "lowLabel": "Zen",
+      "highLabel": "Heated",
+      "emotions": [
+        "angry",
+        "excited",
+        "anxious",
+        "frustrated"
+      ]
+    },
+    {
+      "name": "Playfulness Gauge",
+      "lowLabel": "Serious",
+      "highLabel": "Comedian",
+      "emotions": [
+        "sarcastic",
+        "happy",
+        "excited"
+      ]
+    }
+  ],
+  "backup": {
+    "enabled": true,
+    "schedule": "daily",
+    "retentionDays": 30
+  }
+}

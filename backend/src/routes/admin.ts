@@ -1576,6 +1576,186 @@ router.get('/config/export', (_req, res) => {
   }
 });
 
+// POST /api/admin/config/import - Import configuration data from exported JSON
+router.post('/config/import', (req, res) => {
+  try {
+    const importData = req.body;
+
+    // Validate the import data structure
+    if (!importData || typeof importData !== 'object') {
+      return res.status(400).json({ error: 'Invalid configuration data' });
+    }
+
+    // Check for version compatibility
+    if (importData.version && importData.version !== '1.0') {
+      return res.status(400).json({
+        error: `Unsupported configuration version: ${importData.version}. Expected version 1.0`,
+      });
+    }
+
+    const importedKeys: string[] = [];
+    const errors: string[] = [];
+
+    // Import crawler settings if present
+    if (importData.crawler && typeof importData.crawler === 'object') {
+      const crawler = importData.crawler;
+
+      // Validate crawler settings
+      const crawlerErrors: string[] = [];
+      if (crawler.intervalHours !== undefined) {
+        const interval = Number(crawler.intervalHours);
+        if (isNaN(interval) || interval < 1 || interval > 168) {
+          crawlerErrors.push('Crawl interval must be between 1 and 168 hours');
+        }
+      }
+      if (crawler.historyDepthDays !== undefined) {
+        const depth = Number(crawler.historyDepthDays);
+        if (isNaN(depth) || depth < 1 || depth > 365) {
+          crawlerErrors.push('History depth must be between 1 and 365 days');
+        }
+      }
+      if (crawler.rateLimitPer15Min !== undefined) {
+        const limit = Number(crawler.rateLimitPer15Min);
+        if (isNaN(limit) || limit < 1 || limit > 900) {
+          crawlerErrors.push('Rate limit must be between 1 and 900');
+        }
+      }
+
+      if (crawlerErrors.length > 0) {
+        errors.push(...crawlerErrors);
+      } else {
+        db.prepare(`
+          INSERT INTO configurations (key, value, updated_at)
+          VALUES ('crawler', ?, datetime('now'))
+          ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
+        `).run(JSON.stringify(crawler), JSON.stringify(crawler));
+        importedKeys.push('crawler');
+      }
+    }
+
+    // Import emotions settings if present
+    if (importData.emotions && typeof importData.emotions === 'object') {
+      const emotions = importData.emotions;
+
+      // Validate that each emotion has a valid color
+      let emotionsValid = true;
+      for (const [key, value] of Object.entries(emotions)) {
+        if (typeof value !== 'object' || value === null) {
+          errors.push(`Invalid emotion format for "${key}"`);
+          emotionsValid = false;
+          break;
+        }
+        const emotionObj = value as { color?: string };
+        if (emotionObj.color && !/^#[0-9A-Fa-f]{6}$/.test(emotionObj.color)) {
+          errors.push(`Invalid color format for emotion "${key}": ${emotionObj.color}`);
+          emotionsValid = false;
+          break;
+        }
+      }
+
+      if (emotionsValid) {
+        db.prepare(`
+          INSERT INTO configurations (key, value, updated_at)
+          VALUES ('emotions', ?, datetime('now'))
+          ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
+        `).run(JSON.stringify(emotions), JSON.stringify(emotions));
+        importedKeys.push('emotions');
+      }
+    }
+
+    // Import gauges settings if present
+    if (importData.gauges && Array.isArray(importData.gauges)) {
+      const gauges = importData.gauges;
+
+      // Validate gauge structure
+      let gaugesValid = true;
+      for (const gauge of gauges) {
+        if (!gauge.name || typeof gauge.name !== 'string') {
+          errors.push('Each gauge must have a name');
+          gaugesValid = false;
+          break;
+        }
+        if (!gauge.lowLabel || typeof gauge.lowLabel !== 'string') {
+          errors.push(`Gauge "${gauge.name}" must have a lowLabel`);
+          gaugesValid = false;
+          break;
+        }
+        if (!gauge.highLabel || typeof gauge.highLabel !== 'string') {
+          errors.push(`Gauge "${gauge.name}" must have a highLabel`);
+          gaugesValid = false;
+          break;
+        }
+        if (!gauge.emotions || !Array.isArray(gauge.emotions)) {
+          errors.push(`Gauge "${gauge.name}" must have an emotions array`);
+          gaugesValid = false;
+          break;
+        }
+      }
+
+      if (gaugesValid) {
+        db.prepare(`
+          INSERT INTO configurations (key, value, updated_at)
+          VALUES ('gauges', ?, datetime('now'))
+          ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
+        `).run(JSON.stringify(gauges), JSON.stringify(gauges));
+        importedKeys.push('gauges');
+      }
+    }
+
+    // Import backup settings if present (non-sensitive parts only)
+    if (importData.backup && typeof importData.backup === 'object') {
+      const backup = importData.backup;
+
+      // Get existing backup config to preserve credentials
+      const existingBackupResult = db.prepare(
+        `SELECT value FROM configurations WHERE key = 's3_backup'`
+      ).get() as { value: string } | undefined;
+      const existingBackup = existingBackupResult
+        ? JSON.parse(existingBackupResult.value)
+        : {};
+
+      // Only update non-sensitive settings from import
+      const newBackupConfig = {
+        ...existingBackup,
+        enabled: backup.enabled ?? existingBackup.enabled ?? false,
+        schedule: backup.schedule ?? existingBackup.schedule ?? 'daily',
+        retentionDays: backup.retentionDays ?? existingBackup.retentionDays ?? 30,
+        // Keep existing sensitive data (bucketName, region, credentials)
+      };
+
+      db.prepare(`
+        INSERT INTO configurations (key, value, updated_at)
+        VALUES ('s3_backup', ?, datetime('now'))
+        ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = datetime('now')
+      `).run(JSON.stringify(newBackupConfig), JSON.stringify(newBackupConfig));
+      importedKeys.push('backup (non-sensitive settings only)');
+    }
+
+    if (importedKeys.length === 0 && errors.length === 0) {
+      return res.status(400).json({
+        error: 'No valid configuration data found in the import file',
+      });
+    }
+
+    if (errors.length > 0 && importedKeys.length === 0) {
+      return res.status(400).json({
+        error: 'Configuration import failed',
+        details: errors,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Configuration imported successfully',
+      imported: importedKeys,
+      warnings: errors.length > 0 ? errors : undefined,
+    });
+  } catch (error) {
+    console.error('Error importing configuration:', error);
+    res.status(500).json({ error: 'Failed to import configuration' });
+  }
+});
+
 // GET /api/admin/backup/status
 router.get('/backup/status', (_req, res) => {
   // TODO: Implement backup status

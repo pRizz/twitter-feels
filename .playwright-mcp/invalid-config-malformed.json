@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "crawler": {
+    "intervalHours": "not a number",
+    "historyDepthDays": 999999,
+    "rateLimitPer15Min": -50
+  },
+  "emotions": {
+    "happy": {
+      "color": "invalid-color"
+    }
+  },
+  "gauges": "should be an array"
+}

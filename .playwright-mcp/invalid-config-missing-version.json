@@ -1,0 +1,6 @@
+{
+  "crawler": {
+    "intervalHours": 5,
+    "historyDepthDays": 100
+  }
+}

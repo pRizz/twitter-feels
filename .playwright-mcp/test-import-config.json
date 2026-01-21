@@ -1,0 +1,60 @@
+{
+  "exportedAt": "2026-01-21T13:51:37.054Z",
+  "version": "1.0",
+  "crawler": {
+    "intervalHours": 24,
+    "historyDepthDays": 30,
+    "rateLimitPer15Min": 100
+  },
+  "emotions": {
+    "happy": {
+      "color": "#FF0000"
+    },
+    "sad": {
+      "color": "#0000FF"
+    },
+    "angry": {
+      "color": "#FF4444"
+    },
+    "fearful": {
+      "color": "#9932CC"
+    },
+    "hatred": {
+      "color": "#8B0000"
+    },
+    "thankful": {
+      "color": "#32CD32"
+    },
+    "excited": {
+      "color": "#ff6b35"
+    },
+    "hopeful": {
+      "color": "#00CED1"
+    },
+    "frustrated": {
+      "color": "#FF8C00"
+    },
+    "sarcastic": {
+      "color": "#BA55D3"
+    },
+    "inspirational": {
+      "color": "#FFD700"
+    },
+    "anxious": {
+      "color": "#708090"
+    }
+  },
+  "gauges": [
+    {
+      "name": "Anger Gauge",
+      "lowLabel": "Calm",
+      "highLabel": "Furious",
+      "emotions": ["angry", "frustrated", "hatred"]
+    }
+  ],
+  "backup": {
+    "enabled": false,
+    "schedule": "weekly",
+    "retentionDays": 7
+  }
+}

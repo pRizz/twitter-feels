@@ -1043,9 +1043,9 @@ export default function AdminSettings() {
             <span className="text-xl">📦</span>
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Configuration Export</h2>
+            <h2 className="text-lg font-semibold">Configuration Export/Import</h2>
             <p className="text-sm text-muted-foreground">
-              Export your configuration settings for backup or migration
+              Export or import your configuration settings for backup or migration
             </p>
           </div>
         </div>
@@ -1056,53 +1056,124 @@ export default function AdminSettings() {
             Sensitive data like AWS credentials are excluded from the export for security.
           </p>
 
-          <button
-            onClick={async () => {
-              try {
-                const response = await fetch('http://localhost:3001/api/admin/config/export', {
-                  credentials: 'include',
-                });
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={async () => {
+                try {
+                  const response = await fetch('http://localhost:3001/api/admin/config/export', {
+                    credentials: 'include',
+                  });
 
-                if (response.status === 401) {
-                  navigate('/admin/login');
-                  return;
-                }
-
-                if (!response.ok) {
-                  throw new Error('Failed to export configuration');
-                }
-
-                // Get the filename from Content-Disposition header or use default
-                const contentDisposition = response.headers.get('Content-Disposition');
-                let filename = 'twitter-feels-config.json';
-                if (contentDisposition) {
-                  const match = contentDisposition.match(/filename="(.+)"/);
-                  if (match) {
-                    filename = match[1];
+                  if (response.status === 401) {
+                    navigate('/admin/login');
+                    return;
                   }
+
+                  if (!response.ok) {
+                    throw new Error('Failed to export configuration');
+                  }
+
+                  // Get the filename from Content-Disposition header or use default
+                  const contentDisposition = response.headers.get('Content-Disposition');
+                  let filename = 'twitter-feels-config.json';
+                  if (contentDisposition) {
+                    const match = contentDisposition.match(/filename="(.+)"/);
+                    if (match) {
+                      filename = match[1];
+                    }
+                  }
+
+                  // Create blob and download
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = filename;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+
+                  showSuccess('Configuration exported successfully!');
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'Failed to export configuration');
                 }
+              }}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+            >
+              <span>📥</span>
+              Export Configuration
+            </button>
 
-                // Create blob and download
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
+            <label className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors flex items-center gap-2 cursor-pointer">
+              <span>📤</span>
+              Import Configuration
+              <input
+                type="file"
+                accept=".json,application/json"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
 
-                showSuccess('Configuration exported successfully!');
-              } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to export configuration');
-              }
-            }}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
-          >
-            <span>📥</span>
-            Export Configuration
-          </button>
+                  try {
+                    // Read file contents
+                    const text = await file.text();
+                    let configData;
+                    try {
+                      configData = JSON.parse(text);
+                    } catch {
+                      throw new Error('Invalid JSON file. Please select a valid configuration export file.');
+                    }
+
+                    // Send to backend
+                    const response = await fetch('http://localhost:3001/api/admin/config/import', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify(configData),
+                    });
+
+                    if (response.status === 401) {
+                      navigate('/admin/login');
+                      return;
+                    }
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                      throw new Error(data.error || 'Failed to import configuration');
+                    }
+
+                    // Refresh settings to show imported values
+                    await fetchSettings();
+
+                    // Show success message with imported keys
+                    const importedList = data.imported?.join(', ') || 'configuration';
+                    showSuccess(`Configuration imported successfully! Imported: ${importedList}`);
+
+                    // Show any warnings
+                    if (data.warnings && data.warnings.length > 0) {
+                      setError(`Import completed with warnings: ${data.warnings.join('; ')}`);
+                    }
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : 'Failed to import configuration');
+                  } finally {
+                    // Reset file input so same file can be selected again
+                    e.target.value = '';
+                  }
+                }}
+              />
+            </label>
+          </div>
+
+          <div className="p-4 bg-muted/30 border border-border rounded-lg">
+            <div className="text-sm text-muted-foreground">
+              <strong className="text-foreground">Import Note:</strong> When importing, only non-sensitive settings
+              will be restored. AWS credentials and bucket information are not included in exports for security.
+              After importing, verify your settings and re-enter any sensitive credentials if needed.
+            </div>
+          </div>
         </div>
       </div>
 
