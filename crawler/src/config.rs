@@ -29,11 +29,18 @@ pub struct Config {
 impl Config {
     /// Load configuration from environment variables
     pub fn from_env() -> anyhow::Result<Self> {
+        let twitter_bearer_token = env::var("TWITTER_BEARER_TOKEN").unwrap_or_default();
+        if twitter_bearer_token.trim().is_empty() {
+            return Err(anyhow::anyhow!(
+                "TWITTER_BEARER_TOKEN is required for the crawler"
+            ));
+        }
+
         Ok(Self {
             database_url: env::var("DATABASE_URL")
                 .unwrap_or_else(|_| "../backend/data/twitter_feels.db".to_string()),
 
-            twitter_bearer_token: env::var("TWITTER_BEARER_TOKEN").unwrap_or_default(),
+            twitter_bearer_token,
 
             crawl_interval_hours: env::var("CRAWL_INTERVAL_HOURS")
                 .ok()

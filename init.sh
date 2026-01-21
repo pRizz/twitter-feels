@@ -279,6 +279,39 @@ EOF
     fi
 }
 
+get_twitter_bearer_token() {
+    local env_file="$1"
+
+    if [ ! -f "$env_file" ]; then
+        return 1
+    fi
+
+    local line
+    line=$(grep -E '^TWITTER_BEARER_TOKEN=' "$env_file" || true)
+    if [ -z "$line" ]; then
+        return 1
+    fi
+
+    printf "%s" "${line#TWITTER_BEARER_TOKEN=}"
+}
+
+warn_missing_twitter_bearer_token() {
+    local crawler_env="crawler/.env"
+    local backend_env="backend/.env"
+    local token=""
+
+    if [ -f "$crawler_env" ]; then
+        token=$(get_twitter_bearer_token "$crawler_env" || true)
+    elif [ -f "$backend_env" ]; then
+        token=$(get_twitter_bearer_token "$backend_env" || true)
+    fi
+
+    if [ -z "${token//[[:space:]]/}" ]; then
+        log_warn "TWITTER_BEARER_TOKEN is missing. The crawler cannot fetch tweets."
+        log_info "Set TWITTER_BEARER_TOKEN in crawler/.env (or backend/.env)."
+    fi
+}
+
 generate_admin_password() {
     if command_exists openssl; then
         openssl rand -base64 48 | tr -d '\n'
@@ -488,6 +521,7 @@ main() {
         setup)
             check_prerequisites
             create_env_files
+            warn_missing_twitter_bearer_token
             setup_frontend
             setup_backend
             ensure_admin_password
@@ -497,13 +531,16 @@ main() {
             ;;
         dev)
             maybe_warn_docker_best_practice
+            warn_missing_twitter_bearer_token
             run_dev
             ;;
         build)
             check_prerequisites
+            warn_missing_twitter_bearer_token
             build_production
             ;;
         docker)
+            warn_missing_twitter_bearer_token
             run_docker
             ;;
         help|--help|-h)
@@ -513,6 +550,7 @@ main() {
             # Default: setup then dev
             check_prerequisites
             create_env_files
+            warn_missing_twitter_bearer_token
             setup_frontend
             setup_backend
             ensure_admin_password
