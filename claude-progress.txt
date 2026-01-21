@@ -8122,3 +8122,76 @@ Ensure all text has sufficient contrast ratio meeting WCAG AA standards (4.5:1 m
 - Data is properly filtered by the backend API using tweet_timestamp
 - Switching between Weekly and Monthly shows different aggregated data
 - Clear Filters button appears when non-default filter is selected
+
+
+---
+
+## Session - Feature #178 - 2026-01-21
+
+### Feature #178: Weekly filter works correctly (COMPLETED)
+- **Status**: PASSING
+- **Category**: Q-Temporal
+- **Description**: Weekly filter shows last 7 days data
+
+### Verification Steps Completed:
+
+1. **Select weekly time filter** - Weekly button is active/highlighted in cyan on dashboard
+2. **Note displayed date range** - Date range displays as '(Jan 14, 2026 - Jan 21, 2026)'
+3. **Verify covers last 7 days** - Jan 14 to Jan 21 is exactly 7 days
+4. **Verify data matches range** - Weekly shows 3 analyses vs 16 for All Time
+
+### Screenshots:
+- feature178-weekly-filter-with-date-range.png
+- feature178-monthly-filter-date-range.png
+- feature178-all-time-no-date-range.png
+- feature178-weekly-filter-verified.png
+
+### Current Progress:
+- Features passing: 119/235 (~50.6%)
+- Feature #178 marked as passing
+
+
+---
+
+## Regression Test Session - Feature #7 - 2026-01-21
+
+### Feature #7: Dashboard route loads (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: B-Navigation
+- **Description**: Main dashboard page at / loads correctly
+
+### Verification Steps Completed:
+
+1. **Navigate to /** ✅
+   - Successfully navigated to http://localhost:5173
+   - Page loaded without errors
+   - URL shows http://localhost:5173/
+
+2. **Verify page title is correct** ✅
+   - Page title is "Twitter Feels" - matches expected application name
+
+3. **Verify dashboard content renders** ✅
+   - Header with "Twitter Feels" branding and theme toggle present
+   - "Last updated" timestamp displayed in header
+   - Main heading "Twitter Feels Dashboard" renders correctly
+   - Time filter buttons (Weekly, Monthly, Yearly, All Time) present and functional
+   - Model dropdown with options (Combined, BERTweet, etc.) present
+   - Sort dropdown (Followers, Name, Emotion Score) present
+   - "⚡ Average Twitter Feel" section with 6 emotion gauges displaying values
+   - "🏆 Emotion Leaderboards" section with 6 leaderboards present
+   - "👥 Tracked Influencers" section with search and user cards present
+   - Statistics footer showing: 1 Tracked Users, 16 Tweets Analyzed, 16 Sentiment Analyses
+   - Admin link in footer present
+
+4. **Verify no navigation errors occur** ✅
+   - No JavaScript console errors detected
+   - Page loaded and rendered completely
+   - All interactive elements visible and accessible
+
+### Screenshot:
+- .playwright-mcp/.playwright-mcp/feature7-dashboard-route-loads.png
+
+### Result:
+- No regression detected - Feature #7 still working correctly
+
+[Testing] Session complete - verified feature #7 (Dashboard route loads) - still passing
