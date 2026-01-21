@@ -254,24 +254,18 @@ export default function TweetDetail() {
 
   return (
     <div className="container mx-auto py-8 px-4 animate-fade-in">
-      {/* Back link */}
-      <div className="mb-6">
-        <Link
-          to={`/users/${tweet.user.id}`}
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to @{tweet.user.username}
+      {/* Breadcrumb navigation */}
+      <nav className="mb-6 text-sm">
+        <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">
+          Home
         </Link>
-      </div>
+        <span className="mx-2 text-muted-foreground">/</span>
+        <Link to={`/users/${tweet.user.id}`} className="text-muted-foreground hover:text-primary transition-colors">
+          {tweet.user.displayName}
+        </Link>
+        <span className="mx-2 text-muted-foreground">/</span>
+        <span className="text-foreground">Tweet</span>
+      </nav>
 
       {/* Tweet Card */}
       <div className="bg-card rounded-lg p-6 shadow-card border border-border mb-8 animate-slide-up">
