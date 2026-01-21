@@ -18813,3 +18813,134 @@ Updated the database configurations table to set the correct lowLabel for Anger 
 - Feature #39 marked as passing
 
 [Testing] Session complete - verified feature #39 (Clicking user card navigates to user detail) - PASSING
+
+
+---
+
+## Session - Feature #37 - 2026-01-21
+
+### Feature #37: Time period selector works (VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: User can filter data by weekly, monthly, yearly, all-time
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173
+   - Dashboard loaded successfully
+
+2. **Locate time period selector** ✅
+   - Found Time selector in the filter area with options: Weekly, Monthly, Yearly, All Time
+   - Weekly is the default (highlighted in cyan)
+
+3. **Select 'Weekly' option** ✅
+   - Weekly selected by default
+   - Date range shows "(Jan 14, 2026 - Jan 21, 2026)"
+   - URL: http://localhost:5173/
+
+4. **Verify data updates to reflect weekly aggregation** ✅
+   - Gauge values displayed: Anger 19, Inspiration 37, Gratitude 40, Mood 62, Intensity 27, Playfulness 38
+   - Leaderboards show weekly scores
+
+5. **Test Monthly option** ✅
+   - Clicked "Monthly" button
+   - URL updated to: ?period=monthly
+   - Date range changed to "(Dec 22, 2025 - Jan 21, 2026)"
+   - Clear Filters button appeared
+   - Data reflects monthly aggregation
+
+6. **Test Yearly option** ✅
+   - Clicked "Yearly" button
+   - URL updated to: ?period=yearly
+   - Date range changed to "(Jan 21, 2025 - Jan 21, 2026)"
+   - Data reflects yearly aggregation
+
+7. **Test All Time option** ✅
+   - Clicked "All Time" button
+   - URL updated to: ?period=all_time
+   - Date range not shown (no time constraint)
+   - Data reflects all-time aggregation
+
+### API Verification:
+- Backend `getTimeBucketCutoff()` function correctly calculates date cutoffs
+- SQL queries filter by `tweet_timestamp >= ?` with appropriate cutoff dates
+- Time filter is applied to gauges, leaderboards, and user-specific data
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature37-step1-initial-dashboard.png - Default Weekly view
+- .playwright-mcp/.playwright-mcp/feature37-step2-monthly-selected.png - Monthly filter selected
+- .playwright-mcp/.playwright-mcp/feature37-step3-yearly-selected.png - Yearly filter selected
+- .playwright-mcp/.playwright-mcp/feature37-step4-alltime-selected.png - All Time filter selected
+- .playwright-mcp/.playwright-mcp/feature37-step5-weekly-reset.png - Back to Weekly
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 218/235 (~92.8%)
+- Feature #37 marked as passing
+
+[Testing] Session complete - verified feature #37 (Time period selector works) - PASSING
+
+
+---
+
+## Session - Feature #38 - 2026-01-21
+
+### Feature #38: LLM model filter works (VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: User can filter data by specific LLM model
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173
+   - Dashboard loaded with all gauges and data
+
+2. **Locate LLM model filter dropdown** ✅
+   - Found "Model:" dropdown in the filter section
+   - Default selection is "Combined"
+   - Dropdown contains 8 models including Combined option
+
+3. **Select a specific model** ✅
+   - Selected "BERTweet Sentiment Analysis (base)"
+   - URL updated to ?model=12
+   - Clear Filters button appeared
+
+4. **Verify data updates to reflect that model's analysis** ✅
+   - Gauge values changed from Combined to BERTweet-specific data:
+     - Anger: 19 → 18
+     - Inspiration: 37 → 35
+     - Gratitude: 40 → 41
+     - Mood: 62 → 60
+     - Intensity: 27 → 25
+     - Playfulness: 38 → 33
+   - Tested another model (DistilRoBERTa, model=5):
+     - Anger: 17, Inspiration: 35, Gratitude: 45
+     - Mood: 68, Intensity: 27, Playfulness: 41
+   - Leaderboard data also updated per model
+
+5. **Select 'Combined' to see all models** ✅
+   - Selected "Combined" from dropdown
+   - URL reset to http://localhost:5173/ (no model param)
+   - Data restored to original Combined values
+   - Clear Filters button hidden (default state)
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature38-step1-combined-model.png - Initial state with Combined
+- .playwright-mcp/.playwright-mcp/feature38-step2-bertweet-model.png - After selecting BERTweet
+- .playwright-mcp/.playwright-mcp/feature38-step3-distilroberta-model.png - After selecting DistilRoBERTa
+- .playwright-mcp/.playwright-mcp/feature38-step4-combined-model-again.png - Back to Combined
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 218/235 (~92.8%)
+- Feature #38 marked as passing
+
+[Testing] Session complete - verified feature #38 (LLM model filter works) - PASSING
