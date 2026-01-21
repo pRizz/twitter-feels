@@ -13595,3 +13595,139 @@ Only Vite dev server HMR/WebSocket errors (dev server issues, not application er
 - Feature #227 marked as passing
 
 [Testing] Session complete - verified feature #227 (User search by handle works) - PASSING
+
+
+---
+
+## Testing Session - Feature #224 Regression Test - 2026-01-21
+
+### Feature #224: Orphaned analyses cleaned up (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: J-Cleanup
+- **Description**: Analyses for deleted tweets are removed
+
+### Verification Steps Completed:
+
+1. **Added test user** ✅
+   - Created user 'Regression Test F224' (@regTest224)
+   - Ran crawler to generate tweets and sentiment analyses
+   - User had 6 tweets before deletion
+
+2. **Deleted user via admin panel** ✅
+   - Clicked Delete button for @regTest224
+   - Confirmed deletion
+   - User count: 6 → 5
+   - Tweet count: 178 → 172 (6 tweets cascade deleted)
+
+3. **Verified no orphaned records** ✅
+   - Ran verify-orphaned-analyses.js script
+   - Foreign keys enabled: true
+   - Orphaned tweets: 0
+   - Orphaned sentiment analyses: 0
+   - Database clean - cascade delete working correctly
+
+### Screenshots:
+- .playwright-mcp/feature224-regression-before-delete.png - User list with test user (6 tweets)
+- .playwright-mcp/feature224-regression-after-delete.png - User list after deletion (172 tweets)
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected
+- Feature #224 still working correctly
+- Cascade delete properly removes tweets and sentiment analyses when user is deleted
+
+[Testing] Session complete - verified feature #224 (Orphaned analyses cleaned up) - still passing
+
+
+
+---
+
+## Testing Session - Feature #10 Regression Test - 2026-01-21
+
+### Feature #10: Admin login route loads (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: B-Navigation
+- **Description**: Admin login page loads for unauthenticated users
+
+### Verification Steps Completed:
+
+1. **Navigate to /admin without authentication** ✅
+   - Navigated to http://localhost:5173/admin
+   - Automatically redirected to /admin/login?returnTo=%2Fadmin
+   - Proper authentication flow behavior
+
+2. **Verify login form is displayed** ✅
+   - "Admin Login" heading displayed
+   - "Twitter Feels Administration" subtitle shown
+   - Form container styled correctly
+
+3. **Verify username and password fields exist** ✅
+   - Username text input present with label
+   - Password text input present with label
+   - Both fields functional and focusable
+
+4. **Verify login button is present** ✅
+   - "Log In" button displayed
+   - Button is clickable (cursor: pointer)
+   - Styled with cyan color theme
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature10-admin-login-page.png - Login form display
+
+### Console Errors:
+- 401 Unauthorized errors (EXPECTED - authentication check before redirect)
+
+### Result:
+- No regression detected
+- Feature #10 still working correctly
+- Admin login route properly loads for unauthenticated users
+
+[Testing] Session complete - verified feature #10 (Admin login route loads) - still passing
+
+
+
+---
+
+## Session - Feature #228 - 2026-01-21
+
+### Feature #228: User search by name works (VERIFIED)
+- **Status**: PASSING
+- **Category**: L-SearchFilter
+- **Description**: Can search users by display name
+
+### Verification Steps Completed:
+
+1. **Enter display name in search**
+   - Entered "Sam Altman" in the user search input field
+   - Screenshot: .playwright-mcp/feature228-step1-full-name-search.png
+
+2. **Verify matching user found**
+   - Only Sam Altman's card was displayed
+   - Correctly showed: avatar, @sama handle, bio "CEO of OpenAI", Top emotion "excited: 47"
+   - Screenshot: .playwright-mcp/feature228-step2-user-found.png
+
+3. **Enter partial name**
+   - Entered "Bill" (partial name)
+   - Only Bill Gates appeared in results
+   - Screenshot: .playwright-mcp/feature228-step3-partial-name-search.png
+
+4. **Verify fuzzy match works**
+   - Tested "elon" (lowercase) - matched "Elon Musk" (case-insensitive)
+   - Screenshot: .playwright-mcp/feature228-step4-partial-case-insensitive.png
+   - Search filters on: displayName, username, and @username
+
+### Technical Details:
+- Search implementation in Dashboard.tsx (lines 929-936)
+- Uses .toLowerCase().includes() for case-insensitive partial matching
+- Matches against displayName, username, and handle (@username) format
+
+### Console Errors: NONE
+
+### Code Changes: NONE (feature was already implemented correctly)
+
+### Current Progress:
+- Features passing: 169/235 (~71.9%)
+- Feature #228 marked as passing
+
+[Testing] Session complete - verified feature #228 (User search by name works) - PASSING
