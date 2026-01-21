@@ -77,7 +77,6 @@ const requireAuth = (req: Request, res: Response, next: NextFunction) => {
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
 
-  // TODO: Implement actual authentication with password hash comparison
   // Check for missing or whitespace-only values
   const trimmedUsername = typeof username === 'string' ? username.trim() : '';
   const trimmedPassword = typeof password === 'string' ? password.trim() : '';
@@ -86,14 +85,41 @@ router.post('/login', (req, res) => {
     return res.status(400).json({ error: 'Username and password required' });
   }
 
-  // Placeholder - will be replaced with actual auth
-  // In production, compare against hashed password in database
-  console.log('Login attempt for:', username);
+  console.log('Login attempt for:', trimmedUsername);
 
-  req.session.adminId = 1;
-  req.session.adminUsername = username;
+  try {
+    // Look up admin user in database
+    const admin = db.prepare(
+      'SELECT id, username, password_hash FROM admin_users WHERE username = ?'
+    ).get(trimmedUsername) as { id: number; username: string; password_hash: string } | undefined;
 
-  res.json({ success: true, message: 'Logged in successfully' });
+    if (!admin) {
+      // User not found - use generic error message to prevent username enumeration
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    // Compare password with stored hash
+    // In production, use bcrypt.compare(trimmedPassword, admin.password_hash)
+    // For development, we use a simple hash format: hashed_<password>
+    const expectedHash = `hashed_${trimmedPassword}`;
+
+    if (admin.password_hash !== expectedHash) {
+      // Password mismatch
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    // Authentication successful
+    req.session.adminId = admin.id;
+    req.session.adminUsername = admin.username;
+
+    // Update last login timestamp
+    db.prepare('UPDATE admin_users SET last_login_at = datetime(\'now\') WHERE id = ?').run(admin.id);
+
+    res.json({ success: true, message: 'Logged in successfully' });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Authentication failed due to server error' });
+  }
 });
 
 // POST /api/admin/logout
