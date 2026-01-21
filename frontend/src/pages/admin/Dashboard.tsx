@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Activity, Clock, AlertTriangle, CheckCircle2, Loader2, Play, RefreshCw, RotateCcw } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useToast } from '@/hooks/useToast';
 
 // Types for crawler status
 interface CrawlerRun {
@@ -338,6 +339,9 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isTriggering, setIsTriggering] = useState(false);
   const [isReanalyzing, setIsReanalyzing] = useState(false);
+  const [previousRunningState, setPreviousRunningState] = useState<boolean | null>(null);
+  const [lastNotifiedRunId, setLastNotifiedRunId] = useState<number | null>(null);
+  const { success: showSuccess, error: showError } = useToast();
 
   // Fetch crawler status
   const fetchStatus = async () => {
@@ -379,10 +383,15 @@ export default function AdminDashboard() {
         throw new Error(data.error || 'Failed to trigger crawler');
       }
 
+      // Show confirmation toast
+      showSuccess('Crawler started successfully');
+
       // Refresh status after triggering
       await fetchStatus();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to trigger crawler');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to trigger crawler';
+      setError(errorMessage);
+      showError(errorMessage);
     } finally {
       setIsTriggering(false);
     }
@@ -431,6 +440,35 @@ export default function AdminDashboard() {
     const interval = setInterval(fetchStatus, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Detect crawler completion and show notification
+  useEffect(() => {
+    if (!status) return;
+
+    const currentRunning = status.isRunning;
+    const lastRun = status.lastRun;
+
+    // Check if crawler just transitioned from running to idle (completed)
+    if (previousRunningState === true && currentRunning === false && lastRun) {
+      // Only notify once per run (check run ID)
+      if (lastNotifiedRunId !== lastRun.id) {
+        setLastNotifiedRunId(lastRun.id);
+
+        if (lastRun.status === 'completed') {
+          showSuccess(
+            `Crawler completed! Fetched ${lastRun.tweetsFetched} tweets, analyzed ${lastRun.tweetsAnalyzed}.`
+          );
+        } else if (lastRun.status === 'failed') {
+          showError(
+            `Crawler failed with ${lastRun.errorsCount} error${lastRun.errorsCount !== 1 ? 's' : ''}.`
+          );
+        }
+      }
+    }
+
+    // Update previous state for next comparison
+    setPreviousRunningState(currentRunning);
+  }, [status, previousRunningState, lastNotifiedRunId, showSuccess, showError]);
 
   if (loading) {
     return (
