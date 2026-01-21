@@ -7956,3 +7956,169 @@ Ensure all text has sufficient contrast ratio meeting WCAG AA standards (4.5:1 m
 - `.playwright-mcp/contrast-light-mode.png` - Light theme verification
 - `.playwright-mcp/contrast-dark-mode.png` - Dark theme verification
 
+
+---
+
+## Session - Feature #180 - 2026-01-21
+
+### Feature #180: Yearly filter works correctly (COMPLETED)
+- **Status**: PASSING
+- **Category**: Q-Temporal
+- **Description**: Yearly filter shows last 365 days data
+
+### Verification Steps Completed:
+
+1. **Select yearly time filter** ✅
+   - Navigated to dashboard at http://localhost:5173
+   - Clicked "Yearly" button in time filter section
+   - Button became active (highlighted with cyan background)
+   - URL updated to http://localhost:5173/?period=yearly
+
+2. **Note displayed date range** ✅
+   - Date range displayed: "(Jan 21, 2025 - Jan 21, 2026)"
+   - Shows alongside the time filter buttons
+
+3. **Verify covers last 365 days** ✅
+   - Start date: Jan 21, 2025
+   - End date: Jan 21, 2026 (today)
+   - Difference: Exactly 365 days / 1 year
+   - Backend code confirms: `now.setDate(now.getDate() - 365)`
+
+4. **Verify data matches range** ✅
+   - API endpoint tested: http://localhost:3001/api/dashboard?period=yearly
+   - Gauge values match UI display:
+     - Anger Gauge: 19
+     - Inspiration Gauge: 39
+     - Gratitude Gauge: 31
+     - Mood Gauge: 65
+     - Intensity Gauge: 29
+     - Playfulness Gauge: 39
+   - All tweets in database (Dec 2025 - Jan 2026) fall within yearly range
+   - Leaderboard scores updated to reflect yearly data
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature180-yearly-filter-active.png - Dashboard with yearly filter active
+
+### Console Errors:
+- None
+
+### Current Progress:
+- Features passing: 120/235 (~51.1%)
+- Feature #180 marked as passing
+
+### Commit:
+- 24d8b70 - Verify Feature #180: Yearly filter works correctly
+
+### Notes:
+- Yearly filter correctly calculates 365 days back from current date
+- Date range is displayed to users so they understand the filter bounds
+- Data is properly filtered by the backend API
+- Clear Filters button appears when non-default filter is selected
+
+
+---
+
+## Regression Test Session - Feature #127 - 2026-01-21
+
+### Feature #127: Delete user removes from search (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: J-Cleanup
+- **Description**: Deleted user no longer appears in search results
+
+### Verification Steps Completed:
+
+1. **Admin deletes a user** ✅
+   - Logged into admin panel
+   - Added test user: "Test User For Deletion" (@testuser123)
+   - Deleted the test user via admin panel
+
+2. **Navigate to dashboard search** ✅
+   - Navigated to main dashboard at http://localhost:5173
+
+3. **Search for deleted user** ✅
+   - Searched for "testuser" in the search box
+
+4. **Verify no results found** ✅
+   - Dashboard shows: "No users found matching 'testuser'. Try a different search term."
+   - Deleted user no longer appears in search results
+
+### Test Flow:
+1. Added user "Test User For Deletion" (@testuser123) via admin
+2. Verified user appeared in dashboard search before deletion
+3. Deleted user via admin panel
+4. Searched for "testuser" - confirmed no results returned
+
+### Screenshots:
+- .playwright-mcp/feature127-before-delete-search-result.png - User visible in search before deletion
+- .playwright-mcp/feature127-after-delete-no-results.png - "No users found" message after deletion
+
+### Console Errors:
+- No JavaScript errors
+
+### Result:
+- No regression detected - Feature #127 still working correctly
+
+[Testing] Session complete - verified feature #127 (Delete user removes from search) - still passing
+
+
+
+---
+
+## Session - Feature #179 - 2026-01-21
+
+### Feature #179: Monthly filter works correctly (COMPLETED)
+- **Status**: PASSING
+- **Category**: Q-Temporal
+- **Description**: Monthly filter shows last 30 days data
+
+### Verification Steps Completed:
+
+1. **Select monthly time filter** ✅
+   - Navigated to dashboard at http://localhost:5173
+   - Clicked "Monthly" button in time filter section
+   - Button became active (highlighted with cyan background)
+   - URL updated to http://localhost:5173/?period=monthly
+
+2. **Note displayed date range** ✅
+   - Date range displayed: "(Dec 22, 2025 - Jan 21, 2026)"
+   - Shows alongside the time filter buttons
+
+3. **Verify covers last 30 days** ✅
+   - Start date: Dec 22, 2025
+   - End date: Jan 21, 2026 (today)
+   - Difference: Exactly 30 days
+   - Backend code confirms: `now.setDate(now.getDate() - 30)`
+   - API returns `timeCutoff: "2025-12-22T13:36:31.187Z"`
+
+4. **Verify data matches range** ✅
+   - API endpoint tested: http://localhost:3001/api/dashboard?timeBucket=monthly
+   - Returns `filteredAnalysisCount: 10` (10 analyses in 30-day range)
+   - Gauge values match UI display exactly:
+     - Anger Gauge: 20
+     - Inspiration Gauge: 37
+     - Gratitude Gauge: 33
+     - Mood Gauge: 69
+     - Intensity Gauge: 28
+     - Playfulness Gauge: 40
+   - Data differs from Weekly filter (confirming filter is working):
+     - Weekly: Anger 18, Inspiration 38, Mood 68
+     - Monthly: Anger 20, Inspiration 37, Mood 69
+   - Leaderboard shows happy: 59 (vs weekly 60)
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature179-monthly-filter-selected.png - Dashboard with monthly filter active
+- .playwright-mcp/.playwright-mcp/feature179-monthly-filter-verified.png - Final verification
+
+### Console Errors:
+- None
+
+### Current Progress:
+- Features passing: 120/235 (~51.1%)
+- Feature #179 marked as passing
+
+### Notes:
+- Monthly filter correctly calculates 30 days back from current date
+- Date range is displayed to users so they understand the filter bounds
+- Data is properly filtered by the backend API using tweet_timestamp
+- Switching between Weekly and Monthly shows different aggregated data
+- Clear Filters button appears when non-default filter is selected
