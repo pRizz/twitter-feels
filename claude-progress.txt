@@ -17441,3 +17441,147 @@ Session complete - implemented and verified feature #18 - PASSING
 - Feature #88 marked as passing
 
 [Testing] Session complete - verified feature #88 (Data persists across sessions) - PASSING
+
+---
+
+## Session - Feature #46 Regression Test - 2026-01-21
+
+### Feature #46: Tweet detail shows full content (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: functional
+- **Description**: Tweet detail page displays complete tweet text
+
+### Verification Steps Completed:
+
+1. **Navigate to tweet detail page** ✅
+   - Navigated to /tweets/37, /tweets/38, and /tweets/52
+   - All pages loaded successfully
+
+2. **Verify full tweet content is displayed** ✅
+   - Tweet #37: 112 chars - full content displayed
+   - Tweet #38: 112 chars - full content displayed
+   - Tweet #52: 1,291 chars - FULL content displayed (longest tweet)
+
+3. **Verify content is not truncated** ✅
+   - The longest tweet (1,291 chars) shows all paragraphs
+   - All bullet points visible
+   - Final paragraph visible
+
+4. **Verify text formatting is preserved** ✅
+   - Line breaks between paragraphs preserved
+   - Bullet points displayed correctly
+   - Special characters and emoji render properly
+
+### Screenshots:
+- .playwright-mcp/feature46-tweet-detail-full-content.png
+- .playwright-mcp/feature46-long-tweet-full-content.png
+
+### Console Errors: NONE
+
+### Code Changes: NONE (regression test only - feature working correctly)
+
+[Testing] Session complete - verified feature #46 (Tweet detail shows full content) - PASSING
+
+
+---
+
+## Session - Feature #14 Regression Test - 2026-01-21
+
+### Feature #14: Admin routes require authentication (REGRESSION TEST - PASSED)
+- **Status**: STILL PASSING
+- **Category**: A-Security
+- **Description**: Unauthenticated users cannot access admin pages
+
+### Verification Steps Completed:
+
+1. **Clear all session data** ✅
+   - Cleared localStorage and sessionStorage via browser evaluation
+   - Started with a clean session state
+
+2. **Navigate directly to /admin/users** ✅
+   - Attempted to access http://localhost:5173/admin/users without authentication
+   - Request was intercepted by auth protection
+
+3. **Verify redirect to login page** ✅
+   - Successfully redirected to http://localhost:5173/admin/login?returnTo=%2Fadmin%2Fusers
+   - returnTo parameter correctly preserves the original destination
+
+4. **Verify no admin content is visible** ✅
+   - Only login form displayed (Username, Password, Log In button)
+   - No admin dashboard, user lists, or settings visible
+   - API correctly returned 401 Unauthorized for /api/admin/me
+
+### Additional Verification:
+- Tested /admin route → Redirected to login with returnTo=%2Fadmin
+- Tested /admin/settings → Redirected to login with returnTo=%2Fadmin%2Fsettings
+- All admin routes consistently protected
+
+### Screenshots:
+- .playwright-mcp/feature14-admin-redirect-to-login.png - Redirect from /admin/users
+- .playwright-mcp/feature14-admin-settings-redirect.png - Redirect from /admin/settings
+
+### Console Errors: 
+- 401 Unauthorized errors are EXPECTED (security feature working correctly)
+
+### Code Changes: NONE (regression test only - feature working correctly)
+
+### Current Progress:
+- Features passing: 205/235 (~87.2%)
+- Feature #14 confirmed still PASSING
+
+[Testing] Session complete - verified feature #14 (Admin routes require authentication) - PASSING
+
+
+---
+
+## Session - Feature #28 - 2026-01-21
+
+### Feature #28: Anger gauge displays with labels (FIXED AND VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Anger gauge shows with Chill/Angry labels
+
+### Problem Found:
+The database configuration had the wrong lowLabel for the Anger Gauge. It was set to "Peaceful" but according to app_spec.txt, it should be "Chill".
+
+### Fix Implemented:
+Updated the database configurations table to set the correct lowLabel for Anger Gauge from "Peaceful" to "Chill" using a script (backend/fix-anger-gauge-label.cjs).
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173/
+   - Dashboard loaded successfully
+
+2. **Locate Anger Gauge** ✅
+   - Found Anger Gauge in "Average Twitter Feel" section
+   - First gauge in the grid (top-left)
+
+3. **Verify gauge is visible with value** ✅
+   - Gauge displayed with value: 18
+   - Progress bar shows appropriate fill level
+   - Red color (#FF4444) used for anger-related gauge
+
+4. **Verify 'Chill' label on low end** ✅
+   - "Chill" text displayed on left side of gauge
+   - Correct positioning below the progress bar
+
+5. **Verify 'Angry' label on high end** ✅
+   - "Angry" text displayed on right side of gauge
+   - Correct positioning below the progress bar
+
+### Screenshots:
+- .playwright-mcp/feature28-anger-gauge-with-labels.png - Dashboard showing Anger Gauge with Chill/Angry labels
+
+### Console Errors: NONE
+
+### Code Changes:
+- backend/fix-anger-gauge-label.cjs - Script to fix database configuration
+- Database update: gauges configuration lowLabel changed from "Peaceful" to "Chill"
+
+### Current Progress:
+- Features passing: 205/235 (~87.2%)
+- Feature #28 marked as passing
+
+[Testing] Session complete - fixed and verified feature #28 (Anger gauge displays with labels) - PASSING
+
