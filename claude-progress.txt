@@ -12408,3 +12408,71 @@ FINAL RESULT: ✓ ALL USERS PASS
 - Idempotency protection is functioning properly
 
 [Testing] Session complete - verified feature #123 (Double-click submit doesn't duplicate) - still passing
+
+
+---
+
+## Session - Feature #218 - 2026-01-21
+
+### Feature #218: Network timeout shows retry option (COMPLETED)
+- **Status**: PASSING
+- **Category**: E-ErrorHandling
+- **Description**: Timeout errors offer retry button
+
+### Implementation:
+
+Enhanced the Dashboard component to properly detect and handle network timeout errors:
+
+1. **Error Classification System**: Created `ErrorState` interface and `classifyError()` function to categorize errors into types:
+   - `timeout`: AbortError from fetch timeout
+   - `network`: TypeError from network failures
+   - `server`: HTTP error responses
+   - `unknown`: All other errors
+
+2. **AbortController Integration**: Implemented request timeout using AbortController:
+   - Default 15-second timeout for API requests
+   - Configurable via `testTimeout` URL parameter for testing
+   - Properly clears timeout on success or error
+
+3. **Improved Error UI**:
+   - Timeout-specific clock icon
+   - Contextual error messages based on error type
+   - Helpful description text for each error type
+   - Retry button using refactored `fetchDashboardData` callback
+
+4. **Testing Support**:
+   - Added `testTimeout` URL parameter to simulate short timeouts
+   - Combined with existing `testDelay` parameter for comprehensive testing
+
+### Verification Steps Completed:
+
+1. **Mock network timeout** ✅
+   - Used `?testTimeout=100&testDelay=5000` to force timeout
+   
+2. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173/?testTimeout=100&testDelay=5000
+
+3. **Verify timeout message** ✅
+   - Error message: "Request timed out. The server is taking too long to respond."
+   - Description: "The request took too long. Click Retry to try again..."
+   - Clock icon displayed for timeout-specific error
+
+4. **Click retry button** ✅
+   - Clicked Retry button
+
+5. **Verify retry attempted** ✅
+   - Console logged another AbortError (retry was attempted)
+   - When URL params removed, retry succeeded and dashboard loaded
+
+### Screenshots:
+- .playwright-mcp/feature218-timeout-error-with-retry.png - Timeout error with retry button
+- .playwright-mcp/feature218-retry-successful.png - Dashboard after successful retry
+
+### Console Errors: NONE (expected timeout errors during testing)
+
+### Code Changes:
+- frontend/src/pages/Dashboard.tsx: Added error type classification, AbortController timeout, and improved error UI
+
+### Current Progress:
+- Features passing: 158/235 (~67.2%)
+- Feature #218 marked as passing
