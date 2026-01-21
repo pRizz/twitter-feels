@@ -19354,3 +19354,107 @@ curl -s -c cookies.txt -b cookies.txt -X DELETE \
 
 [Testing] Session complete - verified feature #56 (Delete user requires confirmation) - PASSING
 
+
+---
+
+## Session - Feature #30 Regression Test - 2026-01-21
+
+### Feature #30: Gratitude gauge displays with labels (VERIFIED - REGRESSION TEST)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Gratitude gauge shows with Entitled/Thankful labels
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173
+   - Dashboard loaded with all gauges
+
+2. **Locate Gratitude Gauge** ✅
+   - Found in the '⚡ Average Twitter Feel' section
+   - Third gauge in the grid layout
+
+3. **Verify gauge is visible with value** ✅
+   - Value displayed: 40
+   - Green gradient progress bar visible
+
+4. **Verify 'Entitled' label on low end** ✅
+   - 'Entitled' label visible on the left side of the gauge
+
+5. **Verify 'Thankful' label on high end** ✅
+   - 'Thankful' label visible on the right side of the gauge
+
+### Screenshots:
+- .playwright-mcp/feature30-gratitude-gauge-verification.png - Dashboard showing Gratitude gauge
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 225/235 (~95.7%)
+- Feature #30 still passing - no regression
+
+[Testing] Session complete - verified feature #30 (Gratitude gauge displays with labels) - STILL PASSING
+
+
+
+---
+
+## Session - Feature #65 - 2026-01-21
+
+### Feature #65: Admin can enable/disable LLM model (VERIFIED)
+- **Status**: PASSING
+- **Category**: D-Workflow
+- **Description**: Admin can toggle model active state
+
+### Verification Steps Completed:
+
+1. **Log in as admin** ✅
+   - Navigated to http://localhost:5173/admin/login
+   - Logged in with admin credentials
+   - Successfully redirected to admin dashboard
+
+2. **Navigate to /admin/models** ✅
+   - Clicked "LLM Models" in the sidebar navigation
+   - Models page loaded with list of installed models
+
+3. **Locate installed model** ✅
+   - Found BERTweet Sentiment Analysis model in the list
+   - Model shows "Ready" status with "Enabled" button (green)
+
+4. **Toggle enable/disable switch** ✅
+   - Clicked the "Enabled" button for BERTweet model
+   - Button changed to "Disabled" (gray styling)
+   - Model state successfully toggled in database
+
+5. **Verify state changes** ✅
+   - Button text changed from "Enabled" to "Disabled"
+   - Button styling changed from green to gray
+   - Re-clicked to re-enable - state toggled back to "Enabled"
+
+6. **Verify disabled model not used for analysis** ✅
+   - Disabled BERTweet model again
+   - Navigated to public dashboard (http://localhost:5173/)
+   - Checked Model dropdown filter
+   - BERTweet Sentiment Analysis was NOT listed in the dropdown
+   - Only enabled models appear in the filter options
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature65-step1-models-all-enabled.png - All models enabled initially
+- .playwright-mcp/.playwright-mcp/feature65-step2-bertweet-disabled.png - BERTweet disabled (gray button)
+- .playwright-mcp/.playwright-mcp/feature65-step3-bertweet-re-enabled.png - BERTweet re-enabled
+- .playwright-mcp/.playwright-mcp/feature65-step4-disabled-model-not-in-dropdown.png - Dashboard without disabled model
+
+### Console Errors: NONE
+
+### Code Implementation Notes:
+- Frontend toggle: Models.tsx handleToggleEnabled() calls PUT /api/admin/models/:id
+- Backend endpoint: admin.ts line 1329-1365 handles toggle with validation
+- Models with download_status !== "ready" cannot be enabled
+- is_enabled flag in llm_models table controls visibility in public API
+
+### Current Progress:
+- Features passing: 224/235 (~95.3%)
+- Feature #65 marked as passing
+
+[Testing] Session complete - verified feature #65 (Admin can enable/disable LLM model) - PASSING
+
