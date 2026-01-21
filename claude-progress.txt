@@ -15374,3 +15374,63 @@ This session was assigned to work on Feature #221, but the feature was already m
 - Feature #127 confirmed still PASSING
 
 [Testing] Session complete - verified feature #127 (Delete user removes from search) - PASSING
+
+
+---
+
+## Session - Feature #160 - 2026-01-21
+
+### Feature #160: Progress shown for downloads (VERIFIED)
+- **Status**: PASSING
+- **Category**: N-Feedback
+- **Description**: Model download shows progress percentage
+
+### Verification Steps Completed:
+
+1. **Start model download** ✅
+   - Reset "Emotion English DistilRoBERTa" model (ID 5) status to 'not_downloaded'
+   - Navigated to /admin/models
+   - Model showed "Not Downloaded" status with "Retry Download" button
+   - Clicked "Retry Download" button to start download
+
+2. **Verify progress bar/percentage shown** ✅
+   - Status badge showed "Downloading 19%"
+   - Progress section displayed "Downloading..." with "19%" percentage
+   - Bytes indicator showed "59.01 MB / 314.71 MB"
+   - Visual progress bar was present (blue fill on gray background)
+
+3. **Verify progress updates over time** ✅
+   - Progress polled from backend API via `/api/admin/models/download/progress/:id`
+   - Backend simulates progress updates every 500ms (8 second total duration)
+   - Progress increased from 0% to 100%
+   - Download completed and status changed to "Ready"
+   - "Enabled" button appeared after download completed
+
+### Implementation Details:
+- **Frontend (Models.tsx)**:
+  - `downloadProgress` state tracks progress per model
+  - Polling mechanism calls progress API every 2 seconds
+  - Progress bar component shows percentage, bytes downloaded/total
+  - Status badge shows "Downloading X%" during download
+  
+- **Backend (admin.ts)**:
+  - `downloadProgressStore` Map stores progress per model ID
+  - `simulateDownloadProgress()` updates progress every 500ms
+  - `GET /models/download/progress/:id` returns current progress
+  - Progress includes: progress %, bytesDownloaded, totalBytes, status
+
+### Screenshots:
+- .playwright-mcp/feature160-models-page-initial.png - Initial state with all models ready
+- .playwright-mcp/feature160-model-not-downloaded.png - Model showing "Not Downloaded" status
+- .playwright-mcp/feature160-download-progress-19percent.png - After clicking download (captured at completion)
+- .playwright-mcp/feature160-download-complete.png - Download complete, model shows "Ready"
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - feature already implemented)
+
+### Current Progress:
+- Features passing: 182/235 (~77.4%)
+- Feature #160 verified and marked as passing
+
+[Testing] Session complete - verified feature #160 (Progress shown for downloads) - PASSING
