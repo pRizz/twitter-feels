@@ -13457,3 +13457,141 @@ Only Vite dev server HMR/WebSocket errors (dev server issues, not application er
 
 [Testing] Session complete - verified feature #224 (Orphaned analyses cleaned up) - PASSING
 
+
+
+---
+
+## Testing Session - Feature #138 Regression Test - 2026-01-21
+
+### Feature #138: Search with spaces handled (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: L-SearchFilter
+- **Description**: Whitespace-only search handled correctly
+
+### Verification Steps Completed:
+
+1. **Navigate to user list** ✅
+   - Loaded dashboard at http://localhost:5173
+   - User list visible in 'Tracked Influencers' section
+
+2. **Enter only spaces in search** ✅
+   - Typed 5 spaces in the search input
+   - Search box accepted the input without error
+
+3. **Verify handled gracefully (shows all or message)** ✅
+   - All 5 users still displayed after spaces-only search
+   - Users shown: Sam Altman, Elon Musk, Bill Gates, Sundar Pichai, Multi-Model Test
+   - No error messages or crashes
+   - Whitespace treated as empty search
+
+### Screenshots:
+- .playwright-mcp/feature138-spaces-search-all-users-shown.png - Dashboard with spaces in search
+- .playwright-mcp/feature138-spaces-search-user-list.png - User list showing all 5 users
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected
+- Feature #138 still working correctly
+- Whitespace-only search gracefully shows all users
+
+[Testing] Session complete - verified feature #138 (Search with spaces handled) - still passing
+
+
+
+---
+
+## Testing Session - Feature #188 Regression Test - 2026-01-21
+
+### Feature #188: Invalid config import rejected (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: S-Export
+- **Description**: Malformed config file is rejected
+
+### Verification Steps Completed:
+
+1. **Create invalid config file** ✅
+   - Created malformed JSON: 'this is not valid json { broken'
+   - Created JSON with unsupported version: { version: '999.0', ... }
+
+2. **Try to import it** ✅
+   - Triggered file input with invalid JSON content
+   - Triggered file input with invalid version config
+
+3. **Verify error message** ✅
+   - Invalid JSON: "Invalid JSON file. Please select a valid configuration export file."
+   - Invalid version: "Unsupported configuration version: 999.0. Expected version 1.0"
+
+4. **Verify existing config unchanged** ✅
+   - Crawl Interval: 6 hours (unchanged)
+   - History Depth: 180 days (unchanged)
+   - Rate Limit: 450 (unchanged)
+   - S3 Bucket Name: my-valid-bucket-123 (unchanged)
+   - AWS Region: eu-west-1 (unchanged)
+   - Backup Schedule: Daily (unchanged)
+   - Retention Period: 30 days (unchanged)
+
+### Screenshots:
+- .playwright-mcp/feature188-settings-page.png - Settings page with current config
+- .playwright-mcp/feature188-invalid-json-error.png - Error for malformed JSON
+- .playwright-mcp/feature188-invalid-version-error.png - Error for invalid version
+
+### Console Errors:
+- 401 errors occurred BEFORE login (expected)
+- 400 Bad Request for invalid config import (expected - this is the rejection)
+
+### Result:
+- No regression detected
+- Feature #188 still working correctly
+- Both frontend (JSON parsing) and backend (validation) rejection work
+
+[Testing] Session complete - verified feature #188 (Invalid config import rejected) - still passing
+
+
+
+---
+
+## Session - Feature #227 - 2026-01-21
+
+### Feature #227: User search by handle works (VERIFIED)
+- **Status**: PASSING
+- **Category**: L-SearchFilter
+- **Description**: Can search users by Twitter handle
+
+### Verification Steps Completed:
+
+1. **Enter @handle in search**
+   - Entered "@sama" in the user search input
+   - Only Sam Altman (@sama) was shown in results
+   - Screenshot: .playwright-mcp/feature227-search-by-handle.png
+   - Screenshot: .playwright-mcp/feature227-search-handle-result.png
+
+2. **Verify matching user found**
+   - Sam Altman card correctly displayed with:
+     - Avatar image
+     - Display name: "Sam Altman"
+     - Handle: "@sama"
+     - Bio: "CEO of OpenAI"
+     - Top emotion: "excited: 47"
+   - All other users (Elon Musk, Bill Gates, etc.) were filtered out
+
+3. **Enter partial handle**
+   - Tested "elon" (partial match without @) - matched Elon Musk
+   - Screenshot: .playwright-mcp/feature227-partial-handle-elon.png
+   - Tested "@Bill" (partial handle with @) - matched Bill Gates
+   - Screenshot: .playwright-mcp/feature227-partial-handle-bill.png
+
+4. **Verify fuzzy match works**
+   - Search matching works case-insensitively
+   - Matches against: displayName, username, and @username (handle format)
+   - Code in Dashboard.tsx filters users by checking includes() on all three fields
+
+### Console Errors: NONE
+
+### Code Changes: NONE (feature was already implemented correctly)
+
+### Current Progress:
+- Features passing: 169/235 (~71.9%)
+- Feature #227 marked as passing
+
+[Testing] Session complete - verified feature #227 (User search by handle works) - PASSING
