@@ -275,23 +275,40 @@ function EmotionAverages({
         )}
       </div>
       <div className="space-y-3">
-        {emotions.map(([emotion, value]) => (
-          <div key={emotion} className="flex items-center gap-3">
-            <span className="text-sm text-foreground capitalize w-24">{emotion}</span>
-            <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${value}%`,
-                  backgroundColor: getColor(emotion),
-                }}
-              />
+        {emotions.map(([emotion, value], index) => {
+          const isHighest = index === 0;
+          const isLowest = index === emotions.length - 1;
+
+          return (
+            <div key={emotion} className={`flex items-center gap-3 ${isHighest || isLowest ? 'relative' : ''}`}>
+              <span className="text-sm text-foreground capitalize w-24 flex items-center gap-1">
+                {emotion}
+                {isHighest && (
+                  <span className="text-xs px-1.5 py-0.5 bg-success/20 text-success rounded-full font-medium" title="Most common emotion">
+                    ↑
+                  </span>
+                )}
+                {isLowest && (
+                  <span className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded-full font-medium" title="Least common emotion">
+                    ↓
+                  </span>
+                )}
+              </span>
+              <div className={`flex-1 h-4 bg-muted rounded-full overflow-hidden ${isHighest ? 'ring-2 ring-success/50' : ''} ${isLowest ? 'ring-2 ring-muted-foreground/30' : ''}`}>
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${value}%`,
+                    backgroundColor: getColor(emotion),
+                  }}
+                />
+              </div>
+              <span className="text-sm font-mono text-muted-foreground w-10 text-right">
+                {Math.round(value)}
+              </span>
             </div>
-            <span className="text-sm font-mono text-muted-foreground w-10 text-right">
-              {Math.round(value)}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
