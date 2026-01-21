@@ -12961,3 +12961,60 @@ Only Vite dev server HMR/WebSocket errors (dev server issues, not application er
 
 [Testing] Session complete - verified feature #221 (Time series data for charts accurate) - PASSING
 
+
+
+---
+
+## Session - Feature #223 - 2026-01-21
+
+### Feature #223: Admin routes redirect to login (VERIFIED)
+- **Status**: PASSING
+- **Category**: H-URLAccess
+- **Description**: Unauthenticated admin access redirects
+
+### Verification Steps Completed:
+
+1. **Clear session** ✅
+   - Logged out via API and logout button
+   - Session cleared successfully
+
+2. **Navigate to /admin/settings** ✅
+   - Navigated directly to http://localhost:5173/admin/settings as unauthenticated user
+
+3. **Verify redirect to /admin/login** ✅
+   - URL changed to: http://localhost:5173/admin/login?returnTo=%2Fadmin%2Fsettings
+   - Login page displayed
+
+4. **Verify original URL remembered** ✅
+   - The returnTo parameter contains encoded original path: %2Fadmin%2Fsettings (=/admin/settings)
+
+5. **Log in, verify redirect to settings** ✅
+   - Logged in with admin/admin123 credentials
+   - Redirected to: http://localhost:5173/admin/settings
+   - Settings page loaded successfully
+
+### Additional Testing:
+- Also tested with /admin/models route
+- Same behavior confirmed: redirect to login with returnTo parameter
+- After login, correctly redirected to /admin/models
+
+### Implementation Details:
+- AdminLayout.tsx: Adds returnTo query parameter when redirecting unauthenticated users
+- Login.tsx: Reads returnTo parameter and redirects there after successful login
+- Security: returnTo is validated to start with '/admin' to prevent open redirect attacks
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature223-step1-redirected-to-login.png - Login page with returnTo param
+- .playwright-mcp/.playwright-mcp/feature223-step2-redirected-to-settings.png - Settings page after login
+- .playwright-mcp/.playwright-mcp/feature223-step3-redirected-to-models.png - Models page (additional test)
+
+### Console Errors: 
+- Only expected 401 responses during auth check (before redirect to login)
+- No application errors
+
+### Current Progress:
+- Features passing: 163/235 (~69.4%)
+- Feature #223 marked as passing
+
+[Testing] Session complete - verified feature #223 (Admin routes redirect to login) - PASSING
+
