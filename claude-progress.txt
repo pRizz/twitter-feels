@@ -6906,3 +6906,65 @@ Added "Clear Filters" functionality to the Dashboard page:
 - Hamburger menu uses responsive CSS to show/hide based on viewport width
 - Menu content includes theme toggle and last updated timestamp
 - All navigation links work correctly on mobile viewport
+
+---
+
+## Session - Feature #166 - 2026-01-21
+
+### Feature #166: Long text truncates properly (COMPLETED)
+- **Status**: PASSING
+- **Category**: O-Responsive
+- **Description**: Long tweet content doesn't overflow
+
+### Verification Steps Completed:
+
+1. **View tweet with very long content** ✅
+   - Created test tweet with ~1500 characters of content
+   - Tweet includes multiple paragraphs, bullet points, emojis, and special characters
+   - Tweet ID #52 added to Sam Altman's account
+
+2. **Verify text truncates or wraps** ✅
+   - Tweet list in UserDetail page uses `line-clamp-3` CSS utility
+   - Long tweet is truncated to 3 lines with ellipsis (...)
+   - Text wraps properly within container boundaries
+
+3. **Verify no horizontal overflow** ✅
+   - Tested on desktop viewport (1280x720) - no horizontal overflow
+   - Tested on mobile viewport (375x667) - no horizontal overflow
+   - Layout maintained properly at all viewport sizes
+
+4. **Verify full text available on click** ✅
+   - Clicked truncated tweet in list view
+   - Navigated to /tweets/52 (Tweet Detail page)
+   - Full tweet content displayed with:
+     - All paragraphs visible
+     - Line breaks preserved (whitespace-pre-wrap)
+     - Bullet points rendered correctly
+     - Emojis displayed properly (🚀🎉💡)
+
+### Implementation Details:
+- UserDetail.tsx line 366: `line-clamp-3` class truncates text in list view
+- TweetDetail.tsx line 320: `whitespace-pre-wrap` preserves full formatting
+- Tailwind CSS handles the truncation and overflow behavior
+
+### Screenshots:
+- .playwright-mcp/feature166-tweet-list-normal.png - Tweet list showing normal tweets
+- .playwright-mcp/feature166-long-tweet-in-list.png - Long tweet in list (full page)
+- .playwright-mcp/feature166-long-tweet-truncation-test.png - Truncated long tweet visible
+- .playwright-mcp/feature166-tweet-list-bottom.png - Bottom of tweet list
+- .playwright-mcp/feature166-full-tweet-detail.png - Full tweet on detail page
+- .playwright-mcp/feature166-mobile-tweet-list.png - Mobile view of charts
+- .playwright-mcp/feature166-mobile-long-tweet-truncated.png - Mobile truncation working
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 106/235 (~45.1%)
+- Feature #166 marked as passing
+
+### Notes:
+- No code changes required - truncation was already properly implemented
+- The `line-clamp-3` Tailwind utility works correctly for text truncation
+- Full text accessible on detail page with preserved formatting
+- Responsive design handles long text at all viewport sizes
