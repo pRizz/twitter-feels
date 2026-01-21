@@ -39,11 +39,22 @@ app.use(session({
 }));
 
 // Rate limiting for public API
-// Note: Higher limit in development to support automated testing
+// Environment variables allow testing rate limits without code changes
+// RATE_LIMIT_WINDOW_MS: Time window in milliseconds (default: 15 minutes)
+// RATE_LIMIT_MAX_REQUESTS: Max requests per window (default: 100 prod, 1000 dev)
+const rateLimitWindowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || String(15 * 60 * 1000), 10);
+const rateLimitMax = parseInt(
+  process.env.RATE_LIMIT_MAX_REQUESTS ||
+  (process.env.NODE_ENV === 'production' ? '100' : '1000'),
+  10
+);
+
 const publicLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit for dev/testing
+  windowMs: rateLimitWindowMs,
+  max: rateLimitMax,
   message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
 // Development: Simulate network delay for testing loading states
