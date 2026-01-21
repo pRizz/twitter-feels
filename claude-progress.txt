@@ -13399,3 +13399,61 @@ Only Vite dev server HMR/WebSocket errors (dev server issues, not application er
 
 [Testing] Session complete - verified feature #225 (Default emotions configured) - PASSING
 
+
+---
+
+## Session - Feature #224 - 2026-01-21
+
+### Feature #224: Orphaned analyses cleaned up (COMPLETED)
+- **Status**: PASSING
+- **Category**: J-Cleanup
+- **Description**: Analyses for deleted tweets are removed
+
+### Verification Steps Completed:
+
+1. **Delete a user** ✅
+   - Created test user "Orphan Test User F224" (@testOrphanF224)
+   - Ran crawler to generate 4 tweets and 13 sentiment analyses
+   - Deleted user via admin panel
+
+2. **Query for orphaned sentiment_analyses** ✅
+   - Created verification script (verify-orphaned-analyses.js)
+   - Queries for tweets with non-existent user IDs
+   - Queries for analyses with non-existent tweet IDs
+   - Both queries returned 0 results after deletion
+
+3. **Verify none exist for deleted user's tweets** ✅
+   - Verified specific tweet IDs (210, 211, 212, 213) no longer exist
+   - Verified no sentiment_analyses reference those tweet IDs
+   - Database state:
+     - Before: 6 users, 151 tweets, 298 analyses
+     - After: 5 users, 147 tweets, 285 analyses
+     - Deleted: 1 user, 4 tweets, 13 analyses
+
+### Technical Details:
+- SQLite foreign keys are enabled (`db.pragma('foreign_keys = ON')`) in:
+  - backend/src/db/connection.ts (line 20)
+  - backend/src/db/init.ts (line 16)
+- Cascade delete configured via:
+  - tweets.twitter_user_id REFERENCES twitter_users(id) ON DELETE CASCADE
+  - sentiment_analyses.tweet_id REFERENCES tweets(id) ON DELETE CASCADE
+- Deletion order: user → triggers tweets deletion → triggers analyses deletion
+
+### Screenshots:
+- .playwright-mcp/feature224-user-deleted.png - Admin panel showing 5 users, 147 tweets after deletion
+
+### Verification Scripts Created:
+- verify-orphaned-analyses.js - Checks for any orphaned tweets or analyses
+- verify-deleted-data.js - Verifies specific deleted user data is gone
+- check-user-data.js - Shows user's tweets and analyses before deletion
+
+### Console Errors: NONE
+
+### Code Changes: NONE (verification only - cascade delete already correctly configured)
+
+### Current Progress:
+- Features passing: 165/235 (~70.2%)
+- Feature #224 marked as passing
+
+[Testing] Session complete - verified feature #224 (Orphaned analyses cleaned up) - PASSING
+
