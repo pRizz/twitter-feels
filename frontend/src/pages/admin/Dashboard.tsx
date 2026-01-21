@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Activity, Clock, AlertTriangle, CheckCircle2, Loader2, Play, RefreshCw, RotateCcw } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/useToast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 // Types for crawler status
 interface CrawlerRun {
@@ -211,11 +212,11 @@ function CrawlerStatusPanel({ status, onTrigger, isTriggering }: {
 
 // Force Re-Analyze Panel Component
 function ForceReanalyzePanel({
-  onReanalyze,
+  onOpenConfirmDialog,
   isReanalyzing,
   isDisabled
 }: {
-  onReanalyze: () => void;
+  onOpenConfirmDialog: () => void;
   isReanalyzing: boolean;
   isDisabled: boolean;
 }) {
@@ -251,7 +252,7 @@ function ForceReanalyzePanel({
       {/* Actions */}
       <div className="p-4">
         <button
-          onClick={onReanalyze}
+          onClick={onOpenConfirmDialog}
           disabled={isDisabled || isReanalyzing}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-amber-600 text-amber-950 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
@@ -341,6 +342,7 @@ export default function AdminDashboard() {
   const [isReanalyzing, setIsReanalyzing] = useState(false);
   const [previousRunningState, setPreviousRunningState] = useState<boolean | null>(null);
   const [lastNotifiedRunId, setLastNotifiedRunId] = useState<number | null>(null);
+  const [showReanalyzeConfirm, setShowReanalyzeConfirm] = useState(false);
   const { success: showSuccess, error: showError } = useToast();
 
   // Fetch crawler status
@@ -509,13 +511,29 @@ export default function AdminDashboard() {
 
       {/* Force Re-Analyze Panel */}
       <ForceReanalyzePanel
-        onReanalyze={triggerReanalyze}
+        onOpenConfirmDialog={() => setShowReanalyzeConfirm(true)}
         isReanalyzing={isReanalyzing}
         isDisabled={status?.isRunning || false}
       />
 
       {/* Recent Runs */}
       {status && <RecentRunsTable runs={status.recentRuns} />}
+
+      {/* Force Re-Analyze Confirmation Dialog */}
+      <ConfirmDialog
+        open={showReanalyzeConfirm}
+        onOpenChange={setShowReanalyzeConfirm}
+        title="Confirm Re-Analysis"
+        description="Are you sure you want to re-analyze all tweets? This will re-process all stored tweets through the sentiment analysis pipeline. This operation may take a significant amount of time depending on the number of tweets."
+        confirmLabel="Re-Analyze All"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setShowReanalyzeConfirm(false);
+          triggerReanalyze();
+        }}
+        onCancel={() => setShowReanalyzeConfirm(false)}
+        variant="warning"
+      />
     </div>
   );
 }
