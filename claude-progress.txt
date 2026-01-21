@@ -19677,3 +19677,72 @@ curl -s -c cookies.txt -b cookies.txt -X DELETE \
 
 [Testing] Session complete - verified feature #89 (Deleted user removed from all views) - PASSING
 
+
+---
+
+## Session - Feature #24 - 2026-01-21
+
+### Feature #24: Theme preference persists across sessions (VERIFIED)
+- **Status**: PASSING
+- **Category**: functional
+- **Description**: Selected theme is saved and restored on page reload
+
+### Verification Steps Completed:
+
+1. **Navigate to homepage** ✅
+   - Navigated to http://localhost:5173
+   - Page loaded successfully in dark mode (default)
+   - Initial localStorage value was null (not yet set)
+
+2. **Switch theme** ✅
+   - Clicked "Toggle theme" button
+   - Theme switched from dark to light mode
+   - UI updated immediately with white background
+
+3. **Check localStorage for theme key** ✅
+   - Checked `localStorage.getItem('twitter-feels-theme')`
+   - Value correctly stored as `"light"` after switching to light mode
+   - Storage key is `twitter-feels-theme` (configured in App.tsx)
+
+4. **Verify value matches current theme** ✅
+   - localStorage value matches `document.documentElement.className`
+   - Both show "light" after toggling to light mode
+
+5. **Verify persistence across navigation** ✅
+   - Navigated to /users/4 (Sam Altman's profile)
+   - Light theme persisted - white background still visible
+   - localStorage still contains "light"
+
+6. **Verify persistence across page refresh** ✅
+   - Refreshed the page (window.location.reload())
+   - Light theme restored from localStorage
+   - No flash of dark mode on reload
+
+7. **Toggle back to dark mode** ✅
+   - Clicked "Toggle theme" button again
+   - Theme switched to dark mode
+   - localStorage updated to "dark"
+   - Navigated to homepage - dark theme persisted
+
+### Technical Implementation:
+- Storage key: `twitter-feels-theme` (configured in App.tsx line 26)
+- ThemeProvider location: `/frontend/src/components/theme-provider.tsx`
+- Correctly reads from localStorage on initialization (line 30)
+- Correctly writes to localStorage when theme changes (line 54)
+- Applies correct class to `document.documentElement`
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature24-step1-initial-state.png - Initial dark mode
+- .playwright-mcp/.playwright-mcp/feature24-step2-light-mode.png - After switching to light mode
+- .playwright-mcp/.playwright-mcp/feature24-step3-after-refresh.png - Light mode persisted after refresh
+- .playwright-mcp/.playwright-mcp/feature24-step4-back-to-dark.png - Dark mode after toggling back
+- .playwright-mcp/.playwright-mcp/feature24-step5-dark-persisted.png - Dark mode persisted on navigation
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 227/235 (~96.6%)
+- Feature #24 marked as passing
+
+[Testing] Session complete - verified feature #24 (Theme preference persists across sessions) - PASSING
+
