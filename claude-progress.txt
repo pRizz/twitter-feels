@@ -7034,3 +7034,166 @@ Added "Clear Filters" functionality to the Dashboard page:
 - Mobile sidebar with hamburger menu improves navigation
 - Horizontal scroll on tables allows viewing all columns on small screens
 - Desktop layout remains unchanged (sidebar always visible)
+
+[Testing] 2026-01-21 - Feature #119 regression test PASSED - Cannot access other users data via URL:
+- Navigated to /users/4 (Sam Altman) - page loaded with correct user data
+- Noted data displayed: Sam Altman, @sama, CEO of OpenAI, 3.0M followers, 16 tweets analyzed
+- Changed URL to /users/5 (non-existent user) - correctly shows "User not found" message
+- Changed URL to /users/999999 (invalid ID) - correctly shows "User not found" with 404 response
+- "Return to Dashboard" link works correctly
+- Navigated back to /users/4 - correct data displayed again
+- API returns proper 404 status for non-existent users
+- No JavaScript application errors (expected 404 fetch errors are handled gracefully)
+- Screenshots: feature119-user4-original.png, feature119-user5-not-found.png, feature119-user4-verified.png
+[Testing] Session complete - verified feature #119 (Cannot access other users data via URL) - still passing
+
+---
+
+## Session - Feature #135 - 2026-01-21
+
+### Feature #135: Clear filters resets all filters (REGRESSION TEST)
+- **Status**: PASSING (no regression)
+- **Category**: K-Defaults
+- **Description**: Clear filters button resets to default view
+
+### Verification Steps Completed:
+
+1. **Applied multiple filters on dashboard** ✅
+   - Changed Time from "Weekly" to "Monthly"
+   - Changed Model from "Combined" to "BERTweet Sentiment Analysis (base)"
+   - Changed Sort from "Followers" to "Name"
+   - URL updated to `?period=monthly&model=7&sortBy=name`
+   - "Clear Filters" button appeared
+
+2. **Clicked clear filters** ✅
+   - Clicked the "Clear Filters" button
+
+3. **Verified all filters reset to default** ✅
+   - Time: Reset to "Weekly" (default, highlighted in cyan)
+   - Model: Reset to "Combined" (default)
+   - Sort: Reset to "Followers" (default)
+   - URL: Reset to `/` with no query parameters
+   - "Clear Filters" button disappeared (only shows when non-default filters applied)
+   - Data: Real sentiment data displayed again
+
+### Screenshots:
+- .playwright-mcp/feature135-initial-state.png - Dashboard initial state
+- .playwright-mcp/feature135-filters-applied.png - Filters changed (Monthly, BERTweet, Name)
+- .playwright-mcp/feature135-after-clear-filters.png - Filters reset to defaults
+
+### Console Errors:
+- None
+
+### Current Progress:
+- Features passing: 110/235 (~46.8%)
+- Feature #135 verified - still passing (no regression)
+
+[Testing] Session complete - verified feature #135 (Clear filters resets all filters) - still passing
+
+---
+
+## Session - Feature #91 - 2026-01-21
+
+### Feature #91: API error shows user-friendly message (REGRESSION TEST)
+- **Status**: PASSING (verified)
+- **Category**: E-ErrorHandling
+- **Description**: Network/API errors display helpful messages
+
+### Verification Steps Completed:
+
+1. **Mock API failure** ✅
+   - Used JavaScript fetch override to simulate network failure
+   - All /api/* requests rejected with TypeError: Failed to fetch
+
+2. **Navigate to dashboard** ✅
+   - Dashboard loaded and attempted to fetch data
+   - API call failed as expected
+
+3. **Verify error message is displayed** ✅
+   - Red/warning styled error banner appears
+   - Message: 'Failed to load dashboard data'
+
+4. **Verify message is user-friendly** ✅
+   - Subtext: 'Unable to connect to the server. Please check your connection and try again.'
+   - No stack traces or technical details exposed to user
+   - Clean, styled error presentation
+
+5. **Verify retry option is available** ✅
+   - Retry button with refresh icon present
+   - Button clearly labeled 'Retry'
+   - Clicking retry successfully reloads data when API is restored
+
+### Screenshots:
+- .playwright-mcp/feature91-api-error-message.png - Error state with user-friendly message
+- .playwright-mcp/feature91-retry-success.png - Successful recovery after retry
+
+### Console Errors:
+- Only expected errors from intentional API blocking (no unexpected JS errors)
+
+### Result:
+- Feature #91 still working correctly - no regression found
+
+[Testing] Session complete - verified feature #91 (API error shows user-friendly message) - still passing
+
+
+---
+
+## Session - Feature #171 - 2026-01-21
+
+### Feature #171: Icon buttons have labels (COMPLETED)
+- **Status**: PASSING
+- **Category**: P-Accessibility
+- **Description**: Icon-only buttons have ARIA labels
+
+### Verification Steps Completed:
+
+1. **Find icon-only buttons (theme toggle, etc)** ✅
+   - Identified icon-only buttons in the codebase:
+     - Theme toggle button (PublicLayout.tsx) - had aria-label
+     - Mobile hamburger menu button (PublicLayout.tsx) - had aria-label
+     - Admin mobile menu buttons (AdminLayout.tsx) - had aria-label
+     - Sort order toggle button (Dashboard.tsx) - MISSING aria-label → FIXED
+     - Toast dismiss button (toaster.tsx) - had aria-label
+     - ConfirmDialog close button (ConfirmDialog.tsx) - had aria-label
+
+2. **Inspect for aria-label attribute** ✅
+   - All icon-only buttons verified to have aria-label attributes:
+     - `aria-label="Toggle theme"` - Theme toggle
+     - `aria-label="Toggle menu"` - Mobile hamburger (public)
+     - `aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}` - Admin hamburger
+     - `aria-label="Close menu"` - Admin sidebar close
+     - `aria-label={sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'}` - Sort toggle (ADDED)
+     - `aria-label="Dismiss notification"` - Toast dismiss
+     - `aria-label="Close"` - ConfirmDialog close
+
+3. **Verify label describes action** ✅
+   - All labels are descriptive and appropriate:
+     - "Toggle theme" - Toggles light/dark mode
+     - "Toggle menu"/"Open menu"/"Close menu" - Navigation menu actions
+     - "Sort ascending"/"Sort descending" - Describes current sort state
+     - "Dismiss notification" - Dismisses toast
+     - "Close" - Closes dialog
+
+### Code Changes Made:
+- Added `aria-label` to sort order toggle button in Dashboard.tsx (line 297)
+
+### Screenshots:
+- .playwright-mcp/feature171-icon-buttons-aria-labels.png - Dashboard with sort button
+- .playwright-mcp/feature171-toast-dismiss-aria-label.png - Toast notification
+- .playwright-mcp/feature171-confirm-dialog-close-aria-label.png - ConfirmDialog
+
+### Console Errors:
+- No JavaScript errors
+
+### Current Progress:
+- Features passing: 111/235 (~47.2%)
+- Feature #171 marked as passing
+
+### Commit:
+- 44523eb - feat: Add aria-label to sort order toggle button for accessibility (#171)
+
+### Notes:
+- Most icon-only buttons already had proper ARIA labels
+- Only the sort order toggle button was missing an aria-label
+- Dynamic labels update based on button state (ascending/descending)
+- All accessibility requirements for icon-only buttons are now met
