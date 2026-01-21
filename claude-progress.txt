@@ -13906,3 +13906,101 @@ Only Vite dev server HMR/WebSocket errors (dev server issues, not application er
 
 [Testing] Session complete - verified feature #126 (Refresh during save handled) - still passing
 
+
+
+---
+
+## Testing Session - Feature #222 Regression Test - 2026-01-21
+
+### Feature #222: Form data preserved on validation error (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: G-State
+- **Description**: Failed submit keeps form data
+
+### Verification Steps Completed:
+
+1. **Fill form with multiple fields** ✅
+   - Navigated to /admin/users
+   - Clicked "+ Add User" button
+   - Filled Twitter Handle: @testRegression222 (too long, invalid)
+   - Filled Display Name: Regression Test User 222
+
+2. **Submit with one invalid field** ✅
+   - Real-time validation triggered on handle input
+   - Handle exceeded 15 character limit
+
+3. **Verify validation error shown** ✅
+   - Error message displayed: "Handle must be 15 characters or less"
+   - Twitter Handle field highlighted with red border
+   - Add User button disabled
+
+4. **Verify other fields still have values** ✅
+   - Twitter Handle field retained: @testRegression222
+   - Display Name field retained: Regression Test User 222
+   - Fixed handle to @testReg222 (valid) - Display Name still preserved!
+   - Add User button became enabled after fix
+
+### Screenshots:
+- .playwright-mcp/feature222-validation-error-data-preserved.png - Validation error with both fields preserved
+- .playwright-mcp/feature222-validation-fixed-data-preserved.png - After fixing handle, display name still preserved
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected
+- Feature #222 still working correctly
+- Form data properly preserved during validation errors
+
+[Testing] Session complete - verified feature #222 (Form data preserved on validation error) - still passing
+
+
+---
+
+## Session - Feature #231 - 2026-01-21
+
+### Feature #231: Crawler completion notification (VERIFIED)
+- **Status**: PASSING
+- **Category**: N-Feedback
+- **Description**: Crawler finish shows notification
+
+### Verification Steps Completed:
+
+1. **Start crawler run** ✅
+   - Clicked "Run Now" button on Admin Dashboard
+   - Crawler started with "Crawler started successfully" toast
+   - Status changed to "Running"
+
+2. **Wait for completion** ✅
+   - Crawler completed in approximately 5 seconds
+   - Status transitioned from "Running" to "Idle"
+
+3. **Verify completion notification** ✅
+   - Green toast notification appeared: "✓ Crawler completed! Fetched 23 tweets, analyzed 23."
+   - Toast displayed in top-right corner of screen
+   - Toast auto-dismisses after 5 seconds (default behavior)
+
+4. **Verify stats shown (tweets fetched, etc)** ✅
+   - Notification includes: tweets fetched count
+   - Notification includes: tweets analyzed count
+   - Format: "Crawler completed! Fetched {X} tweets, analyzed {Y}."
+
+### Technical Details:
+- Implementation in: frontend/src/pages/admin/Dashboard.tsx
+- Uses useEffect to detect status transition from running to idle
+- Tracks previousRunningState and lastNotifiedRunId to prevent duplicate notifications
+- Shows success toast on completion, error toast on failure
+- Notification includes run statistics (tweetsFetched, tweetsAnalyzed)
+
+### Screenshots:
+- .playwright-mcp/feature231-crawler-started.png - Crawler running with "started" toast
+- .playwright-mcp/feature231-crawler-completed-notification.png - Completion notification with stats
+
+### Console Errors: NONE
+
+### Code Changes: NONE (feature was already implemented in commit 7a314d7)
+
+### Current Progress:
+- Features passing: 171/235 (~72.8%)
+- Feature #231 marked as passing
+
+[Testing] Session complete - verified feature #231 (Crawler completion notification) - PASSING
