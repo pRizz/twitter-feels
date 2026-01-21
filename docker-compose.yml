@@ -9,6 +9,9 @@ services:
       - backend
     environment:
       - VITE_API_URL=http://backend:3001
+      - FRONTEND_HOST=localhost
+      - FRONTEND_HOST_PORT=5173
+      - FRONTEND_CONTAINER_PORT=80
 
   backend:
     build:
@@ -22,6 +25,7 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=/app/data/twitter_feels.db
+      - TWITTER_BEARER_TOKEN=${TWITTER_BEARER_TOKEN}
 
   crawler:
     build:
@@ -34,4 +38,5 @@ services:
       - backend
     environment:
       - DATABASE_URL=/app/data/twitter_feels.db
+      - TWITTER_BEARER_TOKEN=${TWITTER_BEARER_TOKEN}
 

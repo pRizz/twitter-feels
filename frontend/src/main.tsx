@@ -14,6 +14,14 @@ const queryClient = new QueryClient({
   },
 });
 
+const logFrontendLocation = () => {
+  const { origin, port } = window.location;
+  const portLabel = port.length > 0 ? port : 'default';
+  console.log(`Frontend running at ${origin} (port ${portLabel})`);
+};
+
+logFrontendLocation();
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
