@@ -10871,6 +10871,69 @@ Applied `font-mono` Tailwind CSS class to all model name and version displays:
 
 ---
 
+## Session - Feature #214 - 2026-01-21
+
+### Feature #214: SQL injection prevented (COMPLETED)
+- **Status**: PASSING
+- **Category**: A-Security
+- **Description**: User input sanitized for database queries
+
+### Verification Steps Completed:
+
+1. **Enter SQL injection in search** ✅
+   - Tested dashboard search with: `'; DROP TABLE users;--`
+   - UI displayed: "No users found matching... Try a different search term."
+   - Input treated as plain text, not executed as SQL
+
+2. **Verify no database error** ✅
+   - No database errors occurred
+   - Application continued functioning normally
+   - Console showed no errors related to SQL
+
+3. **Verify query properly escaped** ✅
+   - Backend uses `better-sqlite3` with parameterized queries
+   - All user inputs use `?` placeholders with `.prepare().run/get/all(params)`
+   - No string concatenation in SQL queries
+
+4. **Verify normal results returned** ✅
+   - Searched for "Sam" - correctly returned Sam Altman user card
+   - API endpoints return proper results with legitimate inputs
+
+### Additional SQL Injection Tests:
+
+**API Endpoint Tests:**
+- `/api/users/1' OR '1'='1` → Returns 404 "User not found" (not all users)
+- `/api/dashboard?timeBucket=weekly' OR 1=1--` → Returns normal data (injection ignored)
+
+**Admin Form Input Tests:**
+- Handle field with SQL injection → Rejected due to validation rules
+
+**Database Integrity Verified:**
+- After all injection attempts, database remained intact
+- User count: 6, Tweet count: 89, Sentiment Analyses: 89
+
+### Technical Implementation:
+
+The application properly prevents SQL injection through:
+1. Parameterized Queries: All database operations use prepared statements
+2. Frontend Validation: Input validation on forms
+3. Backend Validation: Server-side validation before database operations
+4. CSRF Protection: Admin API endpoints require CSRF tokens
+
+### Screenshots:
+- .playwright-mcp/feature214-sql-injection-search-test.png
+- .playwright-mcp/feature214-sql-injection-no-results.png
+- .playwright-mcp/feature214-normal-search-results.png
+
+### Console Errors: NONE
+
+### Current Progress:
+- Features passing: 154/235 (~65.5%)
+- Feature #214 marked as passing
+
+
+---
+
 ## Session - Feature #205 - 2026-01-21
 
 ### Feature #205: 404 page for invalid routes (COMPLETED)
@@ -12007,4 +12070,53 @@ escaped text entities. The code does NOT use dangerouslySetInnerHTML.
 ### Current Progress:
 - Features passing: 153/235 (~65.1%)
 - Feature #213 marked as passing
+
+
+
+---
+
+## Session - 2026-01-21
+
+### Feature #212: CSRF protection on forms (COMPLETED)
+- **Status**: PASSING
+- **Category**: A-Security
+- **Description**: Forms protected against CSRF attacks
+
+### Implementation:
+1. Created backend CSRF middleware (backend/src/middleware/csrf.ts):
+   - Generates cryptographically secure random tokens stored in session
+   - Exposes tokens via cookie (csrf-token) and response header
+   - Validates X-CSRF-Token header on POST/PUT/PATCH/DELETE requests
+   - Uses timing-safe comparison to prevent timing attacks
+   - Exempts login/logout endpoints (no session yet)
+
+2. Created frontend API utility (frontend/src/lib/api.ts):
+   - Automatically reads CSRF token from cookie
+   - Includes token in X-CSRF-Token header for state-changing requests
+   - Provides api.get/post/put/patch/delete convenience methods
+
+3. Updated all admin pages to use new API utility:
+   - Login, Dashboard, Users, Settings, Models, Theme, Errors
+   - AdminLayout fetches CSRF token during auth check
+
+### Verification Steps:
+1. ✅ Logged into admin panel - login POST succeeded with CSRF token
+2. ✅ Added test user "CSRF Test User F212" - POST request included CSRF token (200 OK)
+3. ✅ Tested request WITHOUT CSRF token - rejected with 403 Forbidden
+4. ✅ Tested request with INVALID CSRF token - rejected with 403 Forbidden  
+5. ✅ Deleted test user - DELETE request succeeded with valid CSRF token
+6. ✅ No unexpected console errors
+
+### Screenshots:
+- `.playwright-mcp/csrf_protection_verified.png` - Admin users page after verification
+
+### Current Progress:
+- Features passing: ~152/235 (64.7%)
+- Feature #212 marked as passing
+
+### Technical Notes:
+- CSRF tokens are generated per session using crypto.randomBytes(32)
+- Token validation uses crypto.timingSafeEqual() to prevent timing attacks
+- Login endpoint is exempt since user doesnt have session/token yet
+- Frontend reads token from cookie set by backend (httpOnly: false)
 
