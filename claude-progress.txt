@@ -9326,3 +9326,149 @@ Changed the backend API (`/api/dashboard`) to get the `lastUpdated` value from t
 - Features passing: 132/235 (~56.2%)
 - Feature #190 marked as passing
 
+
+
+---
+
+## Regression Test Session - Feature #188 - 2026-01-21
+
+### Feature #188: Invalid config import rejected (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: S-Export
+- **Description**: Malformed config file is rejected
+
+### Verification Steps Completed:
+
+1. **Create invalid config file** ✅
+   - Created non-JSON file: "this is not valid JSON at all!"
+   - Created invalid version file: version "99.0" (unsupported)
+
+2. **Try to import it** ✅
+   - Uploaded non-JSON file via Import Configuration button
+   - Uploaded invalid version file via Import Configuration button
+
+3. **Verify error message** ✅
+   - Non-JSON file: "Invalid JSON file. Please select a valid configuration export file."
+   - Invalid version: "Unsupported configuration version: 99.0. Expected version 1.0"
+   - Both errors displayed clearly in red alert box with dismiss button
+
+4. **Verify existing config unchanged** ✅
+   - Crawl Interval: 6 hours (unchanged)
+   - History Depth: 180 days (unchanged)
+   - Rate Limit: 450 per 15 min (unchanged)
+
+### Screenshots:
+- .playwright-mcp/feature188-regression-settings-before.png - Settings page before test
+- .playwright-mcp/feature188-regression-error-message.png - Invalid JSON error message
+- .playwright-mcp/feature188-regression-version-error-and-settings.png - Version error and unchanged settings
+
+### Console Errors:
+- Only expected 400 Bad Request from validation (correct behavior)
+- No JavaScript errors
+
+### Result:
+- No regression detected - Feature #188 still working correctly
+
+[Testing] Session complete - verified feature #188 (Invalid config import rejected) - still passing
+
+
+---
+
+## Regression Test Session - Feature #176 - 2026-01-21
+
+### Feature #176: Dates display in user timezone (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: Q-Temporal
+- **Description**: Timestamps shown in local timezone
+
+### Verification Steps Completed:
+
+1. **Check displayed timestamps** ✅
+   - Header: "Last updated: 1/21/2026, 1:48:04 PM" (local format with 12-hour time)
+   - User detail tweets: "Jan 17, 2026", "Dec 30, 2025", etc.
+   - Tweet detail: "Jan 17, 2026, 5:02 PM" (full local datetime)
+   - Chart axes: "Dec 8", "Dec 14", "Jan 1", etc.
+
+2. **Verify they match local timezone** ✅
+   - Code analysis confirmed use of:
+     - `toLocaleString()` in PublicLayout.tsx (header)
+     - `toLocaleDateString('en-US', {...})` in UserDetail.tsx, TweetDetail.tsx
+     - `Intl.DateTimeFormatOptions` in Dashboard.tsx
+   - All these methods automatically use browser's local timezone
+
+3. **Timezone implementation verification** ✅
+   - Backend sends UTC timestamps: "2026-01-17T23:02:42.507Z"
+   - Frontend converts to local: "Jan 17, 2026, 5:02 PM"
+   - Correct pattern: UTC storage → local display
+
+### Screenshots:
+- .playwright-mcp/feature176-user-detail-timestamps.png - User profile with chart dates
+- .playwright-mcp/feature176-tweet-timestamps.png - Tweet list with date stamps
+- .playwright-mcp/feature176-tweet-detail-timestamp.png - Tweet detail with full datetime
+
+### Console Errors:
+- None
+
+### Network Requests:
+- GET /api/tweets/37 => 200 OK
+- GET /api/dashboard => 200 OK
+
+### Result:
+- No regression detected - Feature #176 still working correctly
+- All timestamps display in user's local timezone format
+
+[Testing] Session complete - verified feature #176 (Dates display in user timezone) - still passing
+
+
+
+---
+
+## Regression Test Session - Feature #123 - 2026-01-21
+
+### Feature #123: Double-click submit doesn't duplicate (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: I-Idempotency
+- **Description**: Rapid clicks on forms don't create duplicates
+
+### Verification Steps Completed:
+
+1. **Log in as admin** ✅
+   - Navigated to /admin/login
+   - Logged in with admin credentials
+
+2. **Navigate to add user form** ✅
+   - Clicked on 'Tracked Users' in sidebar
+   - Clicked '+ Add User' button
+   - Form appeared with Twitter Handle and Display Name fields
+
+3. **Fill in user details** ✅
+   - Entered '@testuser123' in Twitter Handle field
+   - Submit button became enabled
+
+4. **Double-click submit rapidly** ✅
+   - Used Playwright dblclick() to simulate rapid double-click
+   - Both clicks registered in quick succession
+
+5. **Verify only one user created** ✅
+   - Before: 1 Total Tracked users
+   - After: 2 Total Tracked users (not 3)
+   - Only ONE testuser123 appeared in the table
+   - Single success toast: 'Successfully added @testuser123 to tracked users!'
+   - Double-click protection working correctly
+
+### Screenshots:
+- .playwright-mcp/feature123-double-click-test-result.png - Shows 2 users after double-click (not duplicated)
+
+### Console Errors:
+- None related to the feature
+
+### Cleanup:
+- Deleted test user testuser123 after verification
+- User count back to 1
+
+### Result:
+- No regression detected - Feature #123 still working correctly
+- Form submission properly prevents duplicate entries from rapid clicks
+
+[Testing] Session complete - verified feature #123 (Double-click submit doesn't duplicate) - still passing
+
