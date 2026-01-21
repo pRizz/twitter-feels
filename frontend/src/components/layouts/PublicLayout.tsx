@@ -48,10 +48,10 @@ export default function PublicLayout() {
             <span className="text-xl font-bold text-primary">Twitter Feels</span>
           </Link>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button - min 44px touch target for accessibility */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-md hover:bg-accent"
+            className="md:hidden p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-accent"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
