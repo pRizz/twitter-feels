@@ -10814,3 +10814,56 @@ Applied `font-mono` Tailwind CSS class to all model name and version displays:
 - Data is re-fetched on mount (not stale cache)
 - No flash or layout shift during navigation
 
+
+---
+
+## Session - Feature #137 Regression Test - 2026-01-21
+
+### Feature #137: Empty search shows all results (REGRESSION TEST)
+- **Status**: PASSING (verified)
+- **Category**: L-SearchFilter
+- **Description**: Empty search query shows full list
+
+### Verification Steps Completed:
+
+1. **Navigate to user list** ✅
+   - Navigated to http://localhost:5173
+   - Dashboard loaded with "Tracked Influencers" section
+   - Initially 1 user (Sam Altman) was present
+
+2. **Setup: Added test users** ✅
+   - Added Elon Musk (@elonmusk) via admin panel
+   - Added Bill Gates (@BillGates) via admin panel
+   - Total: 3 tracked users for proper test coverage
+
+3. **Filter users with search** ✅
+   - Typed "Sam" in search box
+   - Only Sam Altman displayed (filtering works correctly)
+   - Elon Musk and Bill Gates were filtered out
+
+4. **Clear search box** ✅
+   - Cleared the search input field (set to empty string)
+   - All 3 users now displayed:
+     - Sam Altman (@sama)
+     - Elon Musk (@elonmusk)
+     - Bill Gates (@BillGates)
+
+5. **Verify all users displayed** ✅
+   - User count shows "3 Tracked Users"
+   - All 3 user cards visible in the grid
+   - Search box is empty with placeholder "Search users..."
+
+### Screenshots:
+- .playwright-mcp/feature137-step1-dashboard.png - Initial dashboard
+- .playwright-mcp/feature137-step2-filtered.png - Filtered to "Sam" only
+- .playwright-mcp/feature137-step3-all-users.png - Empty search shows all 3 users
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected - Feature #137 still working correctly
+- Empty search correctly shows the full user list
+- Filter → Clear → All results pattern works as expected
+
+[Testing] Session complete - verified feature #137 (Empty search shows all results) - still passing
+[Testing] Session complete - verified feature #120 (Malformed URL parameters handled) - still passing
