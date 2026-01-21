@@ -10867,3 +10867,113 @@ Applied `font-mono` Tailwind CSS class to all model name and version displays:
 
 [Testing] Session complete - verified feature #137 (Empty search shows all results) - still passing
 [Testing] Session complete - verified feature #120 (Malformed URL parameters handled) - still passing
+
+
+---
+
+## Session - Feature #205 - 2026-01-21
+
+### Feature #205: 404 page for invalid routes (COMPLETED)
+- **Status**: PASSING
+- **Category**: B-Navigation
+- **Description**: Non-existent routes show 404 page
+
+### Verification Steps Completed:
+
+1. **Navigate to /invalid-route** ✅
+   - Navigated to http://localhost:5173/invalid-route
+   - 404 page displayed correctly
+
+2. **Verify 404 page displayed** ✅
+   - Shows large "404" heading in cyan/primary color
+   - Shows "Page Not Found" subheading
+   - Shows helpful message: "The page you're looking for doesn't exist or has been moved."
+   - Shows "Back to Dashboard" button with primary styling
+
+3. **Verify navigation still works** ✅
+   - Clicked "Back to Dashboard" link
+   - Successfully navigated to / (main dashboard)
+   - Dashboard loaded with all content (gauges, leaderboards, tracked users)
+
+4. **Verify no console errors** ✅
+   - Checked browser console for errors
+   - No JavaScript errors detected
+
+### Additional Testing:
+- Tested nested invalid route: /nonexistent/page/here - 404 displayed
+- Tested invalid admin route: /admin/invalid-page - 404 displayed
+- Both correctly showed the 404 page
+
+### Implementation:
+The 404 page was already implemented:
+- NotFound.tsx: Component with styled 404 message and navigation link
+- App.tsx: Catch-all route `<Route path="*" element={<NotFound />} />` handles all invalid routes
+
+### Screenshots:
+- .playwright-mcp/feature205-404-page.png - 404 page for /invalid-route
+- .playwright-mcp/feature205-dashboard-after-nav.png - Dashboard after navigation
+- .playwright-mcp/feature205-admin-invalid-route.png - 404 page for admin invalid route
+
+### Console Errors:
+- None
+
+### Current Progress:
+- Features passing: 145/235 (~61.7%)
+- Feature #205 marked as passing
+
+---
+
+## Session - Feature #165 Regression Test - 2026-01-21
+
+### Feature #165: Admin dashboard responsive (REGRESSION TEST)
+- **Status**: PASSING (verified)
+- **Category**: O-Responsive
+- **Description**: Admin pages work on different viewports
+
+### Verification Steps Completed:
+
+1. **Log in as admin on tablet** ✅
+   - Set viewport to 768x1024 (tablet)
+   - Logged into admin panel with admin/admin123
+   - Redirected to /admin dashboard
+
+2. **Navigate through admin pages** ✅
+   - Dashboard: Fully responsive, sidebar + main content layout works
+   - Tracked Users: Table displays properly, stats visible
+   - Settings: All form fields and buttons accessible
+   - LLM Models: Model cards stack properly
+   - Theme: Color pickers and gauge config accessible
+   - Error Logs: Charts and table layout properly
+
+3. **Verify all functions accessible** ✅
+   - Add User button: Clickable, modal opens correctly
+   - Navigation links: All sidebar links work
+   - Logout button: Visible and accessible
+   - Tables: Horizontal scroll where needed, key info visible
+   - Forms: All inputs accessible and editable
+
+4. **Verify no broken layouts** ✅
+   - Sidebar: Fixed width, navigation items visible
+   - Main content: Responsive width, no overflow issues
+   - Cards: Stack properly on narrow viewports
+   - Tables: Maintain readability with horizontal scroll
+   - Modals: Properly centered and sized
+
+### Screenshots:
+- .playwright-mcp/feature165-admin-dashboard-tablet.png
+- .playwright-mcp/feature165-tracked-users-tablet.png
+- .playwright-mcp/feature165-settings-tablet.png
+- .playwright-mcp/feature165-llm-models-tablet.png
+- .playwright-mcp/feature165-theme-tablet.png
+- .playwright-mcp/feature165-error-logs-tablet.png
+- .playwright-mcp/feature165-add-user-modal-tablet.png
+
+### Console Errors:
+- Only 401 errors from initial page load before login (expected)
+- No functional errors after login
+
+### Result:
+- No regression detected - Feature #165 still working correctly
+
+[Testing] Session complete - verified feature #165 (Admin dashboard responsive) - still passing
+
