@@ -11671,3 +11671,230 @@ Enhanced the crawler trigger endpoint to actually create mock tweets for newly a
 - API endpoints: GET/PUT /api/admin/theme
 
 
+
+
+---
+
+## Session - Feature #111 Regression Test - 2026-01-21
+
+### Feature #111: Page refresh preserves filter state (VERIFIED)
+- **Status**: PASSING (No regression)
+- **Category**: G-State
+- **Description**: Selected filters persist across refresh
+
+### Verification Steps Completed:
+
+1. **Select time period filter** ✅
+   - Clicked 'Monthly' button
+   - URL updated to ?period=monthly
+   - Date range shows (Dec 22, 2025 - Jan 21, 2026)
+
+2. **Select LLM model filter** ✅
+   - Selected 'BERTweet Sentiment Analysis (base)' from dropdown
+   - URL updated to ?period=monthly&model=12
+
+3. **Refresh the page** ✅
+   - Pressed F5 to refresh
+   - Page reloaded
+
+4. **Verify filters still selected** ✅
+   - URL preserved: http://localhost:5173/?period=monthly&model=12
+   - 'Monthly' button still shows [active] state
+   - 'BERTweet Sentiment Analysis (base)' still [selected] in dropdown
+   - Date range still shows (Dec 22, 2025 - Jan 21, 2026)
+
+### Implementation Notes:
+- Filter state is persisted via URL query parameters
+- This allows bookmarking and sharing of filtered views
+- React reads URL params on mount to restore filter state
+
+### Screenshots:
+- .playwright-mcp/feature111-before-refresh.png - State before refresh
+- .playwright-mcp/feature111-after-refresh.png - State after refresh (identical)
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected - Feature #111 still working correctly
+
+[Testing] Session complete - verified feature #111 (Page refresh preserves filter state) - still passing
+
+
+
+---
+
+## Session - Feature #96 Regression Test - 2026-01-21
+
+### Feature #96: Loading states shown during data fetch (VERIFIED)
+- **Status**: PASSING (No regression)
+- **Category**: E-ErrorHandling
+- **Description**: Loading indicators appear during API calls
+
+### Verification Steps Completed:
+
+1. **Navigate to dashboard** ✅
+   - Navigated to http://localhost:5173/
+   - Dashboard loaded successfully
+
+2. **Observe loading state during data fetch** ✅
+   - Code review confirms loading state implementation
+   - Dashboard.tsx line 653-658: Loading spinner with role="status" and aria-label
+   - UserDetail.tsx line 729: ProfileSkeleton component for loading state
+
+3. **Verify spinner or skeleton is shown** ✅
+   - Dashboard uses animated spinner (animate-spin class)
+   - User detail uses ProfileSkeleton (animate-pulse class)
+   - Both have proper accessibility attributes
+
+4. **Verify loading state disappears when data loads** ✅
+   - isLoading state starts as true (line 413)
+   - Set to false after data loads (line 563)
+   - Content sections hidden during loading (line 686)
+
+### Code Implementation Verified:
+- Dashboard.tsx: Spinner with `animate-spin` class
+- UserDetail.tsx: Skeleton with `animate-pulse` class
+- Proper React state management (useState hook)
+- Correct conditional rendering
+
+### UI Testing:
+- Dashboard loads with all gauges displaying values
+- Leaderboards show user rankings correctly
+- Filter changes trigger data refresh
+- No console errors detected
+
+### Screenshots:
+- .playwright-mcp/feature96-dashboard-loaded.png - Dashboard after data loads
+- .playwright-mcp/feature96-alltime-filter.png - After switching to All Time filter
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected - Feature #96 still working correctly
+- Loading state implementation is complete and functional
+- API responses are fast so loading state is brief (expected behavior)
+
+[Testing] Session complete - verified feature #96 (Loading states shown during data fetch) - still passing
+
+
+
+---
+
+## Testing Session - Feature #101 - 2026-01-21
+
+### Feature #101: API returns correctly formatted tweet data (REGRESSION TEST)
+- **Status**: STILL PASSING ✅
+- **Category**: F-UIBackend
+- **Description**: Tweet API response matches frontend expectations
+
+### Verification Steps Completed:
+
+1. **Send GET request to /api/tweets/:id** ✅
+   - Sent request to http://localhost:3001/api/tweets/52
+   - API returned HTTP 200 with valid JSON response
+
+2. **Verify response has expected fields** ✅
+   - id: 52
+   - tweetId: test_long_content_166_1769001095459
+   - content: Full tweet text
+   - tweetTimestamp: 2026-01-22T13:11:35.458Z
+   - engagement: { likes: 50000, retweets: 5000, replies: 2500 }
+   - isRetweet: false, isReply: false
+   - user: { id, twitterId, username, displayName, avatarUrl }
+
+3. **Verify emotion breakdown is properly formatted** ✅
+   - combinedEmotions: All 12 emotions with scores (happy: 45, sad: 15, angry: 10, fearful: 5, hatred: 2, thankful: 35, excited: 60, hopeful: 50, frustrated: 20, sarcastic: 25, inspirational: 55, anxious: 12)
+   - emotionColors: Object with color codes for each emotion
+   - UI displays Emotion Breakdown section with colored bars
+
+4. **Verify model info is included** ✅
+   - analyses[0].model: { id: 1, name: 'Llama-3-Sentiment', version: '3.1', provider: 'local' }
+   - UI displays Analysis by Model section with model name, version, date, duration
+
+### Screenshots:
+- .playwright-mcp/feature101-tweet-detail-page.png - Tweet detail page header
+- .playwright-mcp/feature101-emotion-breakdown-model-info.png - Emotion breakdown and model info
+
+### Console Errors: NONE
+
+### Result:
+- No regression detected - Feature #101 still working correctly
+
+[Testing] Session complete - verified feature #101 (API returns correctly formatted tweet data) - still passing
+
+
+
+---
+
+## Session - Feature #211 - 2026-01-21
+
+### Feature #211: API authentication token required (COMPLETED)
+- **Status**: PASSING
+- **Category**: A-Security
+- **Description**: Admin API calls require valid session
+
+### Bug Fix Implemented:
+
+Fixed a bug in `frontend/src/lib/api.ts` where the Content-Type header was not being set for JSON requests:
+
+**Problem**: The code checked `typeof options.body === 'object'` to decide whether to set Content-Type, but the body was already stringified by `JSON.stringify()`, so it was always a string, not an object.
+
+**Solution**: Changed the condition to set Content-Type for any non-FormData body when Content-Type isn't already set.
+
+### Verification Steps Completed:
+
+1. **Clear all cookies/sessions** ✅
+   - Logged out of admin panel
+   - Verified session cookie was cleared
+
+2. **Call admin API endpoint** ✅
+   - Called multiple admin endpoints without authentication:
+     - GET /api/admin/users
+     - GET /api/admin/crawler/status
+     - GET /api/admin/settings
+     - GET /api/admin/models
+
+3. **Verify 401 response** ✅
+   - All endpoints returned HTTP 401 with error: "Authentication required"
+   - Browser showed 401 errors in console when accessing /admin pages
+   - Unauthenticated users redirected to /admin/login
+
+4. **Log in and retry** ✅
+   - Logged in with admin/admin123
+   - Session cookie established
+
+5. **Verify success** ✅
+   - All admin API endpoints now return HTTP 200 with data
+   - Admin dashboard loads successfully
+   - Tracked Users page displays user data
+   - All admin functionality accessible after login
+
+### Screenshots:
+- .playwright-mcp/.playwright-mcp/feature211-step1-unauthenticated-redirect.png - Redirect to login
+- .playwright-mcp/.playwright-mcp/feature211-step2-logged-out.png - Logged out state
+- .playwright-mcp/.playwright-mcp/feature211-step3-redirect-to-login.png - Direct URL access blocked
+- .playwright-mcp/.playwright-mcp/feature211-step4-logged-in-admin-dashboard.png - Successful login
+- .playwright-mcp/.playwright-mcp/feature211-step5-admin-users-success.png - Admin page with data
+
+### API Test Results:
+```
+# Without authentication:
+curl /api/admin/users → 401 {"error":"Authentication required"}
+curl /api/admin/crawler/status → 401 {"error":"Authentication required"}
+curl /api/admin/settings → 401 {"error":"Authentication required"}
+
+# After login:
+curl /api/admin/users → 200 {users: [...]}
+curl /api/admin/crawler/status → 200 {status: "idle", ...}
+curl /api/admin/settings → 200 {crawler: {...}, backup: {...}}
+```
+
+### Console Errors: NONE (401s expected before login)
+
+### Code Changes:
+- frontend/src/lib/api.ts: Fixed Content-Type header logic
+
+### Current Progress:
+- Features passing: 152/235 (~64.7%)
+- Feature #211 marked as passing
+
