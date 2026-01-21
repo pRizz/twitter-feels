@@ -93,7 +93,7 @@ function Leaderboard({ data }: { data: LeaderboardData }) {
       </h3>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <h4 className="text-sm font-medium text-primary-cyan mb-2">Highest</h4>
+          <h4 className="text-sm font-medium text-primary mb-2">Highest</h4>
           <ul className="space-y-2">
             {data.highest.length > 0 ? (
               data.highest.slice(0, 3).map((entry, index) => (
@@ -109,7 +109,7 @@ function Leaderboard({ data }: { data: LeaderboardData }) {
                   <span className="text-sm text-foreground truncate flex-1">
                     {entry.displayName || entry.username}
                   </span>
-                  <span className="text-xs font-mono text-primary-cyan">{entry.score}</span>
+                  <span className="text-xs font-mono text-primary">{entry.score}</span>
                 </li>
               ))
             ) : (
@@ -160,7 +160,7 @@ function UserCard({ user }: { user: UserSummary }) {
             <img src={user.avatarUrl} alt={`${user.displayName || user.username}'s avatar`} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-primary-cyan/20 flex items-center justify-center">
-              <span className="text-lg font-bold text-primary-cyan">
+              <span className="text-lg font-bold text-primary">
                 {user.displayName?.[0] || user.username[0]}
               </span>
             </div>
@@ -176,7 +176,7 @@ function UserCard({ user }: { user: UserSummary }) {
       )}
       <div className="mt-3 flex items-center justify-between">
         <span className="text-xs text-muted-foreground">Top emotion</span>
-        <span className="text-sm font-medium text-primary-cyan capitalize">
+        <span className="text-sm font-medium text-primary capitalize">
           {user.topEmotion}: {user.topEmotionScore}
         </span>
       </div>
@@ -592,10 +592,10 @@ export default function Dashboard() {
       {!isLoading && !error && data && data.filteredAnalysisCount === 0 && (
         <div className="mb-6 p-4 bg-primary-cyan/10 border border-primary-cyan/30 rounded-lg">
           <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-primary-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="text-primary-cyan font-medium">No sentiment data for selected filters</span>
+            <span className="text-primary font-medium">No sentiment data for selected filters</span>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
             {data.stats.totalAnalyses > 0 ? (
@@ -606,7 +606,7 @@ export default function Dashboard() {
             ) : (
               <>
                 No tweets have been analyzed yet. The crawler needs to fetch tweets and run sentiment analysis.
-                Visit the <a href="/admin/login" className="text-primary-cyan hover:underline">admin dashboard</a> to check crawler status.
+                Visit the <a href="/admin/login" className="text-primary hover:underline">admin dashboard</a> to check crawler status.
               </>
             )}
           </p>
@@ -619,7 +619,7 @@ export default function Dashboard() {
           {/* Average Twitter Feel Section - Gauges */}
           <section className="mb-10 animate-slide-up">
             <h2 className="text-2xl font-semibold mb-6 text-foreground flex items-center gap-2">
-              <span className="text-primary-cyan">⚡</span>
+              <span className="text-primary">⚡</span>
               Average Twitter Feel
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -654,7 +654,7 @@ export default function Dashboard() {
           <section style={{ animationDelay: '0.2s' }}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-                <span className="text-primary-cyan">👥</span>
+                <span className="text-primary">👥</span>
                 Tracked Influencers
               </h2>
               {/* User search input */}
@@ -699,7 +699,7 @@ export default function Dashboard() {
                   <div className="bg-card rounded-lg p-8 border border-border text-center">
                     <p className="text-muted-foreground">
                       No Twitter users are being tracked yet. Visit the{' '}
-                      <Link to="/admin/login" className="text-primary-cyan hover:underline">
+                      <Link to="/admin/login" className="text-primary hover:underline">
                         admin dashboard
                       </Link>{' '}
                       to add users.
@@ -737,7 +737,7 @@ export default function Dashboard() {
             <section className="mt-10 pt-6 border-t border-border">
               <div className="flex flex-wrap justify-center gap-8 text-center">
                 <div>
-                  <p className="text-2xl font-bold text-primary-cyan">{data.stats.totalUsers}</p>
+                  <p className="text-2xl font-bold text-primary">{data.stats.totalUsers}</p>
                   <p className="text-sm text-muted-foreground">Tracked Users</p>
                 </div>
                 <div>

@@ -318,10 +318,11 @@ export default function AdminTheme() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Gauge Name */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">
+                      <label htmlFor={`gauge-name-${index}`} className="block text-sm font-medium mb-1">
                         Gauge Name
                       </label>
                       <input
+                        id={`gauge-name-${index}`}
                         type="text"
                         value={gauge.name}
                         onChange={(e) => handleGaugeLabelChange(index, 'name', e.target.value)}
@@ -331,10 +332,11 @@ export default function AdminTheme() {
 
                     {/* Low Label */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">
+                      <label htmlFor={`gauge-low-${index}`} className="block text-sm font-medium mb-1">
                         Low Label (0%)
                       </label>
                       <input
+                        id={`gauge-low-${index}`}
                         type="text"
                         value={gauge.lowLabel}
                         onChange={(e) => handleGaugeLabelChange(index, 'lowLabel', e.target.value)}
@@ -345,10 +347,11 @@ export default function AdminTheme() {
 
                     {/* High Label */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">
+                      <label htmlFor={`gauge-high-${index}`} className="block text-sm font-medium mb-1">
                         High Label (100%)
                       </label>
                       <input
+                        id={`gauge-high-${index}`}
                         type="text"
                         value={gauge.highLabel}
                         onChange={(e) => handleGaugeLabelChange(index, 'highLabel', e.target.value)}

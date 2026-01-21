@@ -568,7 +568,7 @@ export default function AdminSettings() {
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
+        <div role="alert" className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
           {error}
           <button
             onClick={() => setError(null)}
@@ -614,7 +614,7 @@ export default function AdminSettings() {
                 }`}
               />
               {crawlerErrors.intervalHours ? (
-                <p className="text-xs text-destructive mt-1">
+                <p role="alert" className="text-xs text-destructive mt-1">
                   {crawlerErrors.intervalHours}
                 </p>
               ) : (
@@ -643,7 +643,7 @@ export default function AdminSettings() {
                 }`}
               />
               {crawlerErrors.historyDepthDays ? (
-                <p className="text-xs text-destructive mt-1">
+                <p role="alert" className="text-xs text-destructive mt-1">
                   {crawlerErrors.historyDepthDays}
                 </p>
               ) : (
@@ -672,7 +672,7 @@ export default function AdminSettings() {
                 }`}
               />
               {crawlerErrors.rateLimitPer15Min ? (
-                <p className="text-xs text-destructive mt-1">
+                <p role="alert" className="text-xs text-destructive mt-1">
                   {crawlerErrors.rateLimitPer15Min}
                 </p>
               ) : (
@@ -761,7 +761,7 @@ export default function AdminSettings() {
                 disabled={!backupForm.enabled}
               />
               {backupErrors.bucketName ? (
-                <p className="text-xs text-destructive mt-1">
+                <p role="alert" className="text-xs text-destructive mt-1">
                   {backupErrors.bucketName}
                 </p>
               ) : (
@@ -929,14 +929,14 @@ export default function AdminSettings() {
 
         {/* Password Success Message */}
         {passwordSuccess && (
-          <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-500">
+          <div role="alert" className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-500">
             {passwordSuccess}
           </div>
         )}
 
         {/* Password Error Message */}
         {passwordError && (
-          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
+          <div role="alert" className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
             {passwordError}
             <button
               onClick={() => setPasswordError(null)}

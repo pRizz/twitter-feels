@@ -254,7 +254,7 @@ export default function AdminUsers() {
 
       {/* Error Message */}
       {error && (
-        <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
+        <div role="alert" className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
           {error}
           <button
             onClick={() => setError(null)}
@@ -300,7 +300,7 @@ export default function AdminUsers() {
                 disabled={adding}
               />
               {handleTouched && handleError && (
-                <p className="mt-1 text-sm text-destructive">{handleError}</p>
+                <p role="alert" className="mt-1 text-sm text-destructive">{handleError}</p>
               )}
             </div>
             <div className="flex-1 min-w-[200px]">
